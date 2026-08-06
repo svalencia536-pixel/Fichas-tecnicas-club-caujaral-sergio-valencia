@@ -1,0 +1,15 @@
+# Copias temporales de los libros de Excel (se recrean en cada corrida)
+trabajo/
+
+# Estado local del proceso: huella y cifras de la última corrida
+ultimo hash.txt
+ultimo conteo.txt
+
+# Perfiles que deja Chrome al probar la página
+perfil-*/
+p-*/
+
+# Basura de Windows y de Excel
+Thumbs.db
+desktop.ini
+~$*

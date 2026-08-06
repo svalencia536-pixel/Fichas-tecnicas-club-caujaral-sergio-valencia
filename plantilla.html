@@ -1,0 +1,1517 @@
+<title>Fichas Técnicas · Club Lagos de Caujaral</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+
+<style>
+  /* Paleta institucional: la misma del tablero de tendencia de ventas y del Power BI
+     — azul corporativo, verde positivo y los neutros grises de Fluent. */
+  :root{
+    --ground:#F2F2F2; --surface:#FFFFFF; --surface-2:#FAFAFA;
+    --ink:#252423; --muted:#605E5C; --faint:#8A8886;
+    --line:#D0D0D0; --line-soft:#EDEDED;
+    --accent:#0A71B7; --accent-soft:#DEEFFF; --sobre-acento:#FFFFFF;
+    --ok:#179160; --ok-soft:#E8F5E2;
+    --shadow:0 1px 2px rgba(37,36,35,.06), 0 8px 24px -12px rgba(37,36,35,.18);
+    --sans:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --display:"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,"Cascadia Mono","Consolas","SF Mono",Menlo,monospace;
+    /* Un color por grupo, los mismos que ya se leen en el tablero de ventas:
+       verde los alimentos, azul las bebidas, azul claro lo que se deriva de ellas. */
+    --g-FA:#4E9E33; --g-FA-suave:#E8F5E2;
+    --g-FB:#0A71B7; --g-FB-suave:#DEEFFF;
+    --g-FS:#3B9BE0; --g-FS-suave:#E4F1FC;
+    --g-FP:#B87A0C; --g-FP-suave:#FFF8E5;
+    --g-FE:#179160; --g-FE-suave:#E2F0E9;
+    --g-FC:#C13B46; --g-FC-suave:#FDE7E7;
+    --g-OT:#6E6C6A; --g-OT-suave:#EDEDED;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --g-FA:#7BC95C; --g-FA-suave:#1B2A16;
+      --g-FB:#3B9BE0; --g-FB-suave:#12293A;
+      --g-FS:#70BBFF; --g-FS-suave:#152B3C;
+      --g-FP:#E8A317; --g-FP-suave:#2E2410;
+      --g-FE:#4FC08D; --g-FE-suave:#132A22;
+      --g-FC:#E8737C; --g-FC-suave:#2E1618;
+      --g-OT:#A9A6A3; --g-OT-suave:#2D2C2B;
+    }
+  }
+  :root[data-theme="dark"]{
+    --g-FA:#7BC95C; --g-FA-suave:#1B2A16;
+    --g-FB:#3B9BE0; --g-FB-suave:#12293A;
+    --g-FS:#70BBFF; --g-FS-suave:#152B3C;
+    --g-FP:#E8A317; --g-FP-suave:#2E2410;
+    --g-FE:#4FC08D; --g-FE-suave:#132A22;
+    --g-FC:#E8737C; --g-FC-suave:#2E1618;
+    --g-OT:#A9A6A3; --g-OT-suave:#2D2C2B;
+  }
+  :root[data-theme="light"]{
+    --g-FA:#4E9E33; --g-FA-suave:#E8F5E2;
+    --g-FB:#0A71B7; --g-FB-suave:#DEEFFF;
+    --g-FS:#3B9BE0; --g-FS-suave:#E4F1FC;
+    --g-FP:#B87A0C; --g-FP-suave:#FFF8E5;
+    --g-FE:#179160; --g-FE-suave:#E2F0E9;
+    --g-FC:#C13B46; --g-FC-suave:#FDE7E7;
+    --g-OT:#6E6C6A; --g-OT-suave:#EDEDED;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ground:#1B1A19; --surface:#252423; --surface-2:#2D2C2B;
+      --ink:#F3F4F3; --muted:#B3B0AD; --faint:#8A8886;
+      --line:#3B3A39; --line-soft:#2D2C2B;
+      --accent:#3B9BE0; --accent-soft:#12293A; --sobre-acento:#10202B;
+      --ok:#66B448; --ok-soft:#1B2A16;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#1B1A19; --surface:#252423; --surface-2:#2D2C2B;
+    --ink:#F3F4F3; --muted:#B3B0AD; --faint:#8A8886;
+    --line:#3B3A39; --line-soft:#2D2C2B;
+    --accent:#3B9BE0; --accent-soft:#12293A; --sobre-acento:#10202B;
+    --ok:#66B448; --ok-soft:#1B2A16;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+  :root[data-theme="light"]{
+    --ground:#F2F2F2; --surface:#FFFFFF; --surface-2:#FAFAFA;
+    --ink:#252423; --muted:#605E5C; --faint:#8A8886;
+    --line:#D0D0D0; --line-soft:#EDEDED;
+    --accent:#0A71B7; --accent-soft:#DEEFFF; --sobre-acento:#FFFFFF;
+    --ok:#179160; --ok-soft:#E8F5E2;
+    --shadow:0 1px 2px rgba(37,36,35,.06), 0 8px 24px -12px rgba(37,36,35,.18);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:var(--sans); font-size:16px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  button,input,select{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  /* ---------- marco ---------- */
+  .app{display:flex;flex-direction:column;min-height:100vh}
+
+  .topbar{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--line);
+  }
+  .logo{width:34px;height:34px;flex:none;object-fit:contain;display:block}
+  .brand{display:flex;flex-direction:column;gap:1px;margin-right:auto}
+  .brand b{
+    font-family:var(--display);font-size:18px;font-weight:700;
+    letter-spacing:-.015em;line-height:1.15;
+  }
+  .brand span{font-size:11.5px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+  .topmeta{
+    font-family:var(--mono);font-size:11.5px;color:var(--faint);
+    letter-spacing:.02em;white-space:nowrap;
+  }
+
+  .cols{display:grid;grid-template-columns:340px minmax(0,1fr);gap:0;flex:1;align-items:start}
+  @media (max-width:900px){ .cols{grid-template-columns:minmax(0,1fr)} }
+
+  /* ---------- panel de busqueda ---------- */
+  .rail{
+    background:var(--surface);border-right:1px solid var(--line);
+    display:flex;flex-direction:column;gap:0;min-width:0;
+    position:sticky;top:0;max-height:100vh;
+  }
+  @media (max-width:900px){
+    .rail{position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line)}
+    .rail.oculto{display:none}
+  }
+
+  .buscar{padding:16px 16px 12px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--line-soft)}
+  .campo{position:relative;display:flex;align-items:center}
+  .campo input{
+    width:100%;padding:11px 34px 11px 12px;border:1px solid var(--line);
+    border-radius:8px;background:var(--surface-2);
+  }
+  .campo input::placeholder{color:var(--faint)}
+  .campo input::-webkit-search-cancel-button,
+  .campo input::-webkit-search-decoration{-webkit-appearance:none;appearance:none}
+  .campo .limpiar{
+    position:absolute;right:6px;width:24px;height:24px;border:0;background:transparent;
+    color:var(--faint);cursor:pointer;border-radius:6px;line-height:1;font-size:17px;
+  }
+  .campo .limpiar:hover{background:var(--line-soft);color:var(--ink)}
+
+  .grupos{display:flex;flex-wrap:wrap;gap:5px}
+  .chip{
+    border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
+    padding:4px 9px;border-radius:999px;font-size:12px;cursor:pointer;
+    letter-spacing:.01em;transition:background .12s,border-color .12s,color .12s;
+  }
+  .chip:hover{border-color:var(--accent);color:var(--ink)}
+  .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  :root[data-theme="dark"] .chip[aria-pressed="true"],
+  .chip[aria-pressed="true"]{color:#fff}
+  @media (prefers-color-scheme:dark){.chip[aria-pressed="true"]{color:#11171B}}
+  :root[data-theme="dark"] .chip[aria-pressed="true"]{color:#11171B}
+  :root[data-theme="light"] .chip[aria-pressed="true"]{color:#fff}
+  .chip b{font-family:var(--mono);font-size:10.5px;opacity:.75;margin-left:4px;font-weight:400}
+
+  /* desplegable con casillas */
+  .desple{position:relative}
+  .desple>button{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:9px 12px;border:1px solid var(--line);border-radius:8px;
+    background:var(--surface-2);cursor:pointer;text-align:left;font-size:13.5px;
+  }
+  .desple>button:hover{border-color:var(--accent)}
+  .desple>button .cuenta{
+    font-family:var(--mono);font-size:11px;background:var(--accent);color:#fff;
+    padding:1px 6px;border-radius:999px;
+  }
+  @media (prefers-color-scheme:dark){.desple>button .cuenta{color:#11171B}}
+  :root[data-theme="dark"] .desple>button .cuenta{color:#11171B}
+  :root[data-theme="light"] .desple>button .cuenta{color:#fff}
+  .panel{
+    position:absolute;z-index:30;top:calc(100% + 5px);left:0;right:0;
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    box-shadow:var(--shadow);max-height:46vh;overflow-y:auto;padding:6px;
+  }
+  .panel[hidden]{display:none}
+  .panel .seccion{
+    font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
+    padding:8px 8px 4px;display:flex;justify-content:space-between;align-items:center;gap:8px;
+  }
+  .panel .seccion button{
+    border:0;background:transparent;color:var(--accent);cursor:pointer;
+    font-size:11px;text-transform:none;letter-spacing:0;padding:2px 4px;border-radius:4px;
+  }
+  .panel .seccion button:hover{background:var(--accent-soft)}
+  .panel label{
+    display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;
+    cursor:pointer;font-size:13px;line-height:1.35;
+  }
+  .panel label:hover{background:var(--surface-2)}
+  .panel label input{margin:2px 0 0;accent-color:var(--accent);flex:none}
+  .panel hr{border:0;border-top:1px solid var(--line-soft);margin:6px 4px}
+  .panel .vacio{padding:12px 8px;font-size:12.5px;color:var(--faint)}
+
+  .aviso{
+    display:flex;gap:7px;align-items:flex-start;
+    background:var(--accent-soft);border-left:2px solid var(--accent);
+    padding:7px 10px;border-radius:0 6px 6px 0;font-size:12px;color:var(--ink);line-height:1.4;
+  }
+  .aviso[hidden]{display:none}
+
+  /* lista de recetas */
+  .conteo{
+    padding:9px 16px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--faint);border-bottom:1px solid var(--line-soft);
+    display:flex;justify-content:space-between;gap:8px;
+  }
+  .conteo b{font-family:var(--mono);font-weight:400;letter-spacing:0;color:var(--muted)}
+  .lista{overflow-y:auto;flex:1;padding:4px 0 20px;min-height:120px}
+  .lista button{
+    width:100%;display:block;text-align:left;border:0;background:transparent;cursor:pointer;
+    padding:9px 16px 9px 14px;border-left:2px solid transparent;
+  }
+  .lista button:hover{background:var(--surface-2)}
+  .lista button[aria-current="true"]{background:var(--surface-2);border-left-color:var(--accent)}
+  .lista .nom{font-size:13.5px;line-height:1.3;display:block}
+  .lista button[aria-current="true"] .nom{font-weight:600}
+  .lista .sub{
+    display:flex;gap:8px;align-items:center;margin-top:2px;
+    font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.02em;
+  }
+  .lista .sinficha{color:var(--faint)}
+  .lista .conficha{color:var(--ok)}
+  .lista .nada{padding:26px 16px;color:var(--muted);font-size:13px;line-height:1.5}
+
+  /* ---------- ficha ---------- */
+  .ficha{padding:22px 26px 60px;max-width:1000px;min-width:0}
+  @media (max-width:900px){ .ficha{padding:16px 14px 48px} }
+
+  .volver{
+    display:none;margin-bottom:12px;border:1px solid var(--line);background:var(--surface);
+    color:var(--ink);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px;
+  }
+  @media (max-width:900px){ .volver{display:inline-block} }
+
+  .rastro{
+    display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px;
+    font-size:12px;color:var(--muted);
+  }
+  .rastro[hidden]{display:none}
+  .rastro button{
+    border:0;background:transparent;color:var(--accent);cursor:pointer;padding:2px 4px;
+    border-radius:4px;font-size:12px;text-decoration:underline;text-underline-offset:2px;
+  }
+  .rastro button:hover{background:var(--accent-soft)}
+  .rastro span{color:var(--faint)}
+
+  .cabeza{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:20px 22px;box-shadow:var(--shadow);
+  }
+  .cabeza.con-foto{
+    display:grid;grid-template-columns:minmax(0,1fr) 226px;gap:20px;align-items:start;
+  }
+  .cabeza.con-foto .barra{grid-column:1/-1;margin-top:4px}
+  @media (max-width:760px){
+    .cabeza.con-foto{grid-template-columns:minmax(0,1fr)}
+  }
+
+  .foto{margin:0;display:flex;flex-direction:column;gap:5px}
+  .foto img{
+    width:100%;height:170px;object-fit:cover;display:block;
+    border-radius:10px;border:1px solid var(--line);background:var(--surface-2);
+  }
+  .foto figcaption{
+    font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);
+    text-align:center;
+  }
+  .foto-vacia{
+    height:170px;border:1px dashed var(--line);border-radius:10px;background:var(--surface-2);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+    padding:14px;text-align:center;
+  }
+  .foto-vacia span{font-size:13px;color:var(--muted);font-weight:600}
+  .foto-vacia small{font-size:11px;color:var(--faint);line-height:1.4;max-width:22ch}
+
+  .verguia{
+    margin-top:18px;border:1px solid var(--accent);background:transparent;color:var(--accent);
+    padding:9px 17px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:600;
+  }
+  .verguia:hover{background:var(--accent-soft)}
+
+  .imprimir{
+    border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
+    padding:7px 13px;border-radius:9px;cursor:pointer;font-size:13px;
+  }
+  .imprimir:hover{border-color:var(--accent);color:var(--ink)}
+  .aviso-imp{
+    margin:11px 0 0;padding:8px 12px;border-left:2px solid var(--g-FP);
+    background:var(--g-FP-suave);border-radius:0 7px 7px 0;
+    font-size:12.5px;line-height:1.45;color:var(--ink);
+  }
+  .aviso-imp[hidden]{display:none}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:5px;
+  }
+  h1{
+    font-family:var(--display);font-size:clamp(23px,3.1vw,33px);font-weight:700;
+    letter-spacing:-.022em;line-height:1.1;margin:0;text-wrap:balance;
+  }
+  .datos{
+    display:flex;flex-wrap:wrap;gap:7px;margin-top:14px;
+  }
+  .dato{
+    display:flex;flex-direction:column;gap:1px;
+    border:1px solid var(--line-soft);background:var(--surface-2);
+    border-radius:8px;padding:7px 11px;min-width:96px;
+  }
+  .dato i{
+    font-style:normal;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);
+  }
+  .dato b{font-family:var(--mono);font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+  .dato.marca{border-color:var(--accent);background:var(--accent-soft)}
+  .dato.marca b{color:var(--accent)}
+
+  /* barra de raciones */
+  .barra{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;
+    margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft);
+  }
+  .rot{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .pasos{display:flex;align-items:stretch;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .pasos button{
+    border:0;background:var(--surface-2);color:var(--ink);cursor:pointer;
+    width:38px;font-size:19px;line-height:1;
+  }
+  .pasos button:hover{background:var(--accent);color:#fff}
+  @media (prefers-color-scheme:dark){.pasos button:hover{color:#11171B}}
+  :root[data-theme="dark"] .pasos button:hover{color:#11171B}
+  :root[data-theme="light"] .pasos button:hover{color:#fff}
+  .pasos input{
+    width:70px;border:0;border-left:1px solid var(--line);border-right:1px solid var(--line);
+    background:var(--surface);text-align:center;font-family:var(--mono);font-size:16px;
+    font-variant-numeric:tabular-nums;padding:8px 4px;
+  }
+  .rapidos{display:flex;gap:5px}
+  .interr{
+    display:flex;align-items:center;gap:7px;margin-left:auto;font-size:13px;color:var(--muted);
+    cursor:pointer;user-select:none;
+  }
+  .interr input{accent-color:var(--accent);width:16px;height:16px}
+
+  /* tabla de ingredientes */
+  .bloque{margin-top:22px}
+  .titulo{
+    display:flex;align-items:baseline;gap:10px;margin-bottom:9px;
+  }
+  .titulo h2{
+    font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;margin:0;
+  }
+  .titulo em{font-style:normal;font-size:11.5px;color:var(--faint);font-family:var(--mono)}
+
+  .tablawrap{
+    overflow-x:auto;background:var(--surface);border:1px solid var(--line);
+    border-radius:12px;box-shadow:var(--shadow);
+  }
+  table{border-collapse:collapse;width:100%;min-width:560px}
+  thead th{
+    text-align:left;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--faint);font-weight:600;padding:11px 14px;border-bottom:1px solid var(--line);
+    white-space:nowrap;background:var(--surface-2);
+  }
+  thead th.num{text-align:right}
+  tbody td{padding:10px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top;font-size:14px}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover td{background:var(--surface-2)}
+  td.num{
+    text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;
+    white-space:nowrap;font-size:13.5px;
+  }
+  td.idx{
+    font-family:var(--mono);font-size:11px;color:var(--faint);width:1%;padding-right:0;
+    font-variant-numeric:tabular-nums;
+  }
+  td.art{line-height:1.35}
+  .um{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.03em}
+  .gr{font-weight:600}
+  .pend{color:var(--faint);font-family:var(--sans);font-size:12px}
+  .enlace{
+    border:0;background:transparent;padding:0;cursor:pointer;color:var(--accent);
+    text-align:left;font:inherit;text-decoration:underline;text-underline-offset:2px;
+    text-decoration-thickness:1px;
+  }
+  .enlace:hover{background:var(--accent-soft);border-radius:3px}
+  .marcasub{
+    display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;
+    border:1px solid var(--accent);color:var(--accent);border-radius:3px;
+    padding:0 4px;margin-left:6px;vertical-align:1px;
+  }
+  tfoot td{
+    padding:11px 14px;border-top:1px solid var(--line);font-size:13px;
+    background:var(--surface-2);font-weight:600;
+  }
+  tfoot td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  .nota{
+    margin-top:8px;font-size:11.5px;color:var(--faint);line-height:1.5;
+  }
+
+  /* en celular la tabla se compacta: cae el numeral y la columna de unidad,
+     que pasa a ir pegada a la cantidad */
+  .um-inline{display:none}
+  @media (max-width:660px){
+    table{min-width:0}
+    th.c-idx,td.idx,th.c-um,td.c-um,th.c-cu,td.c-cu{display:none}
+    .um-inline{display:inline;margin-left:5px}
+    thead th{padding:9px 10px}
+    tbody td{padding:9px 10px;font-size:14.5px}
+    td.num{font-size:13.5px}
+    tfoot td{padding:9px 10px}
+  }
+
+  /* metodo y utensilios */
+  .prosa{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:18px 22px;box-shadow:var(--shadow);
+  }
+  .prosa p{margin:0 0 10px;max-width:66ch;font-size:15.5px;line-height:1.62}
+  .prosa p:last-child{margin-bottom:0}
+  .falta{
+    background:var(--surface);border:1px dashed var(--line);border-radius:12px;
+    padding:16px 20px;color:var(--muted);font-size:13.5px;line-height:1.55;
+  }
+  .falta b{color:var(--ink)}
+
+  .dosup{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:760px){ .dosup{grid-template-columns:1fr} }
+
+  .bienvenida{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:34px 30px;box-shadow:var(--shadow);max-width:640px;
+  }
+  .bienvenida h2{
+    font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0 0 10px;
+  }
+  .bienvenida p{margin:0 0 12px;color:var(--muted);font-size:15px;line-height:1.6;max-width:58ch}
+  .bienvenida ol{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px;line-height:1.75}
+  .bienvenida ol b{color:var(--ink)}
+
+  /* ---------- color por grupo ----------
+     Cada receta hereda el color de su grupo en --g y --g-suave, y de ahí lo toman
+     la lista, la cabecera y las tarjetas. Así el color dice a qué familia pertenece. */
+  [data-g="FA"]{--g:var(--g-FA); --g-suave:var(--g-FA-suave)}
+  [data-g="FB"]{--g:var(--g-FB); --g-suave:var(--g-FB-suave)}
+  [data-g="FS"]{--g:var(--g-FS); --g-suave:var(--g-FS-suave)}
+  [data-g="FP"]{--g:var(--g-FP); --g-suave:var(--g-FP-suave)}
+  [data-g="FE"]{--g:var(--g-FE); --g-suave:var(--g-FE-suave)}
+  [data-g="FC"]{--g:var(--g-FC); --g-suave:var(--g-FC-suave)}
+  [data-g="OT"]{--g:var(--g-OT); --g-suave:var(--g-OT-suave)}
+
+  .lista button[data-g]{border-left-color:var(--g)}
+  .lista button[data-g]:hover{background:var(--g-suave)}
+  .lista button[data-g][aria-current="true"]{background:var(--g-suave);border-left-width:3px}
+
+  .chip[data-g]{display:inline-flex;align-items:center;gap:6px}
+  .chip[data-g]::before{
+    content:"";width:9px;height:9px;border-radius:2px;background:var(--g);flex:none;
+  }
+  .chip[data-g][aria-pressed="true"]{
+    background:var(--g-suave);border-color:var(--g);color:var(--ink);font-weight:600;
+  }
+  .chip[data-g][aria-pressed="true"]::before{box-shadow:0 0 0 2px var(--surface)}
+
+  /* la ficha se encabeza con una franja del color de su grupo */
+  .cabeza[data-g]{border-top:3px solid var(--g)}
+  .cabeza[data-g] .eyebrow{color:var(--g)}
+  .dato.grupo{background:var(--g-suave);border-color:var(--g)}
+  .dato.grupo b{color:var(--g)}
+  /* las tarjetas de datos llevan un filete arriba, como las del tablero de ventas */
+  .datos .dato{border-top:2px solid var(--line)}
+  .datos .dato:nth-child(1){border-top-color:var(--g-FB)}
+  .datos .dato:nth-child(2){border-top-color:var(--g-FA)}
+  .datos .dato:nth-child(3){border-top-color:var(--g-FS)}
+  .datos .dato.grupo{border-top-color:var(--g)}
+
+  /* ---------- controles de vista ---------- */
+  .controles{display:flex;gap:6px;align-items:center}
+  .ctrl{
+    border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
+    padding:6px 11px;border-radius:8px;cursor:pointer;font-size:12.5px;
+    display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  }
+  .ctrl:hover{border-color:var(--accent);color:var(--ink)}
+  .ctrl b{font-weight:600;color:var(--ink)}
+
+  /* vista de celular forzada desde el botón: se replican las reglas que
+     normalmente dispara el ancho de pantalla, y se enmarca como un teléfono */
+  :root.movil .app{
+    max-width:430px;margin:0 auto;min-height:100vh;
+    border-left:1px solid var(--line);border-right:1px solid var(--line);
+  }
+  :root.movil .cols{grid-template-columns:minmax(0,1fr)}
+  :root.movil .rail{position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line)}
+  :root.movil .rail.oculto{display:none}
+  :root.movil .ficha{padding:16px 14px 48px}
+  :root.movil .volver{display:inline-block}
+  :root.movil .cabeza.con-foto{grid-template-columns:minmax(0,1fr)}
+  :root.movil table{min-width:0}
+  :root.movil th.c-idx,:root.movil td.idx,
+  :root.movil th.c-um,:root.movil td.c-um,
+  :root.movil th.c-cu,:root.movil td.c-cu{display:none}
+  :root.movil .um-inline{display:inline;margin-left:5px}
+  :root.movil .dosup{grid-template-columns:1fr}
+  :root.movil .topmeta{display:none}
+
+  /* ---------- guía de uso ---------- */
+  .ayuda{
+    border:1px solid var(--accent);background:transparent;color:var(--accent);
+    padding:6px 13px;border-radius:999px;cursor:pointer;font-size:13px;font-weight:600;
+    white-space:nowrap;transition:background .12s,color .12s;
+  }
+  .ayuda:hover{background:var(--accent);color:#fff}
+  @media (prefers-color-scheme:dark){.ayuda:hover{color:#11171B}}
+  :root[data-theme="dark"] .ayuda:hover{color:#11171B}
+  :root[data-theme="light"] .ayuda:hover{color:#fff}
+
+  .velo{
+    position:fixed;inset:0;z-index:100;background:rgba(12,17,21,.62);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    backdrop-filter:blur(2px);
+  }
+  .velo[hidden]{display:none}
+  .guia{
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    box-shadow:0 24px 60px -20px rgba(0,0,0,.5);
+    width:min(700px,100%);max-height:min(88vh,900px);display:flex;flex-direction:column;
+  }
+  .guia-cab{
+    display:flex;align-items:center;gap:14px;padding:18px 22px;
+    border-bottom:1px solid var(--line);
+  }
+  .guia-cab h2{
+    font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:-.02em;
+    margin:0;margin-right:auto;
+  }
+  .guia-cab button{
+    border:0;background:var(--surface-2);color:var(--muted);cursor:pointer;
+    width:32px;height:32px;border-radius:8px;font-size:21px;line-height:1;flex:none;
+  }
+  .guia-cab button:hover{background:var(--accent);color:#fff}
+
+  .guia-cuerpo{overflow-y:auto;padding:20px 22px}
+  .guia-entrada{
+    margin:0 0 20px;font-size:15.5px;line-height:1.6;color:var(--muted);max-width:62ch;
+  }
+
+  .pasos-guia{list-style:none;counter-reset:paso;margin:0;padding:0;display:flex;flex-direction:column;gap:22px}
+  .pasos-guia>li{counter-increment:paso;padding-left:44px;position:relative}
+  .pasos-guia>li::before{
+    content:counter(paso);position:absolute;left:0;top:0;
+    width:30px;height:30px;border-radius:50%;
+    background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:14px;font-weight:600;
+  }
+  .pasos-guia h3{
+    font-family:var(--display);font-size:16px;font-weight:700;letter-spacing:-.01em;
+    margin:3px 0 7px;
+  }
+  .pasos-guia p{margin:0 0 8px;font-size:14.5px;line-height:1.6;max-width:60ch}
+  .pasos-guia p:last-child{margin-bottom:0}
+  .pasos-guia em{font-style:normal;font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+
+  .guia-ojo{
+    border-left:2px solid var(--accent);background:var(--accent-soft);
+    padding:8px 12px!important;border-radius:0 7px 7px 0;font-size:13.5px!important;
+  }
+
+  .ejemplo{
+    border:1px solid var(--line);border-radius:9px;overflow:hidden;margin:10px 0 12px;
+    background:var(--surface-2);
+  }
+  .ejemplo-fila{
+    display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:baseline;
+    padding:11px 13px;background:var(--surface);
+  }
+  .ejemplo-art{font-size:13.5px;line-height:1.3}
+  .ejemplo-cant{font-family:var(--mono);font-size:13px;white-space:nowrap}
+  .ejemplo-cant i{font-style:normal;font-size:10.5px;color:var(--faint)}
+  .ejemplo-gr{
+    font-family:var(--mono);font-size:15px;font-weight:700;color:var(--accent);
+    min-width:46px;text-align:right;
+  }
+  .ejemplo-pies{
+    display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;
+    padding:7px 13px;border-top:1px dashed var(--line);
+  }
+  .ejemplo-pies span{
+    font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);line-height:1.3;
+  }
+  .ejemplo-pies span:nth-child(2){text-align:right}
+  .ejemplo-pies span:last-child{text-align:right;color:var(--accent);font-weight:600}
+  .ejemplo-sub{
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;
+    border:1px solid var(--accent);color:var(--accent);border-radius:3px;padding:0 4px;
+  }
+
+  .guia-pie{
+    margin-top:22px;padding-top:16px;border-top:1px solid var(--line-soft);
+    display:flex;flex-direction:column;gap:9px;
+  }
+  .guia-pie p{margin:0;font-size:13.5px;line-height:1.55;color:var(--muted);max-width:62ch}
+
+  .guia-cierre{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end}
+  .guia-cierre button{
+    border:0;background:var(--accent);color:#fff;cursor:pointer;
+    padding:10px 20px;border-radius:9px;font-size:14px;font-weight:600;
+  }
+  @media (prefers-color-scheme:dark){.guia-cierre button{color:#11171B}}
+  :root[data-theme="dark"] .guia-cierre button{color:#11171B}
+  :root[data-theme="light"] .guia-cierre button{color:#fff}
+  .guia-cierre button:hover{filter:brightness(1.08)}
+
+  @media (max-width:660px){
+    .velo{padding:0}
+    .guia{border-radius:0;max-height:100vh;height:100vh;width:100%}
+    .pasos-guia>li{padding-left:38px}
+    .ejemplo-fila,.ejemplo-pies{grid-template-columns:minmax(0,1fr) auto}
+    .ejemplo-pies span:nth-child(2){display:none}
+  }
+
+  /* La ficha se imprime en UNA sola hoja: se apaga todo lo que es navegación
+     y se comprime la escala hasta que quepa. */
+  tr.relleno{display:none}
+
+  /* Bloque de firmas: solo sale en la hoja impresa. En pantalla no aporta nada,
+     pero en el libro físico es lo que da constancia de quién responde por la receta. */
+  .firmas{display:none}
+
+  @page{ size:A4 portrait; margin:8mm }
+  @media print{
+    /* el alto de pantalla no aplica en papel: si se deja, empuja una segunda hoja */
+    html,body{height:auto!important;min-height:0!important}
+    .app{min-height:0!important;max-width:none!important;margin:0!important;border:0!important}
+    .cols{min-height:0!important}
+    :root.movil .app{max-width:none!important;border:0!important}
+
+    /* la ficha queda estandarizada: mismas filas y mismos altos en toda receta */
+    tr.relleno{display:table-row}
+    tr.relleno td{height:14.5pt}
+    tbody td{padding:3.5px 6px}
+    .prosa.metodo,.falta.metodo{min-height:86pt}
+    .dosup .prosa,.dosup .falta{min-height:52pt}
+
+    /* tres firmas al pie, con la línea para firmar y el cargo debajo */
+    .firmas{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:22px;
+      margin-top:20px;padding-top:4px;break-inside:avoid;
+    }
+    .firma{display:flex;flex-direction:column;align-items:center;text-align:center;gap:0}
+    .firma .nombre{
+      font-size:8.5pt;color:#333;min-height:13pt;
+      display:flex;align-items:flex-end;justify-content:center;
+    }
+    .firma .raya{width:100%;border-top:1px solid #777;margin-top:2px}
+    .firma .rol{
+      font-size:6.5pt;letter-spacing:.09em;text-transform:uppercase;color:#555;margin-top:3px;
+    }
+    .firma .cargo{font-size:6.5pt;color:#777;margin-top:1px}
+    /* con costos aparecen tres renglones de totales: se recupera ese alto
+       de los bloques de abajo para no pasarse a una segunda hoja */
+    .ficha.con-costos tr.relleno td{height:12pt}
+    .ficha.con-costos .prosa.metodo,.ficha.con-costos .falta.metodo{min-height:62pt}
+    .ficha.con-costos .dosup .prosa,.ficha.con-costos .dosup .falta{min-height:40pt}
+    .bloque{break-inside:avoid}
+    .rail,.velo,.volver,.rastro,.ayuda,.controles,.aviso-imp,
+    .barra .rapidos,.barra .pasos,.barra .rot,.interr,.imprimir{display:none!important}
+    /* en la hoja impresa se conserva el logo y la fecha del corte */
+    .topbar{padding:0 0 5px;border-bottom:1px solid #999;margin-bottom:8px;gap:9px}
+    .logo{width:22px;height:22px}
+    .brand b{font-size:9.5pt}
+    .brand span{font-size:6.5pt}
+    .topmeta{font-size:6.5pt}
+    .cols{grid-template-columns:1fr}
+    .barra{display:none}
+    html,body{background:#fff;color:#000}
+    body{font-size:9.5pt}
+    .ficha{padding:0;max-width:none}
+    .cabeza,.tablawrap,.prosa,.falta{box-shadow:none;border-color:#999;break-inside:avoid}
+    .cabeza{padding:8px 10px;border-radius:6px}
+    h1{font-size:16pt;line-height:1.05}
+    .eyebrow{font-size:7.5pt;margin-bottom:2px}
+    .datos{gap:4px;margin-top:7px}
+    .dato{padding:3px 7px;min-width:0;border-radius:5px}
+    .dato i{font-size:6.5pt}
+    .dato b{font-size:9pt}
+    .cabeza.con-foto{grid-template-columns:minmax(0,1fr) 150px;gap:10px}
+    .foto img{height:104px;border-radius:6px}
+    .foto figcaption,.foto-vacia{display:none}
+    .bloque{margin-top:9px}
+    .titulo{margin-bottom:4px}
+    .titulo h2{font-size:8.5pt}
+    .titulo em{font-size:7.5pt}
+    .tablawrap{border-radius:6px;overflow:visible}
+    table{min-width:0}
+    thead th{padding:3px 6px;font-size:6.5pt}
+    tbody td{padding:2.5px 6px;font-size:8.5pt}
+    td.num{font-size:8.5pt}
+    td.idx{font-size:7pt}
+    tfoot td{padding:3px 6px;font-size:8.5pt}
+    .marcasub{font-size:6pt;padding:0 2px}
+    .um{font-size:7pt}
+    .nota{font-size:6.5pt;margin-top:4px}
+    .prosa{padding:7px 10px;border-radius:6px}
+    .prosa p{font-size:9pt;line-height:1.35;margin-bottom:4px;max-width:none}
+    .dosup{gap:8px}
+    .enlace{color:#000;text-decoration:none}
+    tbody tr:hover td{background:transparent}
+  }
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <img class="logo" src="__LOGO__" alt="Club Lagos de Caujaral">
+    <div class="brand">
+      <b>Fichas técnicas de cocina y bar</b>
+      <span>Club Lagos de Caujaral</span>
+    </div>
+    <div class="controles">
+      <button class="ctrl" type="button" id="btnVista" aria-pressed="false">
+        <span id="btnVistaTxt">Ver en celular</span>
+      </button>
+      <button class="ctrl" type="button" id="btnTema">
+        <span id="btnTemaTxt">Tema oscuro</span>
+      </button>
+    </div>
+    <button class="ayuda" type="button" id="abrirAyuda">¿Cómo se usa?</button>
+    <div class="topmeta" id="topmeta"></div>
+  </header>
+
+  <div class="cols">
+    <aside class="rail" id="rail">
+      <div class="buscar">
+        <div class="campo">
+          <input id="texto" type="search" autocomplete="off" placeholder="Escribe el nombre de la receta…" aria-label="Buscar receta por nombre">
+          <button class="limpiar" id="limpiarTexto" type="button" aria-label="Borrar lo escrito" hidden>&times;</button>
+        </div>
+
+        <div class="desple">
+          <button type="button" id="abrirPanel" aria-expanded="false">
+            <span>O escógela de la lista</span>
+            <span class="cuenta" id="cuentaSel" hidden>0</span>
+          </button>
+          <div class="panel" id="panel" hidden></div>
+        </div>
+
+        <div class="grupos" id="grupos"></div>
+
+        <div class="aviso" id="aviso" hidden>
+          <span>Mandan las <b id="avisoN">0</b> recetas marcadas en la lista. Puedes borrar lo escrito sin perderlas.</span>
+        </div>
+      </div>
+
+      <div class="conteo">
+        <span>Recetas</span>
+        <b id="conteo">0</b>
+      </div>
+      <div class="lista" id="lista"></div>
+    </aside>
+
+    <main class="ficha" id="ficha"></main>
+  </div>
+</div>
+
+<div class="velo" id="velo" hidden>
+  <div class="guia" role="dialog" aria-modal="true" aria-labelledby="guiaTitulo">
+    <div class="guia-cab">
+      <h2 id="guiaTitulo">Cómo usar las fichas técnicas</h2>
+      <button type="button" id="cerrarAyuda" aria-label="Cerrar la guía">&times;</button>
+    </div>
+
+    <div class="guia-cuerpo">
+      <p class="guia-entrada">
+        Aquí está la receta de cada plato y cada trago del club: qué lleva, cuánto lleva,
+        cómo se prepara y en qué se sirve. Busca la tuya y prepárala.
+      </p>
+
+      <ol class="pasos-guia">
+        <li>
+          <h3>Busca tu receta</h3>
+          <p>
+            Escribe el nombre en la caja de arriba. No tienes que escribirlo completo ni con
+            tildes: con una palabra basta. Si escribes <em>pollo</em> te salen todas las que
+            lleven pollo.
+          </p>
+          <p>
+            ¿No te acuerdas de cómo se llama? Toca <b>“O escógela de la lista”</b> y búscala
+            en orden alfabético. También puedes tocar <b>Alimentos</b>, <b>Bebidas</b> o
+            <b>Subrecetas</b> para ver solo esas.
+          </p>
+        </li>
+
+        <li>
+          <h3>Lee la tabla de ingredientes</h3>
+          <p>Cada renglón es un ingrediente. Las columnas dicen esto:</p>
+          <div class="ejemplo">
+            <div class="ejemplo-fila">
+              <span class="ejemplo-art">TEQUILA OLMECA REPOSADO 1000 ML</span>
+              <span class="ejemplo-cant">0,045 <i>UND</i></span>
+              <span class="ejemplo-gr">45</span>
+            </div>
+            <div class="ejemplo-pies">
+              <span>Lo que necesitas</span>
+              <span>Como está en el sistema</span>
+              <span>Lo que pesas o mides</span>
+            </div>
+          </div>
+          <p>
+            <b>Usa siempre la última columna.</b> Ahí está la cantidad de verdad. En el
+            ejemplo: 45 ml de tequila, aunque el sistema lo escriba como 0,045 de botella.
+          </p>
+          <p class="guia-ojo">
+            Esa columna dice <b>Gramos / ml</b> porque sirve para las dos cosas:
+            <b>lo que se pesa va en gramos</b> —carnes, verduras, quesos— y
+            <b>lo que se mide va en mililitros</b> —licores, jugos, aceites, cremas—.
+            El número es el mismo que necesitas, ya sea en la balanza o en el jigger.
+          </p>
+          <p class="guia-ojo">
+            Si un renglón dice <b>sin equivalencia</b>, ese ingrediente se cuenta por unidad
+            —huevos, deditos de queso, porciones— y va la cantidad tal cual está escrita.
+          </p>
+        </li>
+
+        <li>
+          <h3>¿Vas a preparar más de una?</h3>
+          <p>
+            Usa <b>Cantidad a preparar</b>. Toca <b>×2</b>, <b>×5</b>, <b>×10</b> o escribe el
+            número que necesites, y todas las cantidades se multiplican solas. No tienes que
+            sacar ninguna cuenta.
+          </p>
+        </li>
+
+        <li>
+          <h3>Ingredientes que son otra receta</h3>
+          <p>
+            Algunos ingredientes tienen al lado la marca <b class="ejemplo-sub">SUBRECETA</b>:
+            son preparaciones que se hacen aparte, como el ajo licuado o la salsa pesto.
+            Tócalos y se abre su propia ficha. Para devolverte, usa el camino que queda
+            arriba del nombre.
+          </p>
+        </li>
+
+        <li>
+          <h3>Lo que va debajo de los ingredientes</h3>
+          <p>
+            <b>Método de preparación</b>: el paso a paso.
+            <b>Utensilios</b>: lo que necesitas tener listo.
+            <b>Menaje de servicio</b>: el plato, el vaso o la copa en que se entrega.
+          </p>
+          <p class="guia-ojo">
+            Si alguno dice que todavía no está cargado, es que falta escribirlo — avísale al
+            jefe de cocina o al área de costos.
+          </p>
+        </li>
+      </ol>
+
+      <div class="guia-pie">
+        <p>
+          <b>En el celular</b> funciona igual. Cuando abres una receta, la búsqueda se esconde
+          para que la ficha se vea grande; para buscar otra, toca
+          <b>← Volver a la búsqueda</b>.
+        </p>
+        <p>
+          Las recetas se actualizan solas varias veces al día. Arriba a la derecha dice de
+          qué día son los datos que estás viendo.
+        </p>
+      </div>
+    </div>
+
+    <div class="guia-cierre">
+      <button type="button" id="cerrarAyuda2">Entendido, a cocinar</button>
+    </div>
+  </div>
+</div>
+
+<script id="datos" type="application/json">__DATOS__</script>
+
+<script>
+(function(){
+  "use strict";
+
+  var DATOS = JSON.parse(document.getElementById("datos").textContent);
+  var RECETAS = DATOS.recetas;
+
+  // Filas fijas de la ficha impresa. 16 cubren el 97,5 % de las recetas;
+  // las que se pasan (buffets y eventos) siguen en otra página igual de alta.
+  var FILAS_FICHA = 16;
+
+  // Los gramos vienen ya resueltos por línea desde el generador (quinto elemento),
+  // que aplica la conversión de KL y LT y, para los artículos en UND, la equivalencia
+  // por presentación. Aquí solo se multiplican por la cantidad a preparar.
+
+  var GRUPOS = [
+    { id:"FA", et:"Alimentos" },
+    { id:"FB", et:"Bebidas" },
+    { id:"FS", et:"Subrecetas" },
+    { id:"FP", et:"Adicionales" },
+    { id:"FE", et:"Arma tu menú" },
+    { id:"FC", et:"Promociones" },
+    { id:"OT", et:"Producción" }
+  ];
+
+  function grupoDe(cod){
+    var p = String(cod).slice(0,2).toUpperCase();
+    for (var i=0;i<GRUPOS.length;i++){ if (GRUPOS[i].id === p) return p; }
+    return "OT";
+  }
+
+  var TILDES = new RegExp("[\\u0300-\\u036f]", "g");
+  function norm(s){
+    return String(s||"").toUpperCase()
+      .normalize("NFD").replace(TILDES, "")
+      .replace(/\s+/g, " ").trim();
+  }
+
+  // indices
+  var porCodigo = {}, porNombre = {};
+  RECETAS.forEach(function(r){
+    r.g = grupoDe(r.c);
+    r.k = norm(r.n);
+    porCodigo[r.c] = r;
+    if (!porNombre[r.k]) porNombre[r.k] = r;
+  });
+  RECETAS.sort(function(a,b){ return a.n.localeCompare(b.n,"es"); });
+
+  // ---- estado ----
+  var estado = {
+    texto: "",
+    marcadas: [],      // codigos marcados en el desplegable
+    grupos: [],        // grupos activos
+    actual: null,      // codigo en pantalla
+    raciones: 1,
+    costos: false,
+    rastro: []         // navegacion hacia subrecetas
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var elTexto=$("texto"), elPanel=$("panel"), elLista=$("lista"), elFicha=$("ficha");
+
+  // ---------------- encabezado ----------------
+  (function(){
+    var conMetodo = RECETAS.filter(function(r){ return r.mp; }).length;
+    $("topmeta").textContent =
+      RECETAS.length + " recetas · " + conMetodo + " con método · datos del " + DATOS.generado;
+  })();
+
+  // ---------------- chips de grupo ----------------
+  (function(){
+    var cont = $("grupos");
+    GRUPOS.forEach(function(g){
+      var n = RECETAS.filter(function(r){ return r.g === g.id; }).length;
+      if (!n) return;
+      var b = document.createElement("button");
+      b.className = "chip"; b.type = "button";
+      b.setAttribute("aria-pressed","false");
+      b.setAttribute("data-g", g.id);
+      b.innerHTML = g.et + '<b>' + n + '</b>';
+      b.addEventListener("click", function(){
+        var i = estado.grupos.indexOf(g.id);
+        if (i < 0) estado.grupos.push(g.id); else estado.grupos.splice(i,1);
+        b.setAttribute("aria-pressed", i < 0 ? "true" : "false");
+        pintarLista(); pintarPanel();
+      });
+      cont.appendChild(b);
+    });
+  })();
+
+  // ---------------- filtrado ----------------
+  // Regla: si hay recetas marcadas, la selección manda sobre lo escrito.
+  function candidatas(){
+    var base = RECETAS;
+    if (estado.grupos.length){
+      base = base.filter(function(r){ return estado.grupos.indexOf(r.g) >= 0; });
+    }
+    if (estado.marcadas.length){
+      return base.filter(function(r){ return estado.marcadas.indexOf(r.c) >= 0; });
+    }
+    var t = norm(estado.texto);
+    if (!t) return base;
+    var partes = t.split(" ");
+    return base.filter(function(r){
+      return partes.every(function(p){ return r.k.indexOf(p) >= 0 || r.c.toUpperCase().indexOf(p) >= 0; });
+    });
+  }
+
+  function pintarLista(){
+    var res = candidatas();
+    $("conteo").textContent = res.length;
+    var n = estado.marcadas.length;
+    $("aviso").hidden = !(n && estado.texto);
+    $("avisoN").textContent = n;
+
+    elLista.innerHTML = "";
+    if (!res.length){
+      var v = document.createElement("div");
+      v.className = "nada";
+      v.textContent = "Ninguna receta coincide. Prueba con una palabra suelta del nombre, o quita los filtros de grupo.";
+      elLista.appendChild(v);
+      return;
+    }
+    var frag = document.createDocumentFragment();
+    res.slice(0,400).forEach(function(r){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("data-g", r.g);
+      if (r.c === estado.actual) b.setAttribute("aria-current","true");
+      var et = GRUPOS.filter(function(g){ return g.id === r.g; })[0];
+      b.innerHTML =
+        '<span class="nom"></span>' +
+        '<span class="sub"><span>' + r.c + '</span><span>' + (et ? et.et : "") + '</span>' +
+        '<span class="' + (r.mp ? "conficha" : "sinficha") + '">' +
+        (r.mp ? "con método" : "sin método") + '</span></span>';
+      b.querySelector(".nom").textContent = r.n;
+      b.addEventListener("click", function(){ abrir(r.c, true); });
+      frag.appendChild(b);
+    });
+    elLista.appendChild(frag);
+    if (res.length > 400){
+      var m = document.createElement("div");
+      m.className = "nada";
+      m.textContent = "Se muestran las primeras 400 de " + res.length + ". Afina la búsqueda para ver el resto.";
+      elLista.appendChild(m);
+    }
+  }
+
+  // ---------------- desplegable con casillas ----------------
+  function pintarPanel(){
+    var t = norm(estado.texto);
+    var base = RECETAS;
+    if (estado.grupos.length){
+      base = base.filter(function(r){ return estado.grupos.indexOf(r.g) >= 0; });
+    }
+    // lo escrito también acota la lista del desplegable
+    var opciones = base;
+    if (t){
+      var partes = t.split(" ");
+      opciones = base.filter(function(r){
+        return partes.every(function(p){ return r.k.indexOf(p) >= 0; });
+      });
+    }
+    var marcadas = estado.marcadas.map(function(c){ return porCodigo[c]; }).filter(Boolean);
+    marcadas.sort(function(a,b){ return a.n.localeCompare(b.n,"es"); });
+    var resto = opciones.filter(function(r){ return estado.marcadas.indexOf(r.c) < 0; }).slice(0,300);
+
+    elPanel.innerHTML = "";
+
+    if (marcadas.length){
+      var s1 = document.createElement("div");
+      s1.className = "seccion";
+      s1.innerHTML = '<span>Marcadas · ' + marcadas.length + '</span>';
+      var soltar = document.createElement("button");
+      soltar.type = "button"; soltar.textContent = "Soltar todas";
+      soltar.addEventListener("click", function(){
+        estado.marcadas = []; sincronizarCuenta(); pintarPanel(); pintarLista();
+      });
+      s1.appendChild(soltar);
+      elPanel.appendChild(s1);
+      marcadas.forEach(function(r){ elPanel.appendChild(casilla(r)); });
+      elPanel.appendChild(document.createElement("hr"));
+    }
+
+    var s2 = document.createElement("div");
+    s2.className = "seccion";
+    s2.innerHTML = '<span>' + (t ? "Coinciden con lo escrito" : "Todas, en orden alfabético") + '</span>';
+    elPanel.appendChild(s2);
+
+    if (!resto.length){
+      var v = document.createElement("div");
+      v.className = "vacio";
+      v.textContent = marcadas.length ? "No queda ninguna otra por marcar." : "Ninguna receta coincide.";
+      elPanel.appendChild(v);
+    } else {
+      resto.forEach(function(r){ elPanel.appendChild(casilla(r)); });
+      if (opciones.length - marcadas.length > 300){
+        var m = document.createElement("div");
+        m.className = "vacio";
+        m.textContent = "Hay " + (opciones.length - marcadas.length - 300) + " más. Escribe algo para acotar la lista.";
+        elPanel.appendChild(m);
+      }
+    }
+  }
+
+  function casilla(r){
+    var l = document.createElement("label");
+    var i = document.createElement("input");
+    i.type = "checkbox";
+    i.checked = estado.marcadas.indexOf(r.c) >= 0;
+    i.addEventListener("change", function(){
+      var k = estado.marcadas.indexOf(r.c);
+      if (i.checked && k < 0) estado.marcadas.push(r.c);
+      if (!i.checked && k >= 0) estado.marcadas.splice(k,1);
+      sincronizarCuenta(); pintarPanel(); pintarLista();
+    });
+    var s = document.createElement("span");
+    s.textContent = r.n;
+    l.appendChild(i); l.appendChild(s);
+    return l;
+  }
+
+  function sincronizarCuenta(){
+    var c = $("cuentaSel");
+    c.textContent = estado.marcadas.length;
+    c.hidden = estado.marcadas.length === 0;
+  }
+
+  $("abrirPanel").addEventListener("click", function(){
+    var abierto = elPanel.hidden;
+    elPanel.hidden = !abierto;
+    this.setAttribute("aria-expanded", String(abierto));
+    if (abierto) pintarPanel();
+  });
+  document.addEventListener("click", function(e){
+    if (!elPanel.hidden && !e.target.closest(".desple")){
+      elPanel.hidden = true;
+      $("abrirPanel").setAttribute("aria-expanded","false");
+    }
+  });
+
+  elTexto.addEventListener("input", function(){
+    estado.texto = this.value;
+    $("limpiarTexto").hidden = !this.value;
+    pintarLista();
+    if (!elPanel.hidden) pintarPanel();
+  });
+  $("limpiarTexto").addEventListener("click", function(){
+    elTexto.value = ""; estado.texto = ""; this.hidden = true;
+    elTexto.focus(); pintarLista();
+    if (!elPanel.hidden) pintarPanel();
+  });
+
+  // ---------------- la ficha ----------------
+  function fmt(n, dec){
+    if (!isFinite(n)) return "—";
+    return n.toLocaleString("es-CO",{ minimumFractionDigits:dec, maximumFractionDigits:dec });
+  }
+  function pesos(n){
+    return "$ " + Math.round(n).toLocaleString("es-CO");
+  }
+  function gramos(linea, factor){
+    return (linea.length > 4 && linea[4] !== null) ? linea[4] * factor : null;
+  }
+
+  function abrir(cod, reiniciarRastro){
+    if (!porCodigo[cod]) return;
+    if (reiniciarRastro) estado.rastro = [];
+    estado.actual = cod;
+    estado.raciones = 1;
+    if (window.innerWidth <= 900 || document.documentElement.classList.contains("movil")){
+      $("rail").classList.add("oculto");
+      window.scrollTo(0,0);
+    }
+    pintarFicha();
+    pintarLista();
+  }
+
+  function bajarA(cod){
+    if (!porCodigo[cod]) return;
+    estado.rastro.push(estado.actual);
+    estado.actual = cod;
+    estado.raciones = 1;
+    pintarFicha();
+    pintarLista();
+    window.scrollTo({ top:0, behavior:"smooth" });
+  }
+
+  function pintarFicha(){
+    if (!estado.actual){ pintarBienvenida(); return; }
+    var r = porCodigo[estado.actual];
+    var f = estado.raciones;
+    var et = GRUPOS.filter(function(g){ return g.id === r.g; })[0];
+
+    var html = "";
+
+    html += '<button class="volver" type="button" id="volverLista">&larr; Volver a la búsqueda</button>';
+
+    if (estado.rastro.length){
+      html += '<nav class="rastro">';
+      estado.rastro.forEach(function(c,i){
+        var p = porCodigo[c];
+        html += '<button type="button" data-sube="' + i + '">' + esc(p ? p.n : c) + '</button><span>&rsaquo;</span>';
+      });
+      html += '<span>' + esc(r.n) + '</span></nav>';
+    }
+
+    // cabecera. La foto solo se reserva en las recetas que Sergio mantiene con ficha,
+    // para no llenar de huecos las 790 que solo vienen del sistema.
+    var tieneFicha = !!(r.cat || r.mp || r.ut || r.mn);
+    var conFoto = !!r.fo || tieneFicha;
+
+    html += '<section class="cabeza' + (conFoto ? ' con-foto' : '') + '" data-g="' + r.g + '">';
+    html += '<div class="cabeza-info">';
+    html += '<div class="eyebrow">' + esc(r.cat || (et ? et.et : "Ficha técnica")) + '</div>';
+    html += '<h1>' + esc(r.n) + '</h1>';
+    html += '<div class="datos">';
+    html += dato("Código", r.c);
+    html += dato("Rendimiento", (r.rd ? fmt(r.rd * f, r.rd % 1 ? 2 : 0) : "—") + " " + (r.um || ""));
+    html += dato("Ingredientes", r.i.length);
+    html += '<div class="dato grupo"><i>Grupo</i><b>' + esc(et ? et.et : "—") + '</b></div>';
+    if (f !== 1) html += '<div class="dato marca"><i>Preparando</i><b>&times; ' + fmt(f,0) + '</b></div>';
+    html += '</div>';
+    html += '</div>';
+
+    if (conFoto){
+      html += '<figure class="foto">';
+      if (r.fo){
+        html += '<img src="' + esc(r.fo) + '" alt="Montaje de ' + esc(r.n) + '">';
+        html += '<figcaption>Así se monta</figcaption>';
+      } else {
+        html += '<div class="foto-vacia"><span>Sin foto</span>' +
+                '<small>Se carga desde la columna FOTO de la hoja BASE</small></div>';
+      }
+      html += '</figure>';
+    }
+
+    // barra de raciones
+    html += '<div class="barra">';
+    html += '<span class="rot">Cantidad a preparar</span>';
+    html += '<div class="pasos">';
+    html += '<button type="button" id="menos" aria-label="Una menos">&minus;</button>';
+    html += '<input id="rac" type="number" min="1" step="1" value="' + f + '" aria-label="Número de recetas a preparar">';
+    html += '<button type="button" id="mas" aria-label="Una más">+</button>';
+    html += '</div>';
+    html += '<div class="rapidos">';
+    [1,2,5,10,20].forEach(function(n){
+      html += '<button class="chip" type="button" data-rac="' + n + '" aria-pressed="' + (n===f) + '">&times;' + n + '</button>';
+    });
+    html += '</div>';
+    html += '<label class="interr"><input type="checkbox" id="verCostos"' + (estado.costos ? " checked" : "") + '> Ver costos</label>';
+    html += '<button class="imprimir" type="button" id="imprimir" title="Imprime la ficha en una sola hoja">Imprimir</button>';
+    html += '</div>';
+    html += '<p class="aviso-imp" id="avisoImp" hidden>El visor no dejó abrir la impresión desde aquí. ' +
+            'Presiona <b>Ctrl + P</b> (o <b>⌘ + P</b> en Mac) y sale la ficha en una hoja.</p>';
+    html += '</section>';
+
+    // ingredientes
+    html += '<section class="bloque">';
+    html += '<div class="titulo"><h2>Ingredientes</h2><em>' + r.i.length + ' líneas</em></div>';
+    html += '<div class="tablawrap"><table>';
+    html += '<thead><tr>';
+    html += '<th class="c-idx"></th><th>Ingrediente</th><th class="num">Cantidad</th><th class="c-um">Unidad</th><th class="num">Gramos / ml</th>';
+    if (estado.costos) html += '<th class="num c-cu">Costo und</th><th class="num">Costo línea</th>';
+    html += '</tr></thead><tbody>';
+
+    var totalCosto = 0, hayPendiente = false;
+    r.i.forEach(function(x, idx){
+      var art = x[0], um = x[1], cant = x[2] * f, cu = x[3];
+      var g = gramos(x, f);
+      if (g === null) hayPendiente = true;
+      var sub = porNombre[norm(art)];
+      var esSub = sub && sub.c !== r.c;
+      totalCosto += cu * cant;
+
+      html += '<tr>';
+      html += '<td class="idx">' + (idx+1) + '</td>';
+      html += '<td class="art">';
+      if (esSub){
+        html += '<button class="enlace" type="button" data-baja="' + esc(sub.c) + '">' + esc(art) + '</button>';
+        html += '<span class="marcasub">SUBRECETA</span>';
+      } else {
+        html += esc(art);
+      }
+      html += '</td>';
+      html += '<td class="num">' + fmt(cant, cant < 1 ? 3 : 2) +
+              '<span class="um um-inline">' + esc(um) + '</span></td>';
+      html += '<td class="c-um"><span class="um">' + esc(um) + '</span></td>';
+      html += '<td class="num">' + (g === null
+        ? '<span class="pend">sin equivalencia</span>'
+        : '<span class="gr">' + fmt(g, g < 10 ? 1 : 0) + '</span>') + '</td>';
+      if (estado.costos){
+        html += '<td class="num c-cu">' + pesos(cu) + '</td>';
+        html += '<td class="num">' + pesos(cu * cant) + '</td>';
+      }
+      html += '</tr>';
+    });
+    // Filas en blanco hasta completar el bloque fijo. Solo salen al imprimir:
+    // así el libro físico queda parejo —el método siempre a la misma altura,
+    // sin importar si la receta tiene 3 ingredientes o 18— pero en pantalla
+    // el cocinero no se traga diez renglones vacíos.
+    var totalFilas = Math.max(FILAS_FICHA, Math.ceil(r.i.length / FILAS_FICHA) * FILAS_FICHA);
+    for (var k = r.i.length; k < totalFilas; k++){
+      html += '<tr class="relleno">';
+      html += '<td class="idx">' + (k+1) + '</td><td class="art"></td>';
+      html += '<td class="num"></td><td class="c-um"></td><td class="num"></td>';
+      if (estado.costos) html += '<td class="num c-cu"></td><td class="num"></td>';
+      html += '</tr>';
+    }
+    html += '</tbody>';
+
+    if (estado.costos){
+      // el colspan se recorta solo a las columnas visibles, así el total
+      // queda siempre en la última celda tanto en escritorio como en celular
+      var prot = totalCosto * 0.1;
+      html += '<tfoot>';
+      html += '<tr><td colspan="6">Costo de ingredientes</td><td class="num">' + pesos(totalCosto) + '</td></tr>';
+      html += '<tr><td colspan="6">Protección 10 % (merma)</td><td class="num">' + pesos(prot) + '</td></tr>';
+      html += '<tr><td colspan="6">Costo total protegido</td><td class="num">' + pesos(totalCosto + prot) + '</td></tr>';
+      html += '</tfoot>';
+    }
+    html += '</table></div>';
+
+    html += '<p class="nota"><b>Lo sólido va en gramos y lo líquido en mililitros.</b> ' +
+            '1 KL = 1.000 g · 1 LT = 1.000 ml. Los licores y demás artículos que se piden por unidad ' +
+            'se convierten con la presentación del propio nombre — 0,045 de una botella de 1.000 ml son 45 ml.';
+    if (estado.costos){
+      html += ' <b>El costo sale de la última compra</b>, porque el sistema está exportando el ' +
+              'costo estándar en cero.';
+    }
+    if (hayPendiente){
+      html += ' Los que dicen <b>sin equivalencia</b> se piden por unidad y todavía no tienen ' +
+              'un peso cargado en la tabla de equivalencias.';
+    }
+    html += '</p>';
+    html += '</section>';
+
+    // metodo
+    html += '<section class="bloque">';
+    html += '<div class="titulo"><h2>Método de preparación</h2></div>';
+    if (r.mp){
+      html += '<div class="prosa metodo">' + parrafos(r.mp) + '</div>';
+    } else {
+      html += '<div class="falta metodo"><b>Todavía no tiene método cargado.</b><br>' +
+              'Escríbelo en la hoja <span class="um">BASE</span> del libro de recetas y aparece aquí en la próxima actualización.</div>';
+    }
+    html += '</section>';
+
+    // utensilios y menaje
+    html += '<section class="bloque dosup">';
+    html += '<div>';
+    html += '<div class="titulo"><h2>Utensilios</h2></div>';
+    html += r.ut ? '<div class="prosa"><p>' + esc(r.ut) + '</p></div>'
+                 : '<div class="falta">Sin utensilios cargados.</div>';
+    html += '</div>';
+    html += '<div>';
+    html += '<div class="titulo"><h2>Menaje de servicio</h2></div>';
+    html += r.mn ? '<div class="prosa"><p>' + esc(r.mn) + '</p></div>'
+                 : '<div class="falta">Sin menaje cargado.</div>';
+    html += '</div>';
+    html += '</section>';
+
+    // firmas al pie de la hoja impresa
+    html += '<footer class="firmas">';
+    html += firma("Elaboró", r.el || "", "");
+    html += firma("Aprobó", r.ap || "", "");
+    html += firma("Parametrizó", r.pa || "Sergio Valencia", "Jefe de costos");
+    html += '</footer>';
+
+    elFicha.className = "ficha" + (estado.costos ? " con-costos" : "");
+    elFicha.innerHTML = html;
+    conectarFicha();
+  }
+
+  // Una firma: el nombre va sobre la raya. Si la hoja BASE trae el nombre en una
+  // columna (ELABORO / APROBO / PARAMETRIZO) se imprime; si no, la raya queda en
+  // blanco para firmar a mano.
+  function firma(rol, nombre, cargo){
+    return '<div class="firma">' +
+      '<span class="nombre">' + esc(nombre) + '</span>' +
+      '<span class="raya"></span>' +
+      '<span class="rol">' + esc(rol) + '</span>' +
+      (cargo ? '<span class="cargo">' + esc(cargo) + '</span>' : '') +
+      '</div>';
+  }
+
+  function dato(rot, val){
+    return '<div class="dato"><i>' + esc(rot) + '</i><b>' + esc(String(val)) + '</b></div>';
+  }
+
+  function conectarFicha(){
+    var vol = $("volverLista");
+    if (vol) vol.addEventListener("click", function(){
+      $("rail").classList.remove("oculto");
+      window.scrollTo(0,0);
+    });
+
+    var rac = $("rac");
+    if (rac){
+      rac.addEventListener("change", function(){
+        var v = Math.max(1, Math.round(Number(this.value) || 1));
+        estado.raciones = v; pintarFicha();
+      });
+      $("menos").addEventListener("click", function(){
+        estado.raciones = Math.max(1, estado.raciones - 1); pintarFicha();
+      });
+      $("mas").addEventListener("click", function(){
+        estado.raciones = estado.raciones + 1; pintarFicha();
+      });
+    }
+    Array.prototype.forEach.call(elFicha.querySelectorAll("[data-rac]"), function(b){
+      b.addEventListener("click", function(){
+        estado.raciones = Number(b.getAttribute("data-rac")); pintarFicha();
+      });
+    });
+    var vc = $("verCostos");
+    if (vc) vc.addEventListener("change", function(){ estado.costos = this.checked; pintarFicha(); });
+    // El visor puede bloquear la ventana de impresión de la página incrustada.
+    // Si pasa, se le dice al usuario el atajo en vez de dejarlo dando clic en vano.
+    var pr = $("imprimir");
+    if (pr) pr.addEventListener("click", function(){
+      var abrio = false;
+      try { window.print(); abrio = true; } catch(e){ abrio = false; }
+      var av = $("avisoImp");
+      if (av) av.hidden = abrio;
+      if (!abrio && av) av.hidden = false;
+    });
+
+    Array.prototype.forEach.call(elFicha.querySelectorAll("[data-baja]"), function(b){
+      b.addEventListener("click", function(){ bajarA(b.getAttribute("data-baja")); });
+    });
+    Array.prototype.forEach.call(elFicha.querySelectorAll("[data-sube]"), function(b){
+      b.addEventListener("click", function(){
+        var i = Number(b.getAttribute("data-sube"));
+        var cod = estado.rastro[i];
+        estado.rastro = estado.rastro.slice(0,i);
+        estado.actual = cod;
+        estado.raciones = 1;
+        pintarFicha(); pintarLista();
+      });
+    });
+  }
+
+  function pintarBienvenida(){
+    elFicha.innerHTML =
+      '<div class="bienvenida">' +
+      '<h2>Busca la receta y aquí sale la ficha completa</h2>' +
+      '<p>Ingredientes con su cantidad, la conversión a gramos, el método de preparación, los utensilios y el menaje. ' +
+      'Todo sale del libro de recetas del club.</p>' +
+      '<ol>' +
+      '<li><b>Escribe el nombre</b> en la caja de arriba: sirve con una palabra suelta.</li>' +
+      '<li>O <b>ábrela de la lista</b> y marca las que quieras comparar.</li>' +
+      '<li>Ajusta <b>cuántas recetas vas a preparar</b> y las cantidades se multiplican solas.</li>' +
+      '<li>Si un ingrediente está marcado <b>SUBRECETA</b>, tócalo y se abre su propia ficha.</li>' +
+      '</ol>' +
+      '<button class="verguia" type="button" id="verGuia">Ver la guía completa</button>' +
+      '</div>';
+    $("verGuia").addEventListener("click", abrirAyuda);
+  }
+
+  function parrafos(t){
+    return String(t).split(/\n+/).filter(function(s){ return s.trim(); })
+      .map(function(s){ return '<p>' + esc(s.trim()) + '</p>'; }).join("");
+  }
+
+  function esc(s){
+    return String(s)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+
+  // ---------------- vista celular / escritorio y tema ----------------
+  var raiz = document.documentElement;
+
+  function recordar(k, v){ try{ localStorage.setItem("fichas." + k, v); }catch(e){} }
+  function recordado(k){ try{ return localStorage.getItem("fichas." + k); }catch(e){ return null; } }
+
+  function aplicarVista(movil){
+    raiz.classList.toggle("movil", movil);
+    $("btnVista").setAttribute("aria-pressed", String(movil));
+    $("btnVistaTxt").textContent = movil ? "Ver en computador" : "Ver en celular";
+    recordar("vista", movil ? "movil" : "web");
+  }
+  function aplicarTema(oscuro){
+    raiz.setAttribute("data-theme", oscuro ? "dark" : "light");
+    $("btnTemaTxt").textContent = oscuro ? "Tema claro" : "Tema oscuro";
+    recordar("tema", oscuro ? "dark" : "light");
+  }
+
+  $("btnVista").addEventListener("click", function(){
+    var ahora = !raiz.classList.contains("movil");
+    aplicarVista(ahora);
+    // el panel de búsqueda vuelve a aparecer al cambiar de vista
+    $("rail").classList.remove("oculto");
+    window.scrollTo(0,0);
+  });
+  $("btnTema").addEventListener("click", function(){
+    aplicarTema(raiz.getAttribute("data-theme") !== "dark");
+  });
+
+  // arranque: lo último que escogió el usuario, si no lo que trae el sistema
+  (function(){
+    var v = recordado("vista");
+    aplicarVista(v === "movil");
+    var t = recordado("tema");
+    if (t) {
+      aplicarTema(t === "dark");
+    } else {
+      var oscuroSistema = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      $("btnTemaTxt").textContent = oscuroSistema ? "Tema claro" : "Tema oscuro";
+    }
+  })();
+
+  // ---------------- guía de uso ----------------
+  var elVelo = $("velo");
+  function abrirAyuda(){
+    elVelo.hidden = false;
+    $("cerrarAyuda").focus();
+  }
+  function cerrarAyuda(){
+    elVelo.hidden = true;
+    $("abrirAyuda").focus();
+  }
+  $("abrirAyuda").addEventListener("click", abrirAyuda);
+  $("cerrarAyuda").addEventListener("click", cerrarAyuda);
+  $("cerrarAyuda2").addEventListener("click", cerrarAyuda);
+  elVelo.addEventListener("click", function(e){ if (e.target === elVelo) cerrarAyuda(); });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && !elVelo.hidden) cerrarAyuda();
+  });
+
+  // arranque
+  pintarLista();
+  pintarBienvenida();
+  elTexto.focus();
+})();
+</script>
