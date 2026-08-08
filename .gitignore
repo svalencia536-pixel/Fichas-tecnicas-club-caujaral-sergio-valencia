@@ -9,6 +9,10 @@ ultimo conteo.txt
 perfil-*/
 p-*/
 
+# Node
+node_modules/
+.env
+
 # Basura de Windows y de Excel
 Thumbs.db
 desktop.ini

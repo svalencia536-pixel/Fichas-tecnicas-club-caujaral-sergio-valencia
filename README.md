@@ -67,6 +67,28 @@ No publica si algo huele mal, porque esta página la usa la cocina:
   retorno.** Un aviso mal escrito metió `System.Object[]` dentro de los datos. Para
   avisos dentro de funciones va `Write-Host`.
 
+## Publicación en Railway
+
+`server.js` entrega la página ya generada. No consulta nada en vivo: cada despliegue
+sirve la versión que venga en el repositorio.
+
+**Para actualizar lo que ve la cocina:** correr el generador, `git commit`, `git push`.
+Railway redespliega solo y el link no cambia.
+
+### Clave de acceso
+
+| Variable | Qué hace |
+|---|---|
+| `FICHAS_PASSWORD` | Si existe, la página pide usuario y clave. Si no, queda abierta. |
+| `FICHAS_USER` | El usuario. Por defecto `caujaral`. |
+
+**Sin `FICHAS_PASSWORD` cualquiera con el link ve las recetas y los costos**, porque van
+dentro del propio archivo. La página se sirve con `noindex` y un `robots.txt` que la
+excluye, pero eso solo frena a los buscadores, no a quien tenga la dirección.
+
+`/salud` devuelve en JSON cuántas recetas hay, la fecha de corte de los datos y si está
+protegida con clave.
+
 ## Archivos
 
 | Archivo | Para qué |

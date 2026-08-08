@@ -1,0 +1,14 @@
+{
+  "name": "fichas-tecnicas-caujaral",
+  "version": "1.0.0",
+  "description": "Fichas tecnicas de cocina y bar del Club Lagos de Caujaral. Consulta de recetas para los operarios: ingredientes, conversion a gramos, metodo de preparacion, utensilios y menaje.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true
+}
