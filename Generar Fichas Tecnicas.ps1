@@ -551,6 +551,49 @@ try {
   }
   [System.IO.File]::WriteAllText($salida, $html, (New-Object System.Text.UTF8Encoding($false)))
   [System.IO.File]::WriteAllText($hashFn, $hash, (New-Object System.Text.UTF8Encoding($false)))
+
+  # Copia al repositorio, si existe. Sin esto la version de Railway se queda
+  # atras sin que se note: el generador vive en OneDrive y el repo en Proyectos.
+  $repo = "C:\Users\SergioValencia\Proyectos\fichas-tecnicas-caujaral"
+  if (Test-Path $repo) {
+    [System.IO.File]::WriteAllText((Join-Path $repo "Fichas Tecnicas Caujaral.html"), $html, (New-Object System.Text.UTF8Encoding($false)))
+    Copy-Item (Join-Path $raiz "plantilla.html") (Join-Path $repo "plantilla.html") -Force
+    Copy-Item (Join-Path $raiz "Generar Fichas Tecnicas.ps1") (Join-Path $repo "Generar Fichas Tecnicas.ps1") -Force
+    if (Test-Path $eqFn) { Copy-Item $eqFn (Join-Path $repo "Equivalencias UND.csv") -Force }
+
+    # Publicar en la web. Decision de Sergio del 06/08/2026: que cada cambio del
+    # libro salga solo, sin tener que empujarlo a mano. Railway redespliega al
+    # detectar el push. Si algo falla aqui NO se tumba la corrida: la pagina ya
+    # quedo generada y el artefacto se publica igual.
+    try {
+      $tieneRemoto = $false
+      $remotos = & git -C $repo remote 2>$null
+      if ($LASTEXITCODE -eq 0 -and $remotos) { $tieneRemoto = $true }
+
+      if (-not $tieneRemoto) {
+        "  repositorio sin remoto todavia: no se publica en la web"
+      } else {
+        & git -C $repo add -A 2>&1 | Out-Null
+        $pendiente = & git -C $repo status --porcelain 2>$null
+        if (-not $pendiente) {
+          "  repositorio sin cambios: no hay nada que publicar"
+        } else {
+          $mensaje = "Actualizacion del libro de recetas " + (Get-Date -Format "yyyy-MM-dd HH:mm") +
+                     " - " + $ing.Count + " recetas, " + $conMetodo + " con metodo"
+          & git -C $repo -c user.name="Sergio Valencia" -c user.email="svalencia536@gmail.com" commit -m $mensaje 2>&1 | Out-Null
+          $salidaPush = & git -C $repo push 2>&1
+          if ($LASTEXITCODE -eq 0) {
+            "  publicado en la web: commit y push hechos, Railway redespliega solo"
+          } else {
+            "  aviso: el commit quedo hecho pero el push fallo. Queda pendiente de subir."
+            foreach ($l in $salidaPush) { "     " + $l }
+          }
+        }
+      }
+    } catch {
+      "  aviso: no se pudo publicar en la web ({0}). La pagina si quedo generada." -f $_.Exception.Message
+    }
+  }
   # se guardan las cifras de esta corrida para comparar en la siguiente
   $conteoFn = Join-Path $raiz "ultimo conteo.txt"
   $lineasConteo = @(
