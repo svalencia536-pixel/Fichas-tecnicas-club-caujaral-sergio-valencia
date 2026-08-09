@@ -24,6 +24,19 @@ try {
     throw ("No se encontro ningun libro que coincida con '" + $patron + "' en " + $origen)
   }
 
+  # ---- salida temprana: si ningun libro se guardo desde la ultima corrida, no hay nada que hacer ----
+  # Esto permite correr el proceso cada pocos minutos sin costo: abrir y leer los Excel
+  # toma ~20 segundos, pero comparar una fecha toma milesimas.
+  $fuenteFn = Join-Path $raiz "ultima fuente.txt"
+  $marcaActual = ($encontrados | ForEach-Object { $_.LastWriteTimeUtc.Ticks } | Sort-Object) -join ","
+  if ((Test-Path $fuenteFn) -and (Test-Path $salida)) {
+    $marcaPrevia = (Get-Content $fuenteFn -Raw).Trim()
+    if ($marcaPrevia -eq $marcaActual) {
+      "ESTADO=SIN-CAMBIOS"
+      exit 0
+    }
+  }
+
   # Se trabaja siempre sobre copias: el original puede estar abierto en Excel o sincronizando.
   $libros = @()
   $n = 0
@@ -433,8 +446,15 @@ try {
   }
 
   # ---- armar el JSON a mano (ConvertTo-Json de PS 5.1 destroza los arreglos anidados) ----
+  # Fecha en que Sergio guardo por ultima vez el libro que alimenta esto.
+  # Es lo que de verdad le interesa saber: no cuando corrio el proceso, sino
+  # hasta cuando llegan los datos que esta viendo.
+  $guardadoFuente = ($encontrados | Sort-Object LastWriteTime -Descending | Select-Object -First 1).LastWriteTime
   $sb = New-Object System.Text.StringBuilder
-  [void]$sb.Append('{"generado":"'); [void]$sb.Append((Get-Date -Format "yyyy-MM-dd")); [void]$sb.Append('","recetas":[')
+  [void]$sb.Append('{"generado":"'); [void]$sb.Append((Get-Date -Format "yyyy-MM-dd"))
+  [void]$sb.Append('","fuente":"'); [void]$sb.Append($guardadoFuente.ToString("yyyy-MM-dd HH:mm"))
+  [void]$sb.Append('","corrida":"'); [void]$sb.Append((Get-Date -Format "yyyy-MM-dd HH:mm"))
+  [void]$sb.Append('","recetas":[')
   $primero = $true
   foreach ($cod in ($ing.Keys | Sort-Object)) {
     $m = $meta[$cod]; $b = $base[$cod]; $nom = $hdr[$cod]
@@ -474,7 +494,10 @@ try {
   $json = $sb.ToString()
 
   # ---- huella del contenido, ignorando la fecha de generacion ----
+  # La huella ignora las fechas: si no, toda corrida saldria distinta
   $paraHash = $json -replace '"generado":"[^"]*"', ''
+  $paraHash = $paraHash -replace '"fuente":"[^"]*"', ''
+  $paraHash = $paraHash -replace '"corrida":"[^"]*"', ''
   $md5 = [System.Security.Cryptography.MD5]::Create()
   $hash = [BitConverter]::ToString($md5.ComputeHash([Text.Encoding]::UTF8.GetBytes($paraHash))).Replace("-","")
   $hashPrevio = ""
@@ -602,6 +625,8 @@ try {
     ("conMetodo=" + $conMetodo)
   )
   [System.IO.File]::WriteAllLines($conteoFn, $lineasConteo, (New-Object System.Text.UTF8Encoding($false)))
+  # marca de los archivos fuente, para la salida temprana de la proxima corrida
+  [System.IO.File]::WriteAllText($fuenteFn, $marcaActual, (New-Object System.Text.UTF8Encoding($false)))
 
   "archivo={0}" -f $salida
   "ESTADO=ACTUALIZADO"

@@ -109,6 +109,16 @@
     font-family:var(--mono);font-size:11.5px;color:var(--faint);
     letter-spacing:.02em;white-space:nowrap;
   }
+  /* Marca de hasta cuándo llegan los datos: es la fecha en que se guardó el
+     libro de Excel, no la de la corrida. No sale en la hoja impresa. */
+  .sello{
+    display:inline-flex;align-items:center;gap:5px;margin-left:8px;
+    background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok);
+    padding:2px 8px;border-radius:999px;font-size:10.5px;letter-spacing:.02em;
+  }
+  .sello::before{
+    content:"";width:6px;height:6px;border-radius:50%;background:var(--ok);flex:none;
+  }
 
   .cols{display:grid;grid-template-columns:340px minmax(0,1fr);gap:0;flex:1;align-items:start}
   @media (max-width:900px){ .cols{grid-template-columns:minmax(0,1fr)} }
@@ -674,6 +684,7 @@
     .brand b{font-size:9.5pt}
     .brand span{font-size:6.5pt}
     .topmeta{font-size:6.5pt}
+    .sello{display:none!important}
     .cols{grid-template-columns:1fr}
     .barra{display:none}
     html,body{background:#fff;color:#000}
@@ -943,8 +954,12 @@
   // ---------------- encabezado ----------------
   (function(){
     var conMetodo = RECETAS.filter(function(r){ return r.mp; }).length;
-    $("topmeta").textContent =
-      RECETAS.length + " recetas · " + conMetodo + " con método · datos del " + DATOS.generado;
+    var meta = RECETAS.length + " recetas · " + conMetodo + " con método";
+    $("topmeta").innerHTML = esc(meta) +
+      (DATOS.fuente
+        ? ' <span class="sello" title="Cuándo se guardó por última vez el libro de recetas que alimenta esta página">' +
+          'libro actualizado ' + esc(DATOS.fuente) + '</span>'
+        : ' · datos del ' + esc(DATOS.generado));
   })();
 
   // ---------------- chips de grupo ----------------
@@ -1231,8 +1246,10 @@
     html += '<label class="interr"><input type="checkbox" id="verCostos"' + (estado.costos ? " checked" : "") + '> Ver costos</label>';
     html += '<button class="imprimir" type="button" id="imprimir" title="Imprime la ficha en una sola hoja">Imprimir</button>';
     html += '</div>';
-    html += '<p class="aviso-imp" id="avisoImp" hidden>El visor no dejó abrir la impresión desde aquí. ' +
-            'Presiona <b>Ctrl + P</b> (o <b>⌘ + P</b> en Mac) y sale la ficha en una hoja.</p>';
+    html += '<p class="aviso-imp" id="avisoImp" hidden>' +
+            'Si no se abrió el cuadro de impresión, presiona <b>Ctrl + P</b> ' +
+            '(o <b>⌘ + P</b> en Mac): el visor bloquea el botón, pero el atajo sí funciona ' +
+            'y la ficha sale en una sola hoja.</p>';
     html += '</section>';
 
     // ingredientes
@@ -1395,15 +1412,14 @@
     });
     var vc = $("verCostos");
     if (vc) vc.addEventListener("change", function(){ estado.costos = this.checked; pintarFicha(); });
-    // El visor puede bloquear la ventana de impresión de la página incrustada.
-    // Si pasa, se le dice al usuario el atajo en vez de dejarlo dando clic en vano.
+    // El visor bloquea la impresión de la página incrustada, y lo hace EN SILENCIO:
+    // window.print() no lanza error, simplemente no abre nada. Por eso no se intenta
+    // adivinar si funcionó — siempre se muestra el atajo, y además se intenta.
     var pr = $("imprimir");
     if (pr) pr.addEventListener("click", function(){
-      var abrio = false;
-      try { window.print(); abrio = true; } catch(e){ abrio = false; }
       var av = $("avisoImp");
-      if (av) av.hidden = abrio;
-      if (!abrio && av) av.hidden = false;
+      if (av) av.hidden = false;
+      try { window.print(); } catch(e){ /* el visor lo bloquea; el aviso ya está a la vista */ }
     });
 
     Array.prototype.forEach.call(elFicha.querySelectorAll("[data-baja]"), function(b){
