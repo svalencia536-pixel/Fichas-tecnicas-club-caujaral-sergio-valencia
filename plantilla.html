@@ -303,13 +303,17 @@
   }
   .aviso-imp[hidden]{display:none}
 
-  /* Las etiquetas cambian segun el ancho: en el computador se imprime,
-     en el celular se guarda un PDF. Es el mismo boton. */
+  /* En el celular solo va Compartir: imprimir desde un teléfono no tiene sentido
+     y el botón de más ocupa espacio que hace falta para la ficha. */
   .solo-angosto{display:none}
   @media (max-width:760px){
+    #imprimir{display:none}
+    .aviso-imp{display:none}
     .solo-ancho{display:none}
     .solo-angosto{display:inline}
   }
+  :root.movil #imprimir{display:none}
+  :root.movil .aviso-imp{display:none}
   :root.movil .solo-ancho{display:none}
   :root.movil .solo-angosto{display:inline}
 
