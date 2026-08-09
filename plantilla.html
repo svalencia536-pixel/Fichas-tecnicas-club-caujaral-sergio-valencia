@@ -302,6 +302,26 @@
     font-size:12.5px;line-height:1.45;color:var(--ink);
   }
   .aviso-imp[hidden]{display:none}
+
+  /* Las etiquetas cambian segun el ancho: en el computador se imprime,
+     en el celular se guarda un PDF. Es el mismo boton. */
+  .solo-angosto{display:none}
+  @media (max-width:760px){
+    .solo-ancho{display:none}
+    .solo-angosto{display:inline}
+  }
+  :root.movil .solo-ancho{display:none}
+  :root.movil .solo-angosto{display:inline}
+
+  /* Mensajito que aparece abajo al compartir o copiar */
+  .aviso-flotante{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
+    background:var(--ink);color:var(--ground);
+    padding:11px 20px;border-radius:999px;font-size:13.5px;font-weight:600;
+    box-shadow:0 8px 24px -8px rgba(0,0,0,.45);z-index:200;
+    max-width:calc(100vw - 32px);text-align:center;
+  }
+  .aviso-flotante[hidden]{display:none}
   .eyebrow{
     font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
     color:var(--accent);margin-bottom:5px;
@@ -676,7 +696,7 @@
     .ficha.con-costos .prosa.metodo,.ficha.con-costos .falta.metodo{min-height:62pt}
     .ficha.con-costos .dosup .prosa,.ficha.con-costos .dosup .falta{min-height:40pt}
     .bloque{break-inside:avoid}
-    .rail,.velo,.volver,.rastro,.ayuda,.controles,.aviso-imp,
+    .rail,.velo,.volver,.rastro,.ayuda,.controles,.aviso-imp,.aviso-flotante,
     .barra .rapidos,.barra .pasos,.barra .rot,.interr,.imprimir{display:none!important}
     /* en la hoja impresa se conserva el logo y la fecha del corte */
     .topbar{padding:0 0 5px;border-bottom:1px solid #999;margin-bottom:8px;gap:9px}
@@ -775,6 +795,8 @@
     <main class="ficha" id="ficha"></main>
   </div>
 </div>
+
+<div class="aviso-flotante" id="avisoFlotante" hidden></div>
 
 <div class="velo" id="velo" hidden>
   <div class="guia" role="dialog" aria-modal="true" aria-labelledby="guiaTitulo">
@@ -1244,7 +1266,10 @@
     });
     html += '</div>';
     html += '<label class="interr"><input type="checkbox" id="verCostos"' + (estado.costos ? " checked" : "") + '> Ver costos</label>';
-    html += '<button class="imprimir" type="button" id="imprimir" title="Imprime la ficha en una sola hoja">Imprimir</button>';
+    html += '<button class="imprimir" type="button" id="compartir" title="Enviar esta receta a alguien">' +
+            '<span class="solo-ancho">Compartir</span><span class="solo-angosto">Compartir</span></button>';
+    html += '<button class="imprimir" type="button" id="imprimir" title="Sale en una sola hoja">' +
+            '<span class="solo-ancho">Imprimir</span><span class="solo-angosto">Guardar PDF</span></button>';
     html += '</div>';
     html += '<p class="aviso-imp" id="avisoImp" hidden>' +
             'Si no se abrió el cuadro de impresión, presiona <b>Ctrl + P</b> ' +
@@ -1367,6 +1392,51 @@
     elFicha.className = "ficha" + (estado.costos ? " con-costos" : "");
     elFicha.innerHTML = html;
     conectarFicha();
+
+    // La dirección refleja la receta abierta, sin ensuciar el historial ni
+    // hacer saltar la página. Si el visor lo bloquea, no pasa nada.
+    try {
+      if (history.replaceState) history.replaceState(null, "", "#" + r.c);
+    } catch(e){ /* algunos visores no dejan tocar la direccion */ }
+  }
+
+  /* ---------------- compartir una receta ---------------- */
+
+  var relojAviso = null;
+  function avisar(texto){
+    var e = $("avisoFlotante");
+    e.textContent = texto;
+    e.hidden = false;
+    if (relojAviso) clearTimeout(relojAviso);
+    relojAviso = setTimeout(function(){ e.hidden = true; }, 3200);
+  }
+
+  // Cada receta tiene su propia dirección: .../#FA1110. Así el link que se
+  // comparte abre directo en esa ficha y no en la pantalla de búsqueda.
+  function enlaceDe(r){
+    var base = location.href.split("#")[0];
+    return base + "#" + r.c;
+  }
+
+  function compartirReceta(r){
+    var url = enlaceDe(r);
+    var titulo = r.n.trim();
+    var texto = titulo + " — ficha técnica del Club Lagos de Caujaral";
+
+    if (navigator.share){
+      navigator.share({ title: titulo, text: texto, url: url })
+        .catch(function(){ /* el usuario cerró la hoja de compartir */ });
+      return;
+    }
+    // Sin compartir nativo (casi todo computador): se copia el link
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(
+        function(){ avisar("Link copiado: abre directo en " + titulo); },
+        function(){ avisar("No se pudo copiar. El link es: " + url); }
+      );
+      return;
+    }
+    avisar("Copia esta dirección: " + url);
   }
 
   // Una firma: el nombre va sobre la raya. Si la hoja BASE trae el nombre en una
@@ -1421,6 +1491,9 @@
       if (av) av.hidden = false;
       try { window.print(); } catch(e){ /* el visor lo bloquea; el aviso ya está a la vista */ }
     });
+
+    var co = $("compartir");
+    if (co) co.addEventListener("click", function(){ compartirReceta(r); });
 
     Array.prototype.forEach.call(elFicha.querySelectorAll("[data-baja]"), function(b){
       b.addEventListener("click", function(){ bajarA(b.getAttribute("data-baja")); });
@@ -1527,7 +1600,23 @@
 
   // arranque
   pintarLista();
-  pintarBienvenida();
-  elTexto.focus();
+
+  // Si la dirección trae un código (.../#FA1110), se abre esa ficha de una:
+  // es lo que hace que un link compartido caiga en la receta correcta.
+  var codigoInicial = "";
+  try { codigoInicial = decodeURIComponent((location.hash || "").replace("#","")).trim().toUpperCase(); } catch(e){}
+  if (codigoInicial && porCodigo[codigoInicial]) {
+    abrir(codigoInicial, true);
+  } else {
+    pintarBienvenida();
+    elTexto.focus();
+  }
+
+  // y si alguien pega otro link estando ya adentro
+  window.addEventListener("hashchange", function(){
+    var c = "";
+    try { c = decodeURIComponent((location.hash || "").replace("#","")).trim().toUpperCase(); } catch(e){}
+    if (c && porCodigo[c] && c !== estado.actual) abrir(c, true);
+  });
 })();
 </script>

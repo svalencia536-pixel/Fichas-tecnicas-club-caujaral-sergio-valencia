@@ -588,6 +588,11 @@ try {
     # libro salga solo, sin tener que empujarlo a mano. Railway redespliega al
     # detectar el push. Si algo falla aqui NO se tumba la corrida: la pagina ya
     # quedo generada y el artefacto se publica igual.
+    # git escribe avisos inofensivos por stderr ("LF will be replaced by CRLF").
+    # Con ErrorActionPreference en Stop, PowerShell los convierte en excepcion y
+    # abortaba la publicacion sin razon. Aqui se baja a Continue a proposito.
+    $erroresAntes = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
     try {
       $tieneRemoto = $false
       $remotos = & git -C $repo remote 2>$null
@@ -615,6 +620,8 @@ try {
       }
     } catch {
       "  aviso: no se pudo publicar en la web ({0}). La pagina si quedo generada." -f $_.Exception.Message
+    } finally {
+      $ErrorActionPreference = $erroresAntes
     }
   }
   # se guardan las cifras de esta corrida para comparar en la siguiente
