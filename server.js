@@ -32,6 +32,7 @@ let PAGINA_GZ = null;
 let ARRANQUE = new Date();
 let RECETAS = 0;
 let CORTE = '';
+let LOGO = null;   // el logo en binario, para servirlo como favicon
 
 function cargar() {
   PAGINA = fs.readFileSync(ARCHIVO, 'utf8');
@@ -42,6 +43,10 @@ function cargar() {
   CORTE = corte ? corte[1] : '';
   const recetas = PAGINA.match(/"c":"/g);
   RECETAS = recetas ? recetas.length : 0;
+
+  // Se saca el logo de la propia pagina, del atributo del icono
+  const icono = PAGINA.match(/rel="icon"[^>]*href="data:image\/png;base64,([^"]+)"/);
+  LOGO = icono ? Buffer.from(icono[1], 'base64') : null;
 }
 
 function autorizado(req) {
@@ -101,6 +106,23 @@ const servidor = http.createServer((req, res) => {
     } else {
       res.writeHead(200, cabeceras);
       res.end(PAGINA);
+    }
+    return;
+  }
+
+  /* El icono de la pestaña. Va dentro de la propia pagina como data-uri, pero
+     algunos navegadores lo piden aparte en /favicon.ico, y si no existe muestran
+     el globo terraqueo por defecto. Aqui se extrae el mismo logo y se entrega. */
+  if (ruta === '/favicon.ico' || ruta === '/favicon.png') {
+    if (LOGO) {
+      res.writeHead(200, {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=86400',
+        'Content-Length': LOGO.length
+      });
+      res.end(LOGO);
+    } else {
+      res.writeHead(404); res.end();
     }
     return;
   }
