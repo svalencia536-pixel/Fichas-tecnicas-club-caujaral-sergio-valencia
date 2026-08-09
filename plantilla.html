@@ -1428,11 +1428,14 @@
         .catch(function(){ /* el usuario cerró la hoja de compartir */ });
       return;
     }
-    // Sin compartir nativo (casi todo computador): se copia el link
+    // Sin compartir nativo (casi todo computador): se copia el link.
+    // El aviso sale de una y luego se corrige, para que nunca quede en silencio
+    // si el portapapeles se demora o lo bloquea el navegador.
     if (navigator.clipboard && navigator.clipboard.writeText){
+      avisar("Copiando el link de " + titulo + "…");
       navigator.clipboard.writeText(url).then(
-        function(){ avisar("Link copiado: abre directo en " + titulo); },
-        function(){ avisar("No se pudo copiar. El link es: " + url); }
+        function(){ avisar("Link copiado. Abre directo en " + titulo); },
+        function(){ avisar("No se pudo copiar. El link es " + url); }
       );
       return;
     }
