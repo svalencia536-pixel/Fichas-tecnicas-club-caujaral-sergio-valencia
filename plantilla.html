@@ -1562,8 +1562,11 @@
   $("btnVista").addEventListener("click", function(){
     var ahora = !raiz.classList.contains("movil");
     aplicarVista(ahora);
-    // el panel de búsqueda vuelve a aparecer al cambiar de vista
-    $("rail").classList.remove("oculto");
+    // Si hay una receta abierta se conserva en pantalla: en vista de celular la
+    // búsqueda se esconde para dejarle todo el ancho a la ficha, y en computador
+    // caben las dos. Antes se volvía siempre a la búsqueda y se perdía la receta.
+    if (ahora && estado.actual) $("rail").classList.add("oculto");
+    else $("rail").classList.remove("oculto");
     window.scrollTo(0,0);
   });
   $("btnTema").addEventListener("click", function(){
