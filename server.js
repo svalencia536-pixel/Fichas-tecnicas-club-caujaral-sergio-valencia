@@ -17,12 +17,16 @@ const zlib = require('zlib');
 
 const PUERTO = Number(process.env.PORT || 3000);
 
-/* Clave de acceso.
-   Si se define FICHAS_PASSWORD en Railway, la pagina pide usuario y clave.
-   Si no se define, queda abierta a cualquiera con el link — y conviene tenerlo
-   presente, porque el archivo lleva adentro las recetas y los costos. */
+/* Clave de acceso. CERRADO POR DEFECTO, por decision de Sergio del 09/08/2026.
+   Si no existe la variable FICHAS_PASSWORD, la pagina NO se entrega: muestra un
+   aviso de que falta configurarla. Es a proposito — el archivo lleva adentro las
+   891 recetas del club y el costo de cada insumo, y un despliegue sin clave las
+   deja al alcance de cualquiera que tenga la direccion.
+   Para abrirla hay que crear FICHAS_PASSWORD en Railway; no hay forma de dejarla
+   publica por descuido. */
 const USUARIO = process.env.FICHAS_USER || 'caujaral';
 const CLAVE = process.env.FICHAS_PASSWORD || '';
+const ABIERTA_A_PROPOSITO = String(process.env.FICHAS_PUBLICA || '').toLowerCase() === 'si';
 
 const ARCHIVO = path.join(__dirname, 'Fichas Tecnicas Caujaral.html');
 
@@ -50,7 +54,8 @@ function cargar() {
 }
 
 function autorizado(req) {
-  if (!CLAVE) return true;
+  // sin clave configurada no se entrega nada, salvo que se pida abrirla a proposito
+  if (!CLAVE) return ABIERTA_A_PROPOSITO;
   const cabecera = req.headers.authorization || '';
   if (!cabecera.startsWith('Basic ')) return false;
   let plano;
@@ -65,6 +70,13 @@ function autorizado(req) {
 }
 
 function pedirClave(res) {
+  if (!CLAVE) {
+    // Ni siquiera se pide clave: no hay ninguna configurada, asi que no hay
+    // manera de entrar. Se responde sin pistas sobre lo que hay detras.
+    res.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Esta pagina no esta disponible.');
+    return;
+  }
   res.writeHead(401, {
     'WWW-Authenticate': 'Basic realm="Fichas tecnicas Caujaral", charset="UTF-8"',
     'Content-Type': 'text/plain; charset=utf-8'
@@ -76,14 +88,15 @@ const servidor = http.createServer((req, res) => {
   const ruta = (req.url || '/').split('?')[0];
 
   if (ruta === '/salud') {
+    // No revela cuantas recetas hay ni desde cuando, si la pagina esta cerrada
+    var salud = { estado: 'ok', protegidoConClave: Boolean(CLAVE), sirviendo: Boolean(CLAVE) || ABIERTA_A_PROPOSITO };
+    if (salud.sirviendo) {
+      salud.recetas = RECETAS;
+      salud.corteDeDatos = CORTE;
+      salud.arranque = ARRANQUE.toISOString();
+    }
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({
-      estado: 'ok',
-      recetas: RECETAS,
-      corteDeDatos: CORTE,
-      arranque: ARRANQUE.toISOString(),
-      protegidoConClave: Boolean(CLAVE)
-    }, null, 2));
+    res.end(JSON.stringify(salud, null, 2));
     return;
   }
 
@@ -149,8 +162,10 @@ servidor.listen(PUERTO, () => {
   console.log('  recetas: ' + RECETAS + '   corte de datos: ' + CORTE);
   if (CLAVE) {
     console.log('  acceso con clave, usuario "' + USUARIO + '"');
+  } else if (ABIERTA_A_PROPOSITO) {
+    console.log('  ABIERTA A PROPOSITO (FICHAS_PUBLICA=si). Cualquiera con el link entra.');
   } else {
-    console.log('  ATENCION: sin clave. Cualquiera con el link ve las recetas y los costos.');
-    console.log('  Para cerrarlo, crear la variable FICHAS_PASSWORD en Railway.');
+    console.log('  CERRADA: no hay FICHAS_PASSWORD, no se entrega la pagina.');
+    console.log('  Para abrirla, crear FICHAS_PASSWORD en Railway.');
   }
 });
