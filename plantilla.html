@@ -112,6 +112,7 @@
   .topmeta{
     font-family:var(--mono);font-size:11.5px;color:var(--faint);
     letter-spacing:.02em;white-space:nowrap;
+    margin-left:auto;text-align:right;   /* siempre pegada a la derecha, aunque baje de renglón */
   }
   /* Marca de hasta cuándo llegan los datos: es la fecha en que se guardó el
      libro de Excel, no la de la corrida. No sale en la hoja impresa. */
@@ -546,10 +547,10 @@
      verse: es como se sabe si lo que uno mira está al día. Antes se escondía
      entero y esa información se perdía justo donde más falta hace, que es
      consultando de pie en la cocina. Se apagan los conteos y se deja el sello. */
-  :root.movil .topmeta{font-size:0;width:100%;order:9;margin-top:2px}
+  :root.movil .topmeta{font-size:0;width:100%;order:9;margin-top:2px;text-align:right}
   :root.movil .topmeta .sello{font-size:10.5px;margin-left:0}
   @media (max-width:760px){
-    .topmeta{font-size:0;width:100%;order:9;margin-top:2px}
+    .topmeta{font-size:0;width:100%;order:9;margin-top:2px;text-align:right}
     .topmeta .sello{font-size:10.5px;margin-left:0}
   }
 
@@ -935,6 +936,36 @@
   var DATOS = JSON.parse(document.getElementById("datos").textContent);
   var RECETAS = DATOS.recetas;
 
+  /* La fecha del libro, escrita como la diría una persona. "2026-08-14 12:55"
+     obliga a descifrarla; "datos de hoy, 12:55 p. m." se entiende de un vistazo,
+     que es lo que sirve cuando se consulta de pie en la cocina. */
+  var DIAS = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+  var MESES = ["enero","febrero","marzo","abril","mayo","junio",
+               "julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+  function cuandoSeActualizo(texto){
+    var p = String(texto).match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+    if (!p) return "libro actualizado " + texto;
+    var f = new Date(+p[1], +p[2]-1, +p[3], +p[4], +p[5]);
+    if (isNaN(f.getTime())) return "libro actualizado " + texto;
+
+    var hora = f.getHours(), min = p[5];
+    var tarde = hora >= 12;
+    var h12 = hora % 12; if (h12 === 0) h12 = 12;
+    var reloj = h12 + ":" + min + " " + (tarde ? "p. m." : "a. m.");
+
+    // días completos de diferencia, comparando fechas y no horas
+    var hoy = new Date();
+    var a = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    var b = new Date(f.getFullYear(), f.getMonth(), f.getDate());
+    var dias = Math.round((a - b) / 86400000);
+
+    if (dias === 0) return "datos de hoy, " + reloj;
+    if (dias === 1) return "datos de ayer, " + reloj;
+    if (dias > 1 && dias < 7) return "datos del " + DIAS[f.getDay()] + ", " + reloj;
+    return "datos del " + f.getDate() + " de " + MESES[f.getMonth()] + ", " + reloj;
+  }
+
   // Filas fijas de la ficha impresa. 16 cubren el 97,5 % de las recetas;
   // las que se pasan (buffets y eventos) siguen en otra página igual de alta.
   var FILAS_FICHA = 16;
@@ -996,8 +1027,8 @@
     var meta = RECETAS.length + " recetas · " + conMetodo + " con método";
     $("topmeta").innerHTML = esc(meta) +
       (DATOS.fuente
-        ? ' <span class="sello" title="Cuándo se guardó por última vez el libro de recetas que alimenta esta página">' +
-          'libro actualizado ' + esc(DATOS.fuente) + '</span>'
+        ? ' <span class="sello" title="Cuándo se guardó por última vez el libro de recetas que alimenta esta página. ' +
+          'Fecha exacta: ' + esc(DATOS.fuente) + '">' + esc(cuandoSeActualizo(DATOS.fuente)) + '</span>'
         : ' · datos del ' + esc(DATOS.generado));
   })();
 
