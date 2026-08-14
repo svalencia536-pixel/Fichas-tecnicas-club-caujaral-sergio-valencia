@@ -542,7 +542,16 @@
   :root.movil th.c-cu,:root.movil td.c-cu{display:none}
   :root.movil .um-inline{display:inline;margin-left:5px}
   :root.movil .dosup{grid-template-columns:1fr}
-  :root.movil .topmeta{display:none}
+  /* En celular no cabe todo el encabezado, pero la fecha del libro SÍ tiene que
+     verse: es como se sabe si lo que uno mira está al día. Antes se escondía
+     entero y esa información se perdía justo donde más falta hace, que es
+     consultando de pie en la cocina. Se apagan los conteos y se deja el sello. */
+  :root.movil .topmeta{font-size:0;width:100%;order:9;margin-top:2px}
+  :root.movil .topmeta .sello{font-size:10.5px;margin-left:0}
+  @media (max-width:760px){
+    .topmeta{font-size:0;width:100%;order:9;margin-top:2px}
+    .topmeta .sello{font-size:10.5px;margin-left:0}
+  }
 
   /* ---------- guía de uso ---------- */
   .ayuda{
