@@ -1716,35 +1716,42 @@
     try { blob = doc.output("blob"); }
     catch(e){ copiarElLink(enlaceDe(r), titulo); return; }
 
-    // Compartir el archivo (celulares)
-    if (navigator.canShare && navigator.share){
-      var archivo;
-      try { archivo = new File([blob], nombre, { type: "application/pdf" }); }
-      catch(e){ archivo = null; }
+    // Compartir el archivo directamente (celulares y tabletas).
+    // Se INTENTA siempre que exista navigator.share: hay navegadores que comparten
+    // archivos pero no traen canShare, y exigirlo dejaba fuera esos casos.
+    if (navigator.share){
+      var archivo = null;
+      try { archivo = new File([blob], nombre, { type: "application/pdf" }); } catch(e){}
 
-      if (archivo && navigator.canShare({ files: [archivo] })){
+      var puede = true;
+      if (archivo && navigator.canShare){
+        try { puede = navigator.canShare({ files: [archivo] }); } catch(e){ puede = true; }
+      }
+
+      if (archivo && puede){
         var intento;
         try {
           intento = navigator.share({ files: [archivo], title: titulo,
                                       text: titulo + " — ficha técnica del Club Lagos de Caujaral" });
-        } catch(e){ descargarPdf(blob, nombre, titulo); return; }
+        } catch(e){ descargarPdf(blob, nombre, titulo, true); return; }
         if (intento && typeof intento.then === "function"){
           intento.catch(function(err){
             if (err && err.name === "AbortError") return;   // lo cerró el usuario
-            descargarPdf(blob, nombre, titulo);
+            descargarPdf(blob, nombre, titulo, true);
           });
         }
         return;
       }
     }
-    descargarPdf(blob, nombre, titulo);
+    descargarPdf(blob, nombre, titulo, true);
   }
 
   /* Guardar el PDF. Dentro del visor de claude.ai los enlaces de descarga no
      funcionan —el visor no se lo permite a la página—, así que primero se
      intenta la vía que el visor sí ofrece y solo si no está se cae al enlace,
      que es lo que funciona en Railway y en el archivo local. */
-  function descargarPdf(blob, nombre, titulo){
+  function descargarPdf(blob, nombre, titulo, porqueNoSePudoCompartir){
+    if (porqueNoSePudoCompartir) motivoDescarga = true;
     if (window.claude && typeof claude.use === "function"){
       claude.use("downloads").then(function(descargas){
         if (!descargas){ guardarConEnlace(blob, nombre, titulo); return; }
@@ -1763,6 +1770,8 @@
     guardarConEnlace(blob, nombre, titulo);
   }
 
+  var motivoDescarga = false;
+
   function guardarConEnlace(blob, nombre, titulo){
     try {
       var url = URL.createObjectURL(blob);
@@ -1772,7 +1781,12 @@
       a.click();
       document.body.removeChild(a);
       setTimeout(function(){ URL.revokeObjectURL(url); }, 30000);
-      avisar("PDF de " + titulo + " descargado. Ya lo puedes enviar.");
+      // Se dice POR QUÉ se descargó en vez de compartirse: si no, parece que el
+      // botón hace otra cosa de la que dice.
+      avisar(motivoDescarga
+        ? "Este navegador no comparte archivos. El PDF quedó descargado: envíalo desde ahí."
+        : "PDF de " + titulo + " guardado. Ya lo puedes enviar.");
+      motivoDescarga = false;
     } catch(e){
       avisar("No se pudo guardar el PDF. Usa el botón Imprimir.");
     }
