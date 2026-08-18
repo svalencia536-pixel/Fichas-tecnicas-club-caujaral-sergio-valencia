@@ -1594,8 +1594,14 @@
       try { window.print(); } catch(e){ /* el visor lo bloquea; el aviso ya está a la vista */ }
     });
 
+    // La receta se toma del estado, NO de una variable de pintarFicha: esta
+    // función corre en otro ámbito y allí `r` no existe. Ese descuido dejó el
+    // botón mudo en todos los navegadores.
     var co = $("compartir");
-    if (co) co.addEventListener("click", function(){ compartirReceta(r); });
+    if (co) co.addEventListener("click", function(){
+      var receta = porCodigo[estado.actual];
+      if (receta) compartirReceta(receta);
+    });
 
     Array.prototype.forEach.call(elFicha.querySelectorAll("[data-baja]"), function(b){
       b.addEventListener("click", function(){ bajarA(b.getAttribute("data-baja")); });
