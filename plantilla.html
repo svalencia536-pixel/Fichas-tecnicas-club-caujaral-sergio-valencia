@@ -1740,7 +1740,30 @@
     descargarPdf(blob, nombre, titulo);
   }
 
+  /* Guardar el PDF. Dentro del visor de claude.ai los enlaces de descarga no
+     funcionan —el visor no se lo permite a la página—, así que primero se
+     intenta la vía que el visor sí ofrece y solo si no está se cae al enlace,
+     que es lo que funciona en Railway y en el archivo local. */
   function descargarPdf(blob, nombre, titulo){
+    if (window.claude && typeof claude.use === "function"){
+      claude.use("downloads").then(function(descargas){
+        if (!descargas){ guardarConEnlace(blob, nombre, titulo); return; }
+        descargas.save({ filename: nombre, data: blob }).then(
+          function(){ avisar("PDF de " + titulo + " guardado. Ya lo puedes enviar."); },
+          function(err){
+            var c = err && err.code;
+            if (c === "declined") return;                    // el usuario dijo que no
+            if (c === "rate_limited"){ avisar("Espera un momento y vuelve a intentarlo."); return; }
+            guardarConEnlace(blob, nombre, titulo);          // incluido extension_not_enabled
+          }
+        );
+      }, function(){ guardarConEnlace(blob, nombre, titulo); });
+      return;
+    }
+    guardarConEnlace(blob, nombre, titulo);
+  }
+
+  function guardarConEnlace(blob, nombre, titulo){
     try {
       var url = URL.createObjectURL(blob);
       var a = document.createElement("a");
