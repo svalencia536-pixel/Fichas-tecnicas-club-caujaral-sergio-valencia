@@ -1466,28 +1466,79 @@
     return base + "#" + r.c;
   }
 
-  function compartirReceta(r){
-    var url = enlaceDe(r);
-    var titulo = r.n.trim();
-    var texto = titulo + " — ficha técnica del Club Lagos de Caujaral";
+  /* Copiar sin depender del portapapeles moderno, que exige conexión segura y
+     que algunos visores bloquean. Se usa como red de seguridad. */
+  function copiarALaVieja(texto){
+    try {
+      var caja = document.createElement("textarea");
+      caja.value = texto;
+      caja.setAttribute("readonly", "");
+      caja.style.cssText = "position:fixed;top:-1000px;opacity:0";
+      document.body.appendChild(caja);
+      caja.select();
+      caja.setSelectionRange(0, texto.length);
+      var ok = document.execCommand("copy");
+      document.body.removeChild(caja);
+      return ok;
+    } catch(e){ return false; }
+  }
 
-    if (navigator.share){
-      navigator.share({ title: titulo, text: texto, url: url })
-        .catch(function(){ /* el usuario cerró la hoja de compartir */ });
-      return;
-    }
-    // Sin compartir nativo (casi todo computador): se copia el link.
-    // El aviso sale de una y luego se corrige, para que nunca quede en silencio
-    // si el portapapeles se demora o lo bloquea el navegador.
+  function copiarElLink(url, titulo){
     if (navigator.clipboard && navigator.clipboard.writeText){
-      avisar("Copiando el link de " + titulo + "…");
       navigator.clipboard.writeText(url).then(
         function(){ avisar("Link copiado. Abre directo en " + titulo); },
-        function(){ avisar("No se pudo copiar. El link es " + url); }
+        function(){
+          if (copiarALaVieja(url)) avisar("Link copiado. Abre directo en " + titulo);
+          else mostrarLinkParaCopiar(url);
+        }
       );
       return;
     }
-    avisar("Copia esta dirección: " + url);
+    if (copiarALaVieja(url)) avisar("Link copiado. Abre directo en " + titulo);
+    else mostrarLinkParaCopiar(url);
+  }
+
+  /* Último recurso: se muestra el link ya seleccionado para copiarlo a mano.
+     Antes, cuando todo fallaba, el botón no hacía absolutamente nada. */
+  function mostrarLinkParaCopiar(url){
+    var e = $("avisoFlotante");
+    e.innerHTML = '<span style="display:block;font-weight:400;margin-bottom:6px">' +
+                  'Copia este link:</span>' +
+                  '<input readonly value="' + esc(url) + '" ' +
+                  'style="width:min(460px,72vw);padding:7px 9px;border-radius:6px;border:0;' +
+                  'font:13px ui-monospace,monospace">';
+    e.hidden = false;
+    var campo = e.querySelector("input");
+    if (campo){ campo.focus(); campo.select(); }
+    if (relojAviso) clearTimeout(relojAviso);
+    relojAviso = setTimeout(function(){ e.hidden = true; }, 12000);
+  }
+
+  function compartirReceta(r){
+    var url = enlaceDe(r);
+    var titulo = r.n.trim();
+
+    // Compartir nativo del sistema (celulares). Si el navegador lo tiene pero lo
+    // bloquea —pasa dentro de visores incrustados— NO se puede quedar callado:
+    // se distingue el "el usuario cerró la hoja" de "no se pudo", y en ese
+    // segundo caso se cae al copiado.
+    if (navigator.share){
+      var intento;
+      try {
+        intento = navigator.share({ title: titulo, text: titulo + " — ficha técnica del Club Lagos de Caujaral", url: url });
+      } catch(e){
+        copiarElLink(url, titulo);
+        return;
+      }
+      if (intento && typeof intento.then === "function"){
+        intento.catch(function(err){
+          if (err && err.name === "AbortError") return;   // lo cerró el usuario
+          copiarElLink(url, titulo);
+        });
+      }
+      return;
+    }
+    copiarElLink(url, titulo);
   }
 
   // Una firma: el nombre va sobre la raya. Si la hoja BASE trae el nombre en una
