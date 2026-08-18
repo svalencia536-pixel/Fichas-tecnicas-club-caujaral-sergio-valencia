@@ -566,6 +566,17 @@ try {
   if ($tpl -notmatch '__DATOS__') { throw "La plantilla no tiene el marcador __DATOS__." }
   $html = $tpl.Replace('__DATOS__', ($json -replace '</','<\/'))
 
+  # Libreria para generar el PDF de una ficha desde el propio navegador.
+  # Se incrusta como TEXTO, no como data-uri: asi pesa 357 KB en vez de 476.
+  $pdfFn = Join-Path $raiz "jspdf.min.js"
+  if (Test-Path $pdfFn) {
+    $libPdf = [System.IO.File]::ReadAllText($pdfFn, [System.Text.Encoding]::UTF8)
+    $html = $html.Replace('__JSPDF__', ($libPdf -replace '</script>', '<\/script>'))
+  } else {
+    "  aviso: falta jspdf.min.js, el boton Compartir no podra armar el PDF"
+    $html = $html.Replace('__JSPDF__', '')
+  }
+
   $logoFn = Join-Path $raiz "logo.txt"
   if (Test-Path $logoFn) {
     $html = $html.Replace('__LOGO__', ([System.IO.File]::ReadAllText($logoFn, [System.Text.Encoding]::UTF8)).Trim())
