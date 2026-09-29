@@ -722,6 +722,17 @@
     margin-right:6px;vertical-align:0;flex:none;
   }
 
+  /* En angosto el listado de usos se aprieta, para que quepan las cuatro
+     columnas sin obligar a arrastrar la tabla de lado. */
+  @media (max-width:760px){
+    .usos tbody td,.usos thead th,.usos tfoot td{padding-left:7px;padding-right:7px}
+    .usos td.rec{font-size:13.5px}
+  }
+  :root.movil .usos tbody td,
+  :root.movil .usos thead th,
+  :root.movil .usos tfoot td{padding-left:7px;padding-right:7px}
+  :root.movil .usos td.rec{font-size:13.5px}
+
   /* Aviso de cuando un artículo no tiene equivalencia cargada */
   .sinequiv{
     margin-top:10px;padding:8px 12px;border-left:2px solid var(--g-FP);
@@ -1538,8 +1549,14 @@
             cuantas + (cuantas === 1 ? " receta" : " recetas") + '</em></div>';
     html += '<div class="tablawrap"><table>';
     html += '<thead><tr>';
-    html += '<th class="num">N.&ordm;</th><th>Código</th><th>Receta</th>';
-    html += '<th class="num c-cant">Cantidad</th><th class="c-um">Unidad</th><th class="num">Gramos / ml</th>';
+    // en pantalla angosta los rótulos van abreviados: si no, la columna del
+    // gramaje —que es a lo que se viene— se sale de la pantalla
+    html += '<th class="num">N.&ordm;</th>';
+    html += '<th><span class="solo-ancho">Código</span><span class="solo-angosto">Cód.</span></th>';
+    html += '<th>Receta</th>';
+    html += '<th class="num c-cant">Cantidad</th><th class="c-um">Unidad</th>';
+    html += '<th class="num"><span class="solo-ancho">Gramos / ml</span>' +
+            '<span class="solo-angosto">g / ml</span></th>';
     if (estado.costos) html += '<th class="num">Costo línea</th>';
     html += '</tr></thead><tbody>';
 
@@ -1565,7 +1582,8 @@
 
     html += '</tbody>';
     html += '<tfoot><tr>';
-    html += '<td colspan="5">Total del artículo en todas las recetas</td>';
+    html += '<td colspan="5"><span class="solo-ancho">Total del artículo en todas las recetas</span>' +
+            '<span class="solo-angosto">Total en todas las recetas</span></td>';
     html += '<td class="num">' + (totalG ? fmt(totalG, totalG < 10 ? 1 : 0) : "—") + '</td>';
     if (estado.costos) html += '<td class="num">' + pesos(totalCosto) + '</td>';
     html += '</tr></tfoot>';
