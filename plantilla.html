@@ -670,6 +670,61 @@
     .ejemplo-pies span:nth-child(2){display:none}
   }
 
+  /* ---------- búsqueda por artículo (la vista inversa) ---------- */
+
+  /* Fuera del visor de artefactos no existe el reset que oculta [hidden],
+     y esta página también se sirve sola desde Railway. */
+  [hidden]{display:none!important}
+
+  .modos{
+    display:grid;grid-template-columns:1fr 1fr;gap:4px;
+    padding:12px 16px 0;
+  }
+  .modos button{
+    border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
+    padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;
+    transition:background .12s,border-color .12s,color .12s;
+  }
+  .modos button:hover{border-color:var(--accent);color:var(--ink)}
+  .modos button[aria-pressed="true"]{
+    background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600;
+  }
+  .solo-receta{display:flex;flex-direction:column;gap:10px}
+
+  /* Cada artículo de la lista, con en cuántas recetas aparece */
+  .lista button.art{border-left-color:var(--accent)}
+  .lista button.art:hover{background:var(--accent-soft)}
+  .lista button.art[aria-current="true"]{background:var(--accent-soft);border-left-width:3px}
+  .lista .art .nom{font-size:13.5px}
+
+  /* El código de la receta, para saltar a su ficha desde el listado de usos */
+  .cod{
+    border:0;background:transparent;padding:1px 5px;cursor:pointer;
+    font-family:var(--mono);font-size:12.5px;color:var(--accent);
+    border:1px solid var(--accent);border-radius:4px;
+    text-decoration:none;white-space:nowrap;
+  }
+  .cod:hover{background:var(--accent);color:#fff}
+  @media (prefers-color-scheme:dark){.cod:hover{color:#11171B}}
+  :root[data-theme="dark"] .cod:hover{color:#11171B}
+  :root[data-theme="light"] .cod:hover{color:#fff}
+
+  td.rec{line-height:1.3}
+  td.rec small{
+    display:block;font-size:10.5px;color:var(--faint);letter-spacing:.02em;margin-top:1px;
+  }
+  .marcagrupo{
+    display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--g,var(--faint));
+    margin-right:6px;vertical-align:0;flex:none;
+  }
+
+  /* Aviso de cuando un artículo no tiene equivalencia cargada */
+  .sinequiv{
+    margin-top:10px;padding:8px 12px;border-left:2px solid var(--g-FP);
+    background:var(--g-FP-suave);border-radius:0 7px 7px 0;
+    font-size:12.5px;line-height:1.45;
+  }
+
   /* La ficha se imprime en UNA sola hoja: se apaga todo lo que es navegación
      y se comprime la escala hasta que quepa. */
   tr.relleno{display:none}
@@ -714,6 +769,14 @@
     .ficha.con-costos .prosa.metodo,.ficha.con-costos .falta.metodo{min-height:62pt}
     .ficha.con-costos .dosup .prosa,.ficha.con-costos .dosup .falta{min-height:40pt}
     .bloque{break-inside:avoid}
+    /* El listado de usos de un artículo sí puede ser largo: son todas las
+       recetas que lo llevan. Se le deja partir en varias hojas, y la cabecera
+       de la tabla se repite arriba de cada una. */
+    .bloque.usos{break-inside:auto}
+    .bloque.usos table{break-inside:auto}
+    .bloque.usos thead{display:table-header-group}
+    .bloque.usos tr{break-inside:avoid}
+    .cod{border:0;color:#000;padding:0}
     .rail,.velo,.volver,.rastro,.ayuda,.controles,.aviso-imp,.aviso-flotante,
     .barra .rapidos,.barra .pasos,.barra .rot,.interr,.imprimir{display:none!important}
     /* en la hoja impresa se conserva el logo y la fecha del corte */
@@ -782,29 +845,40 @@
 
   <div class="cols">
     <aside class="rail" id="rail">
+      <!-- Dos maneras de entrar a lo mismo. La de siempre es por la receta.
+           La otra va al revés: se parte del artículo —mantequilla, por decir algo—
+           y sale en qué recetas se usa y con qué gramaje cada una. Sirve para
+           medir el impacto de un insumo sin tener que abrir receta por receta. -->
+      <div class="modos" role="group" aria-label="Cómo quieres buscar">
+        <button type="button" id="modoReceta" aria-pressed="true">Por receta</button>
+        <button type="button" id="modoArticulo" aria-pressed="false">Por artículo</button>
+      </div>
+
       <div class="buscar">
         <div class="campo">
           <input id="texto" type="search" autocomplete="off" placeholder="Escribe el nombre de la receta…" aria-label="Buscar receta por nombre">
           <button class="limpiar" id="limpiarTexto" type="button" aria-label="Borrar lo escrito" hidden>&times;</button>
         </div>
 
-        <div class="desple">
-          <button type="button" id="abrirPanel" aria-expanded="false">
-            <span>O escógela de la lista</span>
-            <span class="cuenta" id="cuentaSel" hidden>0</span>
-          </button>
-          <div class="panel" id="panel" hidden></div>
-        </div>
+        <div class="solo-receta" id="soloReceta">
+          <div class="desple">
+            <button type="button" id="abrirPanel" aria-expanded="false">
+              <span>O escógela de la lista</span>
+              <span class="cuenta" id="cuentaSel" hidden>0</span>
+            </button>
+            <div class="panel" id="panel" hidden></div>
+          </div>
 
-        <div class="grupos" id="grupos"></div>
+          <div class="grupos" id="grupos"></div>
 
-        <div class="aviso" id="aviso" hidden>
-          <span>Mandan las <b id="avisoN">0</b> recetas marcadas en la lista. Puedes borrar lo escrito sin perderlas.</span>
+          <div class="aviso" id="aviso" hidden>
+            <span>Mandan las <b id="avisoN">0</b> recetas marcadas en la lista. Puedes borrar lo escrito sin perderlas.</span>
+          </div>
         </div>
       </div>
 
       <div class="conteo">
-        <span>Recetas</span>
+        <span id="conteoRot">Recetas</span>
         <b id="conteo">0</b>
       </div>
       <div class="lista" id="lista"></div>
@@ -904,6 +978,26 @@
           <p class="guia-ojo">
             Si alguno dice que todavía no está cargado, es que falta escribirlo — avísale al
             jefe de cocina o al área de costos.
+          </p>
+        </li>
+
+        <li>
+          <h3>La consulta al revés: por artículo</h3>
+          <p>
+            Arriba de la caja de búsqueda hay dos pestañas. La segunda,
+            <em>Por artículo</em>, hace la consulta al contrario: en vez de partir de la
+            receta, se parte del insumo.
+          </p>
+          <p>
+            Escribe <em>mantequilla</em> y sale el listado <b>numerado</b> de todas las recetas
+            que la llevan, con su código, el nombre y cuántos gramos o mililitros usa cada una.
+            Abajo queda el total del artículo en todas las recetas.
+          </p>
+          <p>
+            <b>Toca el código</b> de cualquier receta del listado y se abre su ficha completa;
+            arriba queda el camino para devolverte al artículo. Y con
+            <em>Mayor gramaje</em> se ordena de la que más consume a la que menos, que es
+            la manera rápida de ver dónde se está yendo un insumo.
           </p>
         </li>
       </ol>
@@ -1011,12 +1105,37 @@
   });
   RECETAS.sort(function(a,b){ return a.n.localeCompare(b.n,"es"); });
 
+  /* Índice al revés: de cada artículo, en qué recetas aparece y con qué línea.
+     Se arma una sola vez al cargar, recorriendo las líneas que ya están en
+     memoria — no cuesta una segunda pasada al Excel ni pesa en el archivo.
+     Un mismo artículo puede venir repetido dentro de una receta (pasa cuando
+     entra por dos presentaciones distintas); se guardan las dos líneas, porque
+     esconder una daría un gramaje menor al real. */
+  var ARTICULOS = [], porArticulo = {};
+  RECETAS.forEach(function(r){
+    r.i.forEach(function(x){
+      var k = norm(x[0]);
+      if (!k) return;
+      var a = porArticulo[k];
+      if (!a){
+        a = porArticulo[k] = { k:k, n:x[0], usos:[] };
+        ARTICULOS.push(a);
+      }
+      a.usos.push({ r:r, l:x });
+    });
+  });
+  ARTICULOS.sort(function(a,b){ return a.n.localeCompare(b.n,"es"); });
+
   // ---- estado ----
   var estado = {
+    modo: "receta",    // "receta" (lo de siempre) o "articulo" (la vista inversa)
     texto: "",
     marcadas: [],      // codigos marcados en el desplegable
     grupos: [],        // grupos activos
     actual: null,      // codigo en pantalla
+    articulo: null,    // clave del articulo consultado
+    ordenUso: "gramos",// como se ordena el listado de usos: "gramos" o "nombre"
+    desdeArticulo: null, // para poder devolverse al listado de usos
     raciones: 1,
     costos: false,
     rastro: []         // navegacion hacia subrecetas
@@ -1075,7 +1194,60 @@
     });
   }
 
+  /* Los artículos se filtran igual que las recetas: por palabras sueltas, sin
+     importar tildes ni el orden en que se escriban. "mante" encuentra
+     MANTEQUILLA, y "queso mozza" encuentra QUESO MOZZARELLA. */
+  function candidatosArticulo(){
+    var t = norm(estado.texto);
+    if (!t) return ARTICULOS;
+    var partes = t.split(" ");
+    return ARTICULOS.filter(function(a){
+      return partes.every(function(p){ return a.k.indexOf(p) >= 0; });
+    });
+  }
+
+  function pintarListaArticulos(){
+    var res = candidatosArticulo();
+    $("conteo").textContent = res.length;
+    $("aviso").hidden = true;
+
+    elLista.innerHTML = "";
+    if (!res.length){
+      var v = document.createElement("div");
+      v.className = "nada";
+      v.textContent = "Ningún artículo coincide. Prueba con una palabra suelta: " +
+                      "“mante” en vez de “mantequilla sin sal”.";
+      elLista.appendChild(v);
+      return;
+    }
+    var frag = document.createDocumentFragment();
+    res.slice(0,400).forEach(function(a){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "art";
+      if (a.k === estado.articulo) b.setAttribute("aria-current","true");
+      // cuántas recetas distintas lo llevan (no cuántas líneas)
+      var recetas = {};
+      a.usos.forEach(function(u){ recetas[u.r.c] = 1; });
+      var cuantas = Object.keys(recetas).length;
+      b.innerHTML =
+        '<span class="nom"></span>' +
+        '<span class="sub"><span>' + cuantas + (cuantas === 1 ? " receta" : " recetas") + '</span></span>';
+      b.querySelector(".nom").textContent = a.n;
+      b.addEventListener("click", function(){ abrirArticulo(a.k); });
+      frag.appendChild(b);
+    });
+    elLista.appendChild(frag);
+    if (res.length > 400){
+      var m = document.createElement("div");
+      m.className = "nada";
+      m.textContent = "Se muestran los primeros 400 de " + res.length + ". Afina la búsqueda para ver el resto.";
+      elLista.appendChild(m);
+    }
+  }
+
   function pintarLista(){
+    if (estado.modo === "articulo"){ pintarListaArticulos(); return; }
     var res = candidatas();
     $("conteo").textContent = res.length;
     var n = estado.marcadas.length;
@@ -1235,6 +1407,7 @@
   function abrir(cod, reiniciarRastro){
     if (!porCodigo[cod]) return;
     if (reiniciarRastro) estado.rastro = [];
+    estado.desdeArticulo = null;   // lo repone abrirDesdeArticulo si vino de allá
     estado.actual = cod;
     estado.raciones = 1;
     if (window.innerWidth <= 900 || document.documentElement.classList.contains("movil")){
@@ -1243,6 +1416,29 @@
     }
     pintarFicha();
     pintarLista();
+  }
+
+  function abrirArticulo(clave){
+    if (!porArticulo[clave]) return;
+    estado.articulo = clave;
+    estado.desdeArticulo = null;
+    if (window.innerWidth <= 900 || document.documentElement.classList.contains("movil")){
+      $("rail").classList.add("oculto");
+      window.scrollTo(0,0);
+    }
+    pintarFicha();
+    pintarLista();
+  }
+
+  /* Del listado de usos se salta a la ficha de la receta, y queda el rastro
+     para devolverse: si no, tocaría volver a buscar el artículo desde cero. */
+  function abrirDesdeArticulo(cod){
+    if (!porCodigo[cod]) return;
+    var vengoDe = estado.articulo;
+    cambiarModo("receta", true);
+    abrir(cod, true);
+    estado.desdeArticulo = vengoDe;
+    pintarFicha();
   }
 
   function bajarA(cod){
@@ -1255,7 +1451,145 @@
     window.scrollTo({ top:0, behavior:"smooth" });
   }
 
+  /* ------------- la vista inversa: en qué recetas va un artículo -------------
+     Se parte del artículo y se listan todas las recetas que lo llevan, con el
+     gramaje de cada una. Las cantidades van siempre para UNA receta: aquí no
+     aplica el multiplicador, porque lo que se compara es cuánto lleva cada
+     preparación, no cuántas se van a producir. */
+  function pintarArticulo(){
+    var a = porArticulo[estado.articulo];
+    if (!a){ pintarBienvenida(); return; }
+
+    var usos = a.usos.slice();
+    if (estado.ordenUso === "nombre"){
+      usos.sort(function(p,q){ return p.r.n.localeCompare(q.r.n,"es"); });
+    } else {
+      // de mayor a menor gramaje: así se ve de una cuál receta es la que more
+      // consume. Las que no tienen equivalencia cargada se van al final.
+      usos.sort(function(p,q){
+        var gp = gramos(p.l,1), gq = gramos(q.l,1);
+        if (gp === null && gq === null) return p.r.n.localeCompare(q.r.n,"es");
+        if (gp === null) return 1;
+        if (gq === null) return -1;
+        if (gq !== gp) return gq - gp;
+        return p.r.n.localeCompare(q.r.n,"es");
+      });
+    }
+
+    var recetas = {};
+    usos.forEach(function(u){ recetas[u.r.c] = 1; });
+    var cuantas = Object.keys(recetas).length;
+
+    var totalG = 0, hayPendiente = false, totalCosto = 0;
+    usos.forEach(function(u){
+      var g = gramos(u.l,1);
+      if (g === null) hayPendiente = true; else totalG += g;
+      totalCosto += (u.l[3] || 0) * u.l[2];
+    });
+
+    // si el artículo es a su vez una receta del club, se puede abrir su ficha
+    var esReceta = porNombre[a.k];
+
+    var html = "";
+    html += '<button class="volver" type="button" id="volverLista">&larr; Volver a la búsqueda</button>';
+
+    html += '<section class="cabeza" data-g="FS">';
+    html += '<div class="cabeza-info">';
+    html += '<div class="eyebrow">Dónde se usa este artículo</div>';
+    html += '<h1>' + esc(a.n) + '</h1>';
+    html += '<div class="datos">';
+    html += dato("Recetas que lo llevan", cuantas);
+    html += dato("Líneas", usos.length);
+    html += dato("Total " + (totalG ? "" : "") + "gramos / ml", totalG ? fmt(totalG, totalG < 10 ? 1 : 0) : "—");
+    if (esReceta){
+      html += '<div class="dato marca"><i>También es receta</i><b>' + esc(esReceta.c) + '</b></div>';
+    }
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div class="barra">';
+    html += '<span class="rot">Ordenar por</span>';
+    html += '<div class="rapidos">';
+    html += '<button class="chip" type="button" data-orden="gramos" aria-pressed="' +
+            (estado.ordenUso === "gramos") + '">Mayor gramaje</button>';
+    html += '<button class="chip" type="button" data-orden="nombre" aria-pressed="' +
+            (estado.ordenUso === "nombre") + '">Nombre A-Z</button>';
+    html += '</div>';
+    html += '<label class="interr"><input type="checkbox" id="verCostos"' +
+            (estado.costos ? " checked" : "") + '> Ver costos</label>';
+    if (esReceta){
+      html += '<button class="imprimir" type="button" data-ver="' + esc(esReceta.c) +
+              '" title="Este artículo también tiene su propia ficha">Ver su ficha</button>';
+    }
+    html += '<button class="imprimir" type="button" id="imprimir" title="Imprimir este listado">' +
+            '<span class="solo-ancho">Imprimir</span><span class="solo-angosto">Guardar PDF</span></button>';
+    html += '</div>';
+    html += '<p class="aviso-imp" id="avisoImp" hidden>' +
+            'Si no se abrió el cuadro de impresión, presiona <b>Ctrl + P</b> ' +
+            '(o <b>⌘ + P</b> en Mac): el visor bloquea el botón, pero el atajo sí funciona.</p>';
+    html += '</section>';
+
+    html += '<section class="bloque usos">';
+    html += '<div class="titulo"><h2>Recetas que lo llevan</h2><em>' +
+            cuantas + (cuantas === 1 ? " receta" : " recetas") + '</em></div>';
+    html += '<div class="tablawrap"><table>';
+    html += '<thead><tr>';
+    html += '<th class="num">N.&ordm;</th><th>Código</th><th>Receta</th>';
+    html += '<th class="num">Cantidad</th><th class="c-um">Unidad</th><th class="num">Gramos / ml</th>';
+    if (estado.costos) html += '<th class="num">Costo línea</th>';
+    html += '</tr></thead><tbody>';
+
+    usos.forEach(function(u, idx){
+      var r = u.r, x = u.l;
+      var g = gramos(x, 1);
+      var et = GRUPOS.filter(function(gr){ return gr.id === r.g; })[0];
+      html += '<tr data-g="' + r.g + '">';
+      html += '<td class="num">' + (idx+1) + '</td>';
+      html += '<td><button class="cod" type="button" data-ver="' + esc(r.c) +
+              '" title="Abrir la ficha de ' + esc(r.n) + '">' + esc(r.c) + '</button></td>';
+      html += '<td class="rec"><span class="marcagrupo"></span>' + esc(r.n) +
+              '<small>' + esc(et ? et.et : "") + (r.mp ? "" : " · sin método") + '</small></td>';
+      html += '<td class="num">' + fmt(x[2], x[2] < 1 ? 3 : 2) +
+              '<span class="um um-inline">' + esc(x[1]) + '</span></td>';
+      html += '<td class="c-um"><span class="um">' + esc(x[1]) + '</span></td>';
+      html += '<td class="num">' + (g === null
+        ? '<span class="pend">sin equivalencia</span>'
+        : '<span class="gr">' + fmt(g, g < 10 ? 1 : 0) + '</span>') + '</td>';
+      if (estado.costos) html += '<td class="num">' + pesos((x[3] || 0) * x[2]) + '</td>';
+      html += '</tr>';
+    });
+
+    html += '</tbody>';
+    html += '<tfoot><tr>';
+    html += '<td colspan="5">Total del artículo en todas las recetas</td>';
+    html += '<td class="num">' + (totalG ? fmt(totalG, totalG < 10 ? 1 : 0) : "—") + '</td>';
+    if (estado.costos) html += '<td class="num">' + pesos(totalCosto) + '</td>';
+    html += '</tr></tfoot>';
+    html += '</table></div>';
+
+    html += '<p class="nota">El gramaje es el de <b>una</b> receta, tal como está cargada en el libro. ' +
+            'Toca el código para abrir la ficha técnica completa.</p>';
+    if (hayPendiente){
+      html += '<p class="sinequiv">Las líneas que dicen <b>sin equivalencia</b> se piden por unidad y ' +
+              'todavía no tienen un peso cargado en la tabla de equivalencias, así que ' +
+              '<b>no entran en el total</b>.</p>';
+    }
+    html += '</section>';
+
+    elFicha.className = "ficha" + (estado.costos ? " con-costos" : "");
+    elFicha.innerHTML = html;
+    conectarFicha();
+    try {
+      if (history.replaceState) history.replaceState(null, "", "#");
+    } catch(e){}
+  }
+
   function pintarFicha(){
+    if (estado.modo === "articulo"){
+      if (!estado.articulo){ pintarBienvenidaArticulo(); return; }
+      pintarArticulo();
+      return;
+    }
     if (!estado.actual){ pintarBienvenida(); return; }
     var r = porCodigo[estado.actual];
     var f = estado.raciones;
@@ -1264,6 +1598,15 @@
     var html = "";
 
     html += '<button class="volver" type="button" id="volverLista">&larr; Volver a la búsqueda</button>';
+
+    /* Si se llegó aquí desde el listado de un artículo, queda la miga de pan
+       para devolverse a ese listado sin volver a buscarlo. */
+    if (estado.desdeArticulo && porArticulo[estado.desdeArticulo]){
+      html += '<nav class="rastro">';
+      html += '<button type="button" id="volverArticulo">&larr; Recetas con ' +
+              esc(porArticulo[estado.desdeArticulo].n) + '</button>';
+      html += '<span>&rsaquo;</span><span>' + esc(r.n) + '</span></nav>';
+    }
 
     if (estado.rastro.length){
       html += '<nav class="rastro">';
@@ -1854,6 +2197,27 @@
       if (receta) compartirReceta(receta);
     });
 
+    // vuelta al listado de usos del artículo
+    var va = $("volverArticulo");
+    if (va) va.addEventListener("click", function(){
+      var k = estado.desdeArticulo;
+      cambiarModo("articulo", true);
+      abrirArticulo(k);
+    });
+
+    // el código de una receta dentro del listado de usos abre su ficha
+    Array.prototype.forEach.call(elFicha.querySelectorAll("[data-ver]"), function(b){
+      b.addEventListener("click", function(){ abrirDesdeArticulo(b.getAttribute("data-ver")); });
+    });
+
+    // orden del listado de usos
+    Array.prototype.forEach.call(elFicha.querySelectorAll("[data-orden]"), function(b){
+      b.addEventListener("click", function(){
+        estado.ordenUso = b.getAttribute("data-orden");
+        pintarFicha();
+      });
+    });
+
     Array.prototype.forEach.call(elFicha.querySelectorAll("[data-baja]"), function(b){
       b.addEventListener("click", function(){ bajarA(b.getAttribute("data-baja")); });
     });
@@ -1885,6 +2249,59 @@
       '</div>';
     $("verGuia").addEventListener("click", abrirAyuda);
   }
+
+  function pintarBienvenidaArticulo(){
+    elFicha.className = "ficha";
+    elFicha.innerHTML =
+      '<div class="bienvenida">' +
+      '<h2>Busca un artículo y sale en qué recetas se usa</h2>' +
+      '<p>Es la consulta al revés: en vez de partir de la receta, se parte del insumo. ' +
+      'Escribe <b>mantequilla</b> y aparecen todas las recetas que la llevan, con el gramaje de cada una.</p>' +
+      '<ol>' +
+      '<li><b>Escribe el artículo</b> en la caja de arriba, o escógelo de la lista.</li>' +
+      '<li>Sale el listado <b>numerado</b>, con el código, el nombre de la receta y los gramos o mililitros.</li>' +
+      '<li><b>Toca el código</b> de cualquier receta y se abre su ficha técnica completa.</li>' +
+      '<li>Ordena por <b>mayor gramaje</b> para ver de una cuál preparación es la que más consume.</li>' +
+      '</ol>' +
+      '<button class="verguia" type="button" id="verGuia">Ver la guía completa</button>' +
+      '</div>';
+    $("verGuia").addEventListener("click", abrirAyuda);
+  }
+
+  /* ---------------- cambio entre las dos maneras de buscar ---------------- */
+  function cambiarModo(modo, silencioso){
+    if (estado.modo === modo && !silencioso) return;
+    estado.modo = modo;
+    var porArt = (modo === "articulo");
+
+    $("modoReceta").setAttribute("aria-pressed", String(!porArt));
+    $("modoArticulo").setAttribute("aria-pressed", String(porArt));
+    $("soloReceta").hidden = porArt;
+    $("conteoRot").textContent = porArt ? "Artículos" : "Recetas";
+    elTexto.placeholder = porArt
+      ? "Escribe el artículo… (mantequilla, queso, ron)"
+      : "Escribe el nombre de la receta…";
+    elTexto.setAttribute("aria-label", porArt
+      ? "Buscar artículo para ver en qué recetas se usa"
+      : "Buscar receta por nombre");
+
+    // lo escrito para una cosa no sirve para la otra
+    estado.texto = "";
+    elTexto.value = "";
+    $("limpiarTexto").hidden = true;
+    elPanel.hidden = true;
+    $("abrirPanel").setAttribute("aria-expanded","false");
+
+    if (!silencioso){
+      $("rail").classList.remove("oculto");
+      pintarLista();
+      pintarFicha();
+      elTexto.focus();
+    }
+  }
+
+  $("modoReceta").addEventListener("click", function(){ cambiarModo("receta"); });
+  $("modoArticulo").addEventListener("click", function(){ cambiarModo("articulo"); });
 
   function parrafos(t){
     return String(t).split(/\n+/).filter(function(s){ return s.trim(); })
@@ -1978,7 +2395,10 @@
   window.addEventListener("hashchange", function(){
     var c = "";
     try { c = decodeURIComponent((location.hash || "").replace("#","")).trim().toUpperCase(); } catch(e){}
-    if (c && porCodigo[c] && c !== estado.actual) abrir(c, true);
+    if (c && porCodigo[c] && c !== estado.actual){
+      if (estado.modo !== "receta") cambiarModo("receta", true);
+      abrir(c, true);
+    }
   });
 })();
 </script>
