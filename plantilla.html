@@ -1500,7 +1500,7 @@
     html += '<div class="datos">';
     html += dato("Recetas que lo llevan", cuantas);
     html += dato("Líneas", usos.length);
-    html += dato("Total " + (totalG ? "" : "") + "gramos / ml", totalG ? fmt(totalG, totalG < 10 ? 1 : 0) : "—");
+    html += dato("Total gramos / ml", totalG ? fmt(totalG, totalG < 10 ? 1 : 0) : "—");
     if (esReceta){
       html += '<div class="dato marca"><i>También es receta</i><b>' + esc(esReceta.c) + '</b></div>';
     }
