@@ -445,6 +445,9 @@
   @media (max-width:660px){
     table{min-width:0}
     th.c-idx,td.idx,th.c-um,td.c-um,th.c-cu,td.c-cu{display:none}
+    /* En el listado de usos lo que importa es el gramaje: si se deja también
+       la cantidad cruda, la columna de gramos se va fuera de la pantalla. */
+    .usos th.c-cant,.usos td.c-cant{display:none}
     .um-inline{display:inline;margin-left:5px}
     thead th{padding:9px 10px}
     tbody td{padding:9px 10px;font-size:14.5px}
@@ -541,6 +544,7 @@
   :root.movil th.c-idx,:root.movil td.idx,
   :root.movil th.c-um,:root.movil td.c-um,
   :root.movil th.c-cu,:root.movil td.c-cu{display:none}
+  :root.movil .usos th.c-cant,:root.movil .usos td.c-cant{display:none}
   :root.movil .um-inline{display:inline;margin-left:5px}
   :root.movil .dosup{grid-template-columns:1fr}
   /* En celular no cabe todo el encabezado, pero la fecha del libro SÍ tiene que
@@ -1535,7 +1539,7 @@
     html += '<div class="tablawrap"><table>';
     html += '<thead><tr>';
     html += '<th class="num">N.&ordm;</th><th>Código</th><th>Receta</th>';
-    html += '<th class="num">Cantidad</th><th class="c-um">Unidad</th><th class="num">Gramos / ml</th>';
+    html += '<th class="num c-cant">Cantidad</th><th class="c-um">Unidad</th><th class="num">Gramos / ml</th>';
     if (estado.costos) html += '<th class="num">Costo línea</th>';
     html += '</tr></thead><tbody>';
 
@@ -1549,7 +1553,7 @@
               '" title="Abrir la ficha de ' + esc(r.n) + '">' + esc(r.c) + '</button></td>';
       html += '<td class="rec"><span class="marcagrupo"></span>' + esc(r.n) +
               '<small>' + esc(et ? et.et : "") + (r.mp ? "" : " · sin método") + '</small></td>';
-      html += '<td class="num">' + fmt(x[2], x[2] < 1 ? 3 : 2) +
+      html += '<td class="num c-cant">' + fmt(x[2], x[2] < 1 ? 3 : 2) +
               '<span class="um um-inline">' + esc(x[1]) + '</span></td>';
       html += '<td class="c-um"><span class="um">' + esc(x[1]) + '</span></td>';
       html += '<td class="num">' + (g === null
