@@ -1761,7 +1761,9 @@
         var part = costoDeIngredientes > 0 ? (cu * cant) / costoDeIngredientes * 100 : 0;
         html += '<td class="num c-part">' +
                 '<span class="part-barra" style="width:' + Math.min(100, part).toFixed(1) + '%"></span>' +
-                '<span class="part-num">' + fmt(part, part < 10 ? 1 : 0) + ' %</span></td>';
+                // siempre un decimal: con decimales mezclados la columna suma
+                // 100,9 % y un dato que no cuadra a la vista no sirve para analizar
+                '<span class="part-num">' + fmt(part, 1) + ' %</span></td>';
       }
       html += '</tr>';
     });
