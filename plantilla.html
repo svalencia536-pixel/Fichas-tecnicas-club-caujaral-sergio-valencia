@@ -3478,18 +3478,12 @@
       tx("Costo total protegido", M+100, y, 9, "bold", VERDE);
       tx(pesos(u.totalCosto + p10), W-M-1.5, y, 9, "bold", VERDE, "right");
       y += 6;
-      if (u.desmarcadas){
-        tx("No se incluyeron " + u.desmarcadas + " renglones que quedaron sin marcar.",
-           M+100, y, 6.5, "normal", TENUE);
-        y += 4;
-      }
     }
 
-    y += 6;
-    tx("La cantidad es consumo, no faltante: antes de comprar hay que restarle la existencia de bodega,",
-       M, y, 6.5, "normal", TENUE); y += 3.2;
-    tx("sumarle la merma de proceso y redondear a la presentación del proveedor.",
-       M, y, 6.5, "normal", TENUE);
+    /* Sin leyendas al pie, igual que en el reporte de precios: el papel
+       entrega las cifras y ya. Lo de descontar bodega y sumar merma sigue
+       explicado en «Cómo hacer el pedido», que es donde se aprende el proceso;
+       repetirlo en cada hoja lo convertía en letra menuda que nadie lee. */
     return doc;
   }
 
