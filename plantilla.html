@@ -1204,8 +1204,9 @@
         </div>
       </div>
       <p class="aviso-imp" id="avisoImpPed" hidden>
-        Si no se abrió el cuadro de impresión, presiona <b>Ctrl + P</b>
-        (o <b>⌘ + P</b> en Mac): el visor bloquea el botón, pero el atajo sí funciona.
+        Se mandó a la impresora <b>el mismo reporte que sale al compartir</b>, con el logo del club.
+        Si no se abrió el cuadro de impresión, el visor lo bloqueó: usa <b>Compartir PDF</b> y
+        imprime desde el archivo.
       </p>
     </div>
 
@@ -1331,8 +1332,9 @@
         </div>
       </div>
       <p class="aviso-imp" id="avisoImpSim" hidden>
-        Si no se abrió el cuadro de impresión, presiona <b>Ctrl + P</b>
-        (o <b>⌘ + P</b> en Mac). La tabla sale en hoja <b>horizontal</b>.
+        Se mandó a la impresora <b>el mismo reporte que sale al compartir</b>, en hoja horizontal
+        y con el logo del club. Si no se abrió el cuadro de impresión, el visor lo bloqueó:
+        usa <b>Compartir PDF</b> e imprime desde el archivo.
       </p>
     </div>
 
@@ -1582,6 +1584,7 @@
     articulo: null,    // clave del articulo consultado
     ordenUso: "gramos",// como se ordena el listado de usos: "gramos" o "nombre"
     desdeArticulo: null, // para poder devolverse al listado de usos
+    desdePrecios: false, // y al simulador, si se llegó desde allá
     raciones: 1,
     costos: false,
     rastro: []         // navegacion hacia subrecetas
@@ -1854,6 +1857,7 @@
     if (!porCodigo[cod]) return;
     if (reiniciarRastro) estado.rastro = [];
     estado.desdeArticulo = null;   // lo repone abrirDesdeArticulo si vino de allá
+    estado.desdePrecios = false;   // igual, lo repone el enlace del simulador
     estado.actual = cod;
     estado.raciones = 1;
     if (window.innerWidth <= 900 || document.documentElement.classList.contains("movil")){
@@ -2054,6 +2058,13 @@
 
     /* Si se llegó aquí desde el listado de un artículo, queda la miga de pan
        para devolverse a ese listado sin volver a buscarlo. */
+    // si se llegó desde el simulador de precios, queda la miga para volver
+    if (estado.desdePrecios){
+      html += '<nav class="rastro">';
+      html += '<button type="button" id="volverPrecios">&larr; Volver al simulador de precios</button>';
+      html += '<span>&rsaquo;</span><span>' + esc(r.n) + '</span></nav>';
+    }
+
     if (estado.desdeArticulo && porArticulo[estado.desdeArticulo]){
       html += '<nav class="rastro">';
       html += '<button type="button" id="volverArticulo">&larr; Recetas con ' +
@@ -2672,6 +2683,13 @@
       if (receta) compartirReceta(receta);
     });
 
+    // vuelta al simulador de precios
+    var vp = $("volverPrecios");
+    if (vp) vp.addEventListener("click", function(){
+      estado.desdePrecios = false;
+      if (typeof verPantalla === "function") verPantalla("precios");
+    });
+
     // vuelta al listado de usos del artículo
     var va = $("volverArticulo");
     if (va) va.addEventListener("click", function(){
@@ -2948,6 +2966,34 @@
       }
     }
     descargarPdf(blob, nombre, titulo, false);
+  }
+
+  /* Imprimir manda a la impresora EL MISMO reporte que sale al compartir: el
+     del logo, la franja azul y los pedidos separados. Antes imprimía la página
+     web, que es otra cosa y se veía distinta.
+
+     El truco es que el PDF lleve adentro la orden de imprimirse (autoPrint) y
+     cargarlo en un marco escondido: al abrirlo, el visor de PDF del navegador
+     levanta el cuadro de impresión solo. Si el visor del artefacto bloquea los
+     marcos, no pasa nada malo — se guarda el archivo y se avisa, que es la
+     misma salida de siempre. */
+  function imprimirPdf(doc, nombre, titulo, avisoId){
+    var av = $(avisoId); if (av) av.hidden = false;
+    try {
+      doc.autoPrint();
+      var blob = doc.output("blob");
+      var url = URL.createObjectURL(blob);
+      var marco = document.createElement("iframe");
+      marco.setAttribute("aria-hidden", "true");
+      marco.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+      marco.src = url;
+      document.body.appendChild(marco);
+      setTimeout(function(){
+        try { URL.revokeObjectURL(url); marco.remove(); } catch(e){}
+      }, 60000);
+    } catch(e){
+      descargarPdf(doc.output("blob"), nombre, titulo, false);
+    }
   }
 
   function hoyTexto(){
@@ -3424,9 +3470,9 @@
     compartirPdf(doc.output("blob"), "Pedido de produccion " + hoyTexto() + ".pdf", "Pedido de producción");
   });
   $("imprimirPedido").addEventListener("click", function(){
-    if (!ultimoPedido){ avisar("Primero agrega qué vas a producir"); return; }
-    var av = $("avisoImpPed"); if (av) av.hidden = false;
-    try { window.print(); } catch(e){}
+    var doc = pdfDelPedido(); if (!doc) return;
+    imprimirPdf(doc, "Pedido de produccion " + hoyTexto() + ".pdf",
+                "Pedido de producción", "avisoImpPed");
   });
 
   // ================= SIMULADOR DE PRECIOS =================
@@ -3549,7 +3595,9 @@
       h += '<td class="sel"><input type="checkbox" data-sim="' + esc(f.r.c) + '"' +
            (marcada?" checked":"") + ' aria-label="Analizar ' + esc(f.r.n) + '"></td>';
       h += '<td class="idx">' + (marcada ? n : "—") + '</td>';
-      h += '<td><span class="um">' + esc(f.r.c) + '</span></td>';
+      // el código de fórmula abre la ficha técnica, igual que en la vista por artículo
+      h += '<td><button class="cod" type="button" data-ficha="' + esc(f.r.c) +
+           '" title="Abrir la ficha de ' + esc(f.r.n) + '">' + esc(f.r.c) + '</button></td>';
       h += '<td>' + esc(f.r.n) + '</td>';
       h += '<td class="num">' + fmt(f.cant, f.cant<1?3:2) + '</td>';
       h += '<td class="num"><input class="precio-input acomp" type="text" inputmode="numeric" ' +
@@ -3605,6 +3653,19 @@
         var cod = c.getAttribute("data-sim");
         if (c.checked) delete EXC_SIM[cod]; else EXC_SIM[cod] = 1;
         simular();
+      });
+    });
+    /* El código de fórmula lleva a su ficha técnica. Se deja el rastro para
+       poder devolverse: si no, tocaría volver a buscar el insumo desde cero. */
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-ficha]"), function(b){
+      b.addEventListener("click", function(){
+        var cod = b.getAttribute("data-ficha");
+        if (!porCodigo[cod]) return;
+        verPantalla("recetario");
+        if (estado.modo !== "receta") cambiarModo("receta", true);
+        abrir(cod, true);
+        estado.desdePrecios = true;
+        pintarFicha();
       });
     });
     var todas = $("simTodas");
@@ -3730,9 +3791,9 @@
     compartirPdf(doc.output("blob"), "Impacto de precio " + hoyTexto() + ".pdf", "Impacto de precio");
   });
   $("imprimirSim").addEventListener("click", function(){
-    if (!artSel){ avisar("Primero escoge un insumo"); return; }
-    var av = $("avisoImpSim"); if (av) av.hidden = false;
-    try { window.print(); } catch(e){}
+    var doc = pdfDelSimulador(); if (!doc) return;
+    imprimirPdf(doc, "Impacto de precio " + hoyTexto() + ".pdf",
+                "Impacto de precio", "avisoImpSim");
   });
 
   pintarElegidas();
