@@ -698,6 +698,16 @@
   .subnav button[aria-pressed="true"]{background:var(--surface);color:var(--accent);font-weight:600}
 
   .pantalla{display:block;padding:22px 26px 70px;max-width:1120px;min-width:0}
+  /* El simulador es una tabla de doce columnas: con el tope de 1120 px no cabía
+     y las dos últimas —los porcentajes de costo, que son el punto— quedaban
+     fuera de la vista. Esta pantalla usa el ancho completo. */
+  #vPrecios{max-width:none}
+  /* Los rótulos de esa tabla pueden partirse en dos renglones; mantenerlos en
+     una sola línea era lo que inflaba las columnas. */
+  #resSim thead th{white-space:normal;line-height:1.25}
+  #resSim .precio-input{width:96px}
+  #resSim .precio-input.acomp{width:92px}
+  #resSim tbody td,#resSim thead th{padding-left:8px;padding-right:8px}
   h1.tit{
     font-family:var(--display);font-size:clamp(21px,2.6vw,28px);font-weight:700;
     letter-spacing:-.02em;line-height:1.12;margin:0 0 5px;
