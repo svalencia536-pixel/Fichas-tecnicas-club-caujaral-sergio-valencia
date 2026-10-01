@@ -1472,7 +1472,6 @@
   /* La fecha del libro, escrita como la diría una persona. "2026-08-14 12:55"
      obliga a descifrarla; "datos de hoy, 12:55 p. m." se entiende de un vistazo,
      que es lo que sirve cuando se consulta de pie en la cocina. */
-  var DIAS = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
   var MESES = ["enero","febrero","marzo","abril","mayo","junio",
                "julio","agosto","septiembre","octubre","noviembre","diciembre"];
 
@@ -1487,16 +1486,12 @@
     var h12 = hora % 12; if (h12 === 0) h12 = 12;
     var reloj = h12 + ":" + min + " " + (tarde ? "p. m." : "a. m.");
 
-    // días completos de diferencia, comparando fechas y no horas
-    var hoy = new Date();
-    var a = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-    var b = new Date(f.getFullYear(), f.getMonth(), f.getDate());
-    var dias = Math.round((a - b) / 86400000);
-
-    if (dias === 0) return "datos de hoy, " + reloj;
-    if (dias === 1) return "datos de ayer, " + reloj;
-    if (dias > 1 && dias < 7) return "datos del " + DIAS[f.getDay()] + ", " + reloj;
-    return "datos del " + f.getDate() + " de " + MESES[f.getMonth()] + ", " + reloj;
+    /* Siempre la fecha completa, aunque el libro se haya guardado hace un
+       minuto. "datos de hoy" obliga a saber qué día es hoy para entenderlo, y
+       sobre todo no sirve de constancia: si alguien imprime o comparte la
+       pantalla, "hoy" deja de significar algo al día siguiente. */
+    return "datos del " + f.getDate() + " de " + MESES[f.getMonth()] +
+           " del " + f.getFullYear() + ", " + reloj;
   }
 
   // Filas fijas de la ficha impresa. 16 cubren el 97,5 % de las recetas;
