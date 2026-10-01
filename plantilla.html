@@ -3811,13 +3811,9 @@
       y += alto;
     });
 
-    var alPie = [];
-    if (s.ocultas) alPie.push("No se incluyeron " + s.ocultas + " subrecetas, porque no se venden.");
-    if (s.sinMarcar) alPie.push("Se dejaron por fuera " + s.sinMarcar + " recetas sin marcar.");
-    if (alPie.length){
-      y += 5;
-      alPie.forEach(function(t){ tx(t, M, y, 7, "normal", TENUE); y += 3.6; });
-    }
+    /* Nada al pie sobre lo que se dejó por fuera. Desmarcar recetas es una
+       decisión deliberada —se escoge qué grupo analizar—, así que anunciarlo
+       en el reporte se lee como un reclamo y no como información. */
     return doc;
   }
 
