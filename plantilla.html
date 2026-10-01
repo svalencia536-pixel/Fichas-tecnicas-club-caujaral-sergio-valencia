@@ -675,6 +675,185 @@
     .ejemplo-pies span:nth-child(2){display:none}
   }
 
+  /* ================= Pedido y Precios =================
+     Las dos herramientas de costos. Comparten la paleta y los componentes del
+     recetario; aquí solo va lo que no existía antes. */
+
+  .ctrl.seccion[aria-pressed="true"]{
+    background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;
+  }
+  @media (prefers-color-scheme:dark){.ctrl.seccion[aria-pressed="true"]{color:#11171B}}
+  :root[data-theme="dark"] .ctrl.seccion[aria-pressed="true"]{color:#11171B}
+  :root[data-theme="light"] .ctrl.seccion[aria-pressed="true"]{color:#fff}
+
+  .subnav{
+    display:flex;gap:6px;padding:12px 20px 0;background:var(--surface-2);
+    border-bottom:1px solid var(--line);flex-wrap:wrap;
+  }
+  .subnav button{
+    border:1px solid var(--line);border-bottom:0;background:var(--surface-2);color:var(--muted);
+    cursor:pointer;padding:8px 15px;border-radius:9px 9px 0 0;font-size:13.5px;
+    position:relative;top:1px;
+  }
+  .subnav button[aria-pressed="true"]{background:var(--surface);color:var(--accent);font-weight:600}
+
+  .pantalla{display:block;padding:22px 26px 70px;max-width:1120px;min-width:0}
+  h1.tit{
+    font-family:var(--display);font-size:clamp(21px,2.6vw,28px);font-weight:700;
+    letter-spacing:-.02em;line-height:1.12;margin:0 0 5px;
+  }
+  .intro{color:var(--muted);font-size:14.5px;max-width:72ch;margin:0 0 18px;line-height:1.55}
+  h2.sec{
+    font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;margin:0 0 9px;
+  }
+  .tarjeta{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:18px 20px;box-shadow:var(--shadow);margin-bottom:18px;
+  }
+
+  .buscador{position:relative;max-width:520px}
+  .buscador input{
+    width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);
+  }
+  .sugerencias{
+    position:absolute;z-index:40;top:calc(100% + 4px);left:0;right:0;
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    box-shadow:var(--shadow);max-height:340px;overflow-y:auto;padding:5px;
+  }
+  .sugerencias button{
+    display:block;width:100%;text-align:left;border:0;background:transparent;cursor:pointer;
+    padding:8px 10px;border-radius:7px;font-size:13.5px;line-height:1.3;
+  }
+  .sugerencias button:hover{background:var(--accent-soft)}
+  .sugerencias small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--faint);margin-top:1px}
+  .sugerencias .nada{padding:12px;color:var(--faint);font-size:13px}
+
+  .elegidas{display:flex;flex-direction:column;gap:7px;margin-top:14px}
+  .elegida{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:9px;padding:8px 11px;background:var(--surface-2);
+  }
+  .elegida .nom{flex:1;min-width:180px;font-size:14px;line-height:1.25}
+  .elegida .cod{font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .elegida input{
+    width:76px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;
+    background:var(--surface);text-align:center;font-family:var(--mono);
+    font-variant-numeric:tabular-nums;
+  }
+  .elegida .rot{font-size:11px;color:var(--faint);letter-spacing:.05em;text-transform:uppercase}
+  .elegida .quitar{
+    border:0;background:transparent;color:var(--faint);cursor:pointer;
+    width:28px;height:28px;border-radius:7px;font-size:18px;line-height:1;
+  }
+  .elegida .quitar:hover{background:var(--g-FC-suave);color:var(--g-FC)}
+  .vacio{
+    border:1px dashed var(--line);border-radius:10px;padding:22px;text-align:center;
+    color:var(--faint);font-size:13.5px;margin-top:14px;
+  }
+
+  .opciones{
+    display:flex;gap:16px;align-items:center;flex-wrap:wrap;
+    margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft);
+  }
+  .inter{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);cursor:pointer;user-select:none}
+  .inter input{accent-color:var(--accent);width:16px;height:16px}
+  .acciones{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap}
+  .bot{
+    border:1px solid var(--line);background:var(--surface-2);color:var(--ink);
+    padding:8px 14px;border-radius:9px;cursor:pointer;font-size:13.5px;
+  }
+  .bot:hover{border-color:var(--accent)}
+  .bot.principal{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  @media (prefers-color-scheme:dark){.bot.principal{color:#11171B}}
+  :root[data-theme="dark"] .bot.principal{color:#11171B}
+  :root[data-theme="light"] .bot.principal{color:#fff}
+  .bot.principal:hover{filter:brightness(1.08)}
+
+  .resumen{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .resumen .dato{border-top:2px solid var(--accent)}
+  .dato.verde{border-top-color:var(--ok)} .dato.verde b{color:var(--ok)}
+  .dato.roja{border-top-color:var(--g-FC)} .dato.roja b{color:var(--g-FC)}
+  .dato.ambar{border-top-color:var(--g-FP)} .dato.ambar b{color:var(--g-FP)}
+
+  th.sel,td.sel{width:1%;padding-right:0;text-align:center}
+  th.sel input,td.sel input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+  tr.apagada td:not(.sel){opacity:.38}
+  tr.apagada td.sel{opacity:1}
+
+  .mover{
+    border:1px solid var(--line);background:transparent;color:var(--muted);
+    cursor:pointer;font-size:11px;padding:2px 7px;border-radius:5px;white-space:nowrap;
+  }
+  .mover:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .marcamano{
+    font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+    border:1px solid var(--g-FP);color:var(--g-FP);border-radius:3px;padding:0 4px;
+    margin-left:5px;vertical-align:1px;
+  }
+  .abiertas{
+    margin-top:11px;padding:11px 13px;border:1px dashed var(--line);border-radius:10px;
+    background:var(--surface-2);
+  }
+  .abiertas .rot{
+    font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);
+    display:inline-block;margin-right:6px;
+  }
+  .abiertas .mover{margin:3px 4px 3px 0}
+  .abiertas .mover b{color:var(--accent);font-weight:600}
+
+  h2.sec.es-prod,h2.sec.es-pv{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  h2.sec.es-prod::before,h2.sec.es-pv::before{content:"";width:9px;height:9px;border-radius:2px;flex:none}
+  h2.sec.es-prod{color:var(--g-FP)}
+  h2.sec.es-prod::before{background:var(--g-FP)}
+  h2.sec.es-pv{color:var(--accent)}
+  h2.sec.es-pv::before{background:var(--accent)}
+  tr.granTotal td{background:var(--ok-soft);color:var(--ok);border-top:1px solid var(--ok)}
+  td.de small{display:block;font-size:10.5px;color:var(--faint);line-height:1.35;margin-top:2px}
+
+  .campos{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-top:14px}
+  .campo{display:flex;flex-direction:column;gap:4px}
+  .campo label{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+  .campo input{
+    padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);
+    font-family:var(--mono);font-variant-numeric:tabular-nums;
+  }
+  .campo input[type=number]{width:140px;text-align:right}
+  #val,#costoActual{text-align:right;width:150px}
+  .segmento{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .segmento button{
+    border:0;background:var(--surface-2);color:var(--muted);cursor:pointer;padding:9px 14px;font-size:13.5px;
+  }
+  .segmento button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:600}
+  @media (prefers-color-scheme:dark){.segmento button[aria-pressed="true"]{color:#11171B}}
+  :root[data-theme="dark"] .segmento button[aria-pressed="true"]{color:#11171B}
+  :root[data-theme="light"] .segmento button[aria-pressed="true"]{color:#fff}
+  .precio-input{
+    width:112px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;
+    background:var(--surface);text-align:right;font-family:var(--mono);font-size:13px;
+    font-variant-numeric:tabular-nums;
+  }
+  .precio-input::placeholder{color:var(--faint)}
+  .precio-input.acomp{border-color:var(--g-FP);background:var(--g-FP-suave);width:104px}
+  small.parte{
+    display:block;font-size:10px;color:var(--faint);font-weight:400;margin-top:1px;
+    font-family:var(--mono);
+  }
+  .sube{color:var(--g-FC);font-weight:600}
+  .baja{color:var(--ok);font-weight:600}
+  .igual{color:var(--faint)}
+
+  @media (max-width:760px){
+    .pantalla{padding:16px 13px 60px}
+    .subnav{padding:10px 10px 0}
+    .acciones{margin-left:0;width:100%}
+    .buscador{max-width:none}
+  }
+  :root.movil .pantalla{padding:16px 13px 60px}
+  :root.movil .acciones{margin-left:0;width:100%}
+  :root.movil .buscador{max-width:none}
+
   /* ---------- % de participación de cada insumo ----------
      Es una ayuda de análisis para saber dónde está el peso del costo de la
      receta, no parte de la ficha: por eso NO se imprime (la regla está abajo,
@@ -763,6 +942,46 @@
   .firmas{display:none}
 
   @page{ size:A4 portrait; margin:8mm }
+  /* La tabla del simulador tiene once columnas: en vertical no cabe. Se le da
+     una hoja con nombre propio, horizontal, activa solo en esa pantalla. */
+  @page horizontal{ size:A4 landscape; margin:9mm }
+  :root.pagina-horizontal body{ page:horizontal }
+
+  @media print{
+    /* --- pantallas de Pedido y Precios --- */
+    .subnav,.buscador,.opciones,.vacio,.abiertas,.intro,.campos,.segmento,
+    .sugerencias,.acciones{display:none!important}
+    .pantalla{padding:0;max-width:none}
+    .pantalla .tarjeta{border:0;box-shadow:none;padding:0;margin:0 0 6px;background:transparent}
+    .pantalla h1.tit{font-size:15pt;margin-bottom:6px}
+    .pantalla h2.sec{font-size:9pt;margin:9px 0 3px;break-after:avoid}
+    .pantalla .resumen{gap:4px;margin-bottom:8px}
+    .pantalla .tablawrap{overflow:visible!important;border:1px solid #bbb;border-radius:4px}
+    .pantalla table{width:100%!important;table-layout:fixed}
+    .pantalla thead{display:table-header-group}
+    .pantalla tbody td{word-break:break-word}
+    .elegidas{gap:3px;margin-top:0}
+    .elegida{
+      border:0;border-left:2px solid #0A71B7;border-radius:0;background:#F4F9FF;
+      padding:3px 8px;gap:6px;break-inside:avoid;
+    }
+    .elegida .nom{font-size:8.5pt;flex:1}
+    .elegida input{
+      border:0;background:transparent;width:auto;min-width:0;padding:0 2px;
+      font-size:8.5pt;font-weight:700;text-align:right;
+    }
+    .elegida .quitar{display:none}
+    th.sel,td.sel,.mover,.bot{display:none!important}
+    tr.apagada{display:none!important}
+    tr.granTotal td{background:#E8F5E2!important;color:#179160!important}
+    /* en el simulador los precios escritos a mano salen como texto, sin caja */
+    :root.pagina-horizontal .precio-input{
+      border:0!important;background:transparent!important;padding:0!important;
+      width:auto!important;font-size:7.5pt!important;text-align:right;
+    }
+    :root.pagina-horizontal .pantalla table{table-layout:auto}
+  }
+
   @media print{
     /* el alto de pantalla no aplica en papel: si se deja, empuja una segunda hoja */
     html,body{height:auto!important;min-height:0!important}
@@ -864,6 +1083,10 @@
       <span>Club Lagos de Caujaral</span>
     </div>
     <div class="controles">
+      <!-- Las dos herramientas de costos. Funcionan como interruptor: entrar
+           y volver a tocar el mismo botón devuelve al recetario. -->
+      <button class="ctrl seccion" type="button" id="navPedido" aria-pressed="false">Pedido</button>
+      <button class="ctrl seccion" type="button" id="navPrecios" aria-pressed="false">Precios</button>
       <button class="ctrl" type="button" id="btnVista" aria-pressed="false">
         <span id="btnVistaTxt">Ver en celular</span>
       </button>
@@ -875,7 +1098,13 @@
     <div class="topmeta" id="topmeta"></div>
   </header>
 
-  <div class="cols">
+  <!-- Sub-pestañas del botón Pedido -->
+  <div class="subnav" id="subPedido" hidden>
+    <button type="button" id="subArmar" aria-pressed="true">Armar pedido</button>
+    <button type="button" id="subComo" aria-pressed="false">Cómo hacer el pedido</button>
+  </div>
+
+  <div class="cols" id="vistaRecetario">
     <aside class="rail" id="rail">
       <!-- Dos maneras de entrar a lo mismo. La de siempre es por la receta.
            La otra va al revés: se parte del artículo —mantequilla, por decir algo—
@@ -918,6 +1147,180 @@
 
     <main class="ficha" id="ficha"></main>
   </div>
+
+  <!-- ============ ARMAR PEDIDO ============ -->
+  <main class="pantalla" id="vArmar" hidden>
+    <h1 class="tit">Lista de materia prima</h1>
+    <p class="intro">
+      Agrega las recetas y subrecetas que vas a producir con la cantidad de cada una.
+      Abajo los pedidos salen <b>separados por área</b>, nunca revueltos: lo que se le
+      <b>pide a la zona de producción</b> (todo el grupo FS y los bollos, que se despachan
+      ya hechos) y la <b>materia prima del punto de venta</b>. Si marcas
+      <em>abrir los productos de producción</em>, esos productos se convierten en un
+      <b>pedido de producción</b> propio y tampoco se mezcla con el del punto de venta.
+    </p>
+
+    <div class="tarjeta">
+      <h2 class="sec">1 · Qué vas a producir</h2>
+      <div class="buscador">
+        <input id="bus" type="search" autocomplete="off"
+               placeholder="Escribe una receta o subreceta y tócala para agregarla…"
+               aria-label="Buscar receta para agregar al pedido">
+        <div class="sugerencias" id="sug" hidden></div>
+      </div>
+      <div class="elegidas" id="elegidas"></div>
+      <div class="vacio" id="vacio">Todavía no has agregado nada. Busca arriba y ve sumando.</div>
+
+      <div class="opciones">
+        <label class="inter" title="Abre las FS y los bollos en su materia prima, en un pedido aparte para producción">
+          <input type="checkbox" id="abrirProd">
+          Abrir los productos de producción en su materia prima
+        </label>
+        <label class="inter">
+          <input type="checkbox" id="verCostoPed" checked>
+          Ver costos
+        </label>
+        <div class="acciones">
+          <button class="bot" type="button" id="limpiarPed">Vaciar</button>
+          <button class="bot" type="button" id="imprimirPedido">Imprimir</button>
+          <button class="bot principal" type="button" id="pdfPedido">Compartir PDF</button>
+        </div>
+      </div>
+      <p class="aviso-imp" id="avisoImpPed" hidden>
+        Si no se abrió el cuadro de impresión, presiona <b>Ctrl + P</b>
+        (o <b>⌘ + P</b> en Mac): el visor bloquea el botón, pero el atajo sí funciona.
+      </p>
+    </div>
+
+    <div id="resultadoPed"></div>
+  </main>
+
+  <!-- ============ CÓMO HACER EL PEDIDO ============ -->
+  <main class="pantalla" id="vComo" hidden>
+    <h1 class="tit">Cómo hacer el pedido</h1>
+    <p class="intro">
+      El aplicativo te dice <b>cuánta materia prima se consume</b>. Convertir eso en un pedido
+      de compra tiene tres pasos más, y este es el orden que evita pedir de menos o de más.
+    </p>
+
+    <div class="tarjeta">
+      <ol class="pasos-guia">
+        <li>
+          <h3>Arma la producción, no el pedido</h3>
+          <p>
+            En <em>Armar pedido</em> agrega lo que de verdad vas a producir, con la cantidad de
+            cada receta. Si vas a hacer 40 porciones de un plato, pon 40 — no pongas
+            "lo de siempre".
+          </p>
+        </li>
+        <li>
+          <h3>Salen pedidos separados, no uno solo</h3>
+          <p>
+            <b>Pedido a la zona de producción</b>: las subrecetas del grupo <em>FS</em> y los
+            bollos. Eso no se compra — se despacha ya hecho, así que va tal cual, sin abrirse.
+          </p>
+          <p>
+            <b>Pedido de materia prima del punto de venta</b>: todo lo demás, abierto hasta el
+            insumo que de verdad se compra. Si un plato lleva porción de papa francesa, en esta
+            lista no aparece la porción: aparece la papa.
+          </p>
+          <p>
+            Si marcas <em>abrir los productos de producción</em>, aparece además un
+            <b>pedido de producción</b> con la materia prima que necesita esa área. Sale
+            <b>aparte</b>: son dos pedidos que se le entregan a dos personas distintas.
+          </p>
+          <p class="guia-ojo">
+            Si alguno quedó en la lista equivocada, el botón <em>→ producto</em> o
+            <em>→ abrir</em> del renglón lo cambia, y queda cambiado para las próximas veces.
+          </p>
+        </li>
+        <li>
+          <h3>Descuenta lo que ya tienes</h3>
+          <p>
+            La lista es <b>consumo</b>, no faltante. Antes de pedir, réstale la existencia de
+            bodega: lo que sale aquí menos lo que hay es lo que de verdad se compra.
+            Desmarca los renglones que ya tengas y salen del PDF.
+          </p>
+        </li>
+        <li>
+          <h3>Sube la merma y el empaque</h3>
+          <p>
+            El gramaje de la ficha es producto limpio. Para comprar hay que sumarle la merma del
+            proceso y redondear a la presentación del proveedor: si te faltan 2.300 g de
+            mantequilla y viene en barra de 500 g, son 5 barras, no 4,6.
+          </p>
+        </li>
+        <li>
+          <h3>Exporta y envía</h3>
+          <p>
+            Con <em>Compartir PDF</em> sale la lista con fecha, qué producción la generó y el
+            acumulado por artículo. Ese es el soporte que acompaña la orden de compra.
+          </p>
+        </li>
+      </ol>
+    </div>
+  </main>
+
+  <!-- ============ PRECIOS ============ -->
+  <main class="pantalla" id="vPrecios" hidden>
+    <h1 class="tit">Simulador de impacto de precio</h1>
+    <p class="intro">
+      Escoge un insumo, dile cuánto sube, y mira qué recetas se mueven y cuánto.
+      El costo que se compara es el <b>protegido</b>, y el precio de venta se toma
+      <b>sin el 8 % de impuesto</b>.
+    </p>
+
+    <div class="tarjeta">
+      <h2 class="sec">1 · Qué insumo se mueve</h2>
+      <div class="buscador">
+        <input id="busArt" type="search" autocomplete="off"
+               placeholder="Escribe el insumo… (mantequilla, aceite, queso)"
+               aria-label="Buscar insumo para simular">
+        <div class="sugerencias" id="sugArt" hidden></div>
+      </div>
+
+      <div class="campos" id="camposSim" hidden>
+        <div class="campo">
+          <label>Cómo sube</label>
+          <div class="segmento">
+            <button type="button" id="modoPct" aria-pressed="true">Porcentaje</button>
+            <button type="button" id="modoVal" aria-pressed="false">Valor nuevo</button>
+          </div>
+        </div>
+        <div class="campo" id="cPct">
+          <label for="pct">Variación %</label>
+          <input id="pct" type="number" step="0.5" value="10">
+        </div>
+        <div class="campo" id="cVal" hidden>
+          <label for="val">Costo nuevo por unidad</label>
+          <input id="val" type="text" inputmode="numeric" value="$ 0" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label>Costo actual</label>
+          <input id="costoActual" type="text" readonly tabindex="-1">
+        </div>
+        <label class="inter" style="padding-bottom:9px">
+          <input type="checkbox" id="soloVende" checked>
+          Solo lo que se vende
+        </label>
+        <label class="inter" style="padding-bottom:9px"
+               title="Si el costo que escribes ya es el final, quítale la marca">
+          <input type="checkbox" id="protegerAcomp" checked>
+          Proteger el acompañamiento
+        </label>
+        <div class="acciones" style="padding-bottom:5px">
+          <button class="bot" type="button" id="imprimirSim">Imprimir</button>
+          <button class="bot principal" type="button" id="pdfSim">Compartir PDF</button>
+        </div>
+      </div>
+      <p class="aviso-imp" id="avisoImpSim" hidden>
+        Si no se abrió el cuadro de impresión, presiona <b>Ctrl + P</b>
+        (o <b>⌘ + P</b> en Mac). La tabla sale en hoja <b>horizontal</b>.
+      </p>
+    </div>
+
+    <div id="resSim"></div>
+  </main>
 </div>
 
 <div class="aviso-flotante" id="avisoFlotante" hidden></div>
@@ -2437,6 +2840,891 @@
   document.addEventListener("keydown", function(e){
     if (e.key === "Escape" && !elVelo.hidden) cerrarAyuda();
   });
+
+  /* ==================================================================
+     PEDIDO Y PRECIOS — las dos herramientas de costos.
+     Viven en el mismo archivo que el recetario y reutilizan sus datos,
+     su paleta y sus funciones; no hay nada duplicado.
+     ================================================================== */
+
+  /* --- navegación entre el recetario y las dos pantallas --- */
+  var vista = "recetario", subPed = "armar";
+
+  function verPantalla(cual){
+    vista = cual;
+    var esPedido = (cual === "pedido"), esPrecios = (cual === "precios");
+    $("navPedido").setAttribute("aria-pressed", String(esPedido));
+    $("navPrecios").setAttribute("aria-pressed", String(esPrecios));
+    $("subPedido").hidden = !esPedido;
+    $("vistaRecetario").hidden = (cual !== "recetario");
+    $("vPrecios").hidden = !esPrecios;
+    $("vArmar").hidden = !(esPedido && subPed === "armar");
+    $("vComo").hidden  = !(esPedido && subPed === "como");
+    // el simulador se imprime en horizontal; todo lo demás, vertical
+    document.documentElement.classList.toggle("pagina-horizontal", esPrecios);
+    window.scrollTo(0,0);
+  }
+  function verSubPedido(cual){
+    subPed = cual;
+    $("subArmar").setAttribute("aria-pressed", String(cual === "armar"));
+    $("subComo").setAttribute("aria-pressed", String(cual === "como"));
+    verPantalla("pedido");
+  }
+  $("navPedido").addEventListener("click", function(){
+    verPantalla(vista === "pedido" ? "recetario" : "pedido");
+  });
+  $("navPrecios").addEventListener("click", function(){
+    verPantalla(vista === "precios" ? "recetario" : "precios");
+  });
+  $("subArmar").addEventListener("click", function(){ verSubPedido("armar"); });
+  $("subComo").addEventListener("click", function(){ verSubPedido("como"); });
+
+  /* --- casillas donde se escribe plata --- */
+  function soloNumero(t){
+    var d = String(t == null ? "" : t).replace(/[^\d]/g, "");
+    return d ? Number(d) : null;
+  }
+  function comoPesos(el){
+    var n = soloNumero(el.value);
+    el.value = (n === null) ? "" : pesos(n);
+    try { el.setSelectionRange(el.value.length, el.value.length); } catch(e){}
+    return n;
+  }
+
+  /* --- buscador con sugerencias, compartido por las dos pantallas --- */
+  function sugerir(caja, panel, lista, alElegir){
+    var t = norm(caja.value);
+    if (!t){ panel.hidden = true; return; }
+    var partes = t.split(" ");
+    var res = lista.filter(function(o){
+      return partes.every(function(p){ return o.busca.indexOf(p) >= 0; });
+    }).slice(0,40);
+    if (!res.length){
+      panel.innerHTML = '<div class="nada">Nada coincide. Prueba con una palabra suelta.</div>';
+      panel.hidden = false; return;
+    }
+    panel.innerHTML = "";
+    res.forEach(function(o){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.innerHTML = esc(o.et) + '<small>' + esc(o.sub) + '</small>';
+      b.addEventListener("click", function(){ alElegir(o); caja.value = ""; panel.hidden = true; });
+      panel.appendChild(b);
+    });
+    panel.hidden = false;
+  }
+  document.addEventListener("click", function(e){
+    if (!$("sug").hidden && !e.target.closest(".buscador")) $("sug").hidden = true;
+    if (!$("sugArt").hidden && !e.target.closest(".buscador")) $("sugArt").hidden = true;
+  });
+
+  /* --- compartir un PDF: en celular se comparte, en PC se guarda --- */
+  function compartirPdf(blob, nombre, titulo){
+    if (navigator.share){
+      var archivo = null;
+      try { archivo = new File([blob], nombre, { type:"application/pdf" }); } catch(e){}
+      var puede = true;
+      if (archivo && navigator.canShare){
+        try { puede = navigator.canShare({ files:[archivo] }); } catch(e){ puede = true; }
+      }
+      if (archivo && puede){
+        navigator.share({ files:[archivo], title:titulo, text:titulo })
+          .then(function(){ avisar("Compartido"); })
+          .catch(function(err){
+            if (err && err.name !== "AbortError") descargarPdf(blob, nombre, titulo, true);
+          });
+        return;
+      }
+    }
+    descargarPdf(blob, nombre, titulo, false);
+  }
+
+  function hoyTexto(){
+    var f = new Date(), p = function(n){ return (n<10?"0":"") + n; };
+    return f.getFullYear() + "-" + p(f.getMonth()+1) + "-" + p(f.getDate());
+  }
+
+  // ================= ARMAR PEDIDO =================
+  var pedido = [];
+  var EXCLUIDOS = {};
+
+  /* Tres destinos, nunca revueltos: los productos que despacha producción,
+     la materia prima que NECESITA producción, y la del punto de venta. */
+  var MANUAL = {};
+  try { MANUAL = JSON.parse(localStorage.getItem("fichas.clasifica") || "{}"); } catch(e){ MANUAL = {}; }
+  function guardarManual(){
+    try { localStorage.setItem("fichas.clasifica", JSON.stringify(MANUAL)); } catch(e){}
+  }
+  /* Regla: todo FS es producto de producción, y de FP solo los bollos. Se pide
+     que el código sea FP *y* que el nombre arranque en BOLLO: buscar "BOLLO"
+     suelto se llevaría platos como RC DADOS DE POLLO CON BOLLO LIMPIO. */
+  function esProducto(sub, clave){
+    if (MANUAL[clave] === "producto") return true;
+    if (MANUAL[clave] === "materia") return false;
+    if (!sub) return false;
+    var p = String(sub.c).slice(0,2).toUpperCase();
+    if (p === "FS") return true;
+    if (p === "FP" && norm(sub.n).indexOf("BOLLO") === 0) return true;
+    return false;
+  }
+  function gramosRendimiento(r){
+    if (!r.rd || r.rd <= 0) return null;
+    var u = String(r.um||"").toUpperCase().trim();
+    if (u === "KL" || u === "LT") return r.rd * 1000;
+    if (u === "GR" || u === "ML" || u === "G") return r.rd;
+    return null;
+  }
+
+  function sumarPedido(r, factor, cubos, abrirProd, nivel, origen, problemas, vistos, abiertas, viaProd){
+    r.i.forEach(function(x){
+      var art = x[0], um = x[1], cant = x[2] * factor, cu = x[3];
+      var g = (x.length > 4 && x[4] !== null) ? x[4] * factor : null;
+      var clave = norm(art);
+      var sub = porNombre[clave];
+      var propia = sub && sub.c !== r.c;
+      var producto = propia && esProducto(sub, clave);
+
+      if (propia && nivel < 6 && vistos.indexOf(sub.c) < 0 && (!producto || abrirProd)){
+        var f2 = null, gr = gramosRendimiento(sub);
+        if (g !== null && gr) f2 = g / gr;
+        else if (sub.rd > 0 && String(sub.um||"").toUpperCase().trim() === String(um||"").toUpperCase().trim()) f2 = cant / sub.rd;
+        if (f2 !== null && isFinite(f2) && f2 > 0){
+          if (!abiertas[clave]) abiertas[clave] = { n:art, cod:sub.c, k:clave };
+          sumarPedido(sub, f2, cubos, abrirProd, nivel+1, origen, problemas,
+                      vistos.concat([sub.c]), abiertas, viaProd || producto);
+          return;
+        }
+        if (problemas.indexOf(art) < 0) problemas.push(art);
+      }
+
+      var destino = producto ? cubos.prod : (viaProd ? cubos.matProd : cubos.matPV);
+      var a = destino[clave] || (destino[clave] = {
+        n:art, k:clave, um:um, cant:0, g:0, sinG:false, costo:0, de:{},
+        cod: sub ? sub.c : "", esReceta: !!propia, manual: !!MANUAL[clave]
+      });
+      a.cant += cant;
+      if (g === null) a.sinG = true; else a.g += g;
+      a.costo += cu * cant;
+      a.de[origen] = 1;
+    });
+  }
+
+  var listaRecetas = RECETAS.map(function(r){
+    return { busca: r.k + " " + r.c, et: r.n, sub: r.c + " · " + r.i.length + " ingredientes", c: r.c };
+  });
+  $("bus").addEventListener("input", function(){
+    sugerir(this, $("sug"), listaRecetas, function(o){ agregarAlPedido(o.c); });
+  });
+
+  function agregarAlPedido(cod){
+    var ya = null;
+    pedido.forEach(function(p){ if (p.c === cod) ya = p; });
+    if (ya){ ya.cant += 1; avisar("Ya estaba: subió a " + ya.cant); }
+    else pedido.push({ c: cod, cant: 1 });
+    pintarElegidas(); calcularPedido();
+  }
+
+  function pintarElegidas(){
+    var cont = $("elegidas");
+    cont.innerHTML = "";
+    $("vacio").hidden = pedido.length > 0;
+    pedido.forEach(function(p, idx){
+      var r = porCodigo[p.c];
+      var d = document.createElement("div");
+      d.className = "elegida";
+      d.innerHTML =
+        '<span class="nom">' + esc(r.n) + ' <span class="cod">' + esc(r.c) + '</span></span>' +
+        '<span class="rot">Cantidad</span>' +
+        '<input type="number" min="0" step="1" value="' + p.cant + '" aria-label="Cantidad de ' + esc(r.n) + '">' +
+        '<span class="um">' + esc(r.um || "") + '</span>' +
+        '<button class="quitar" type="button" aria-label="Quitar">&times;</button>';
+      d.querySelector("input").addEventListener("input", function(){
+        var v = Number(this.value);
+        p.cant = (isFinite(v) && v >= 0) ? v : 0;
+        calcularPedido();
+      });
+      d.querySelector(".quitar").addEventListener("click", function(){
+        pedido.splice(idx,1); pintarElegidas(); calcularPedido();
+      });
+      cont.appendChild(d);
+    });
+  }
+
+  $("limpiarPed").addEventListener("click", function(){
+    pedido = []; EXCLUIDOS = {}; pintarElegidas(); calcularPedido();
+  });
+  $("abrirProd").addEventListener("change", calcularPedido);
+  $("verCostoPed").addEventListener("change", calcularPedido);
+
+  function ordenarPorCosto(obj){
+    var f = Object.keys(obj).map(function(k){ return obj[k]; });
+    f.sort(function(a,b){ return b.costo - a.costo; });
+    return f;
+  }
+  function sumaDe(filas, campo){
+    var t = 0; filas.forEach(function(f){ t += f[campo]; }); return t;
+  }
+
+  function tablaPedido(filas, conCosto, esProd, cubo){
+    var todas = filas.every(function(f){ return !EXCLUIDOS[f.k]; });
+    var h = '<div class="tablawrap"><table><thead><tr>';
+    h += '<th class="sel"><input type="checkbox" data-todas="' + cubo + '"' +
+         (todas ? " checked" : "") + ' aria-label="Seleccionar todo"></th>';
+    h += '<th class="num">N.º</th>';
+    if (esProd) h += '<th>Código</th>';
+    h += '<th>' + (esProd ? "Producto" : "Insumo") + '</th>';
+    h += '<th class="num">Cantidad</th><th>Unidad</th><th class="num">Gramos / ml</th>';
+    if (conCosto) h += '<th class="num">Costo</th>';
+    h += '<th class="opc">Para qué</th><th class="opc"></th></tr></thead><tbody>';
+
+    var n = 0;
+    filas.forEach(function(f){
+      var de = Object.keys(f.de);
+      var marcada = !EXCLUIDOS[f.k];
+      if (marcada) n++;
+      h += '<tr' + (marcada ? '' : ' class="apagada"') + '>';
+      h += '<td class="sel"><input type="checkbox" data-sel="' + esc(f.k) + '"' +
+           (marcada ? " checked" : "") + ' aria-label="Incluir ' + esc(f.n) + '"></td>';
+      h += '<td class="idx">' + (marcada ? n : "—") + '</td>';
+      if (esProd) h += '<td><span class="um">' + esc(f.cod) + '</span></td>';
+      h += '<td>' + esc(f.n) + (f.manual ? ' <span class="marcamano">a mano</span>' : '') + '</td>';
+      h += '<td class="num">' + fmt(f.cant, f.cant < 1 ? 3 : 2) + '</td>';
+      h += '<td><span class="um">' + esc(f.um) + '</span></td>';
+      h += '<td class="num">' + (f.sinG && !f.g
+            ? '<span class="pend">sin equivalencia</span>'
+            : '<span class="gr">' + fmt(f.g, f.g < 10 ? 1 : 0) + '</span>') + '</td>';
+      if (conCosto) h += '<td class="num">' + pesos(f.costo) + '</td>';
+      h += '<td class="de opc">' + esc(de.slice(0,2).join(", ")) +
+           (de.length > 2 ? '<small>y ' + (de.length-2) + ' más</small>' : '') + '</td>';
+      h += '<td class="opc">';
+      if (f.esReceta){
+        h += '<button class="mover" type="button" data-mover="' + esc(f.k) + '" data-a="' +
+             (esProd ? "materia" : "producto") + '">' + (esProd ? "→ abrir" : "→ producto") + '</button>';
+      }
+      h += '</td></tr>';
+    });
+    h += '</tbody>';
+    if (conCosto){
+      var marcs = filas.filter(function(f){ return !EXCLUIDOS[f.k]; });
+      var rot = (marcs.length === filas.length) ? "Subtotal"
+              : "Subtotal de los " + marcs.length + " marcados (de " + filas.length + ")";
+      h += '<tfoot><tr><td colspan="' + (esProd ? 7 : 6) + '">' + rot + '</td>' +
+           '<td class="num">' + pesos(sumaDe(marcs,"costo")) + '</td>' +
+           '<td class="opc"></td><td class="opc"></td></tr></tfoot>';
+    }
+    return h + '</table></div>';
+  }
+
+  var ultimoPedido = null;
+
+  function calcularPedido(){
+    var cont = $("resultadoPed");
+    var activos = pedido.filter(function(p){ return p.cant > 0; });
+    if (!activos.length){ cont.innerHTML = ""; ultimoPedido = null; return; }
+
+    var abrirProd = $("abrirProd").checked;
+    var conCosto = $("verCostoPed").checked;
+    var cubos = { prod:{}, matProd:{}, matPV:{} };
+    var problemas = [], abiertas = {};
+    activos.forEach(function(p){
+      var r = porCodigo[p.c];
+      sumarPedido(r, p.cant, cubos, abrirProd, 0, r.n, problemas, [r.c], abiertas, false);
+    });
+
+    var fProd = ordenarPorCosto(cubos.prod),
+        fMatProd = ordenarPorCosto(cubos.matProd),
+        fMatPV = ordenarPorCosto(cubos.matPV);
+    function marcs(f){ return f.filter(function(x){ return !EXCLUIDOS[x.k]; }); }
+    var mProd = marcs(fProd), mMatProd = marcs(fMatProd), mMatPV = marcs(fMatPV);
+    var cProd = sumaDe(mProd,"costo"), cMatProd = sumaDe(mMatProd,"costo"),
+        cMatPV = sumaDe(mMatPV,"costo");
+    var totalCosto = cProd + cMatProd + cMatPV;
+    var totalG = sumaDe(mProd,"g") + sumaDe(mMatProd,"g") + sumaDe(mMatPV,"g");
+    var prot = totalCosto * 0.1;
+    var hayPend = mProd.concat(mMatProd, mMatPV).some(function(f){ return f.sinG; });
+    var desmarcadas = (fProd.length-mProd.length) + (fMatProd.length-mMatProd.length) +
+                      (fMatPV.length-mMatPV.length);
+
+    var h = '<div class="resumen">';
+    h += dato("Preparaciones", activos.length);
+    if (mProd.length) h += '<div class="dato ambar"><i>Productos a producción</i><b>' + mProd.length + '</b></div>';
+    if (mMatProd.length) h += '<div class="dato ambar"><i>Insumos de producción</i><b>' + mMatProd.length + '</b></div>';
+    h += dato("Insumos del punto de venta", mMatPV.length);
+    if (desmarcadas) h += '<div class="dato roja"><i>Sin marcar</i><b>' + desmarcadas + '</b></div>';
+    h += dato("Total gramos / ml", fmt(totalG, 0));
+    if (conCosto){
+      h += dato("Costo insumos", pesos(totalCosto));
+      h += '<div class="dato verde"><i>Costo protegido</i><b>' + pesos(totalCosto + prot) + '</b></div>';
+    }
+    h += '</div>';
+
+    function bloque(filas, ms, titulo, pie, costo, esProd, clase, cubo){
+      if (!filas.length) return "";
+      return '<h2 class="sec ' + clase + '" style="margin-top:22px">' + titulo +
+             ' <span class="um">· ' + ms.length + (ms.length === 1 ? ' renglón' : ' renglones') +
+             (conCosto ? ' · ' + pesos(costo) : '') + '</span></h2>' +
+             '<p class="nota" style="margin:0 0 9px">' + pie + '</p>' +
+             tablaPedido(filas, conCosto, esProd, cubo);
+    }
+
+    h += bloque(fProd, mProd, "Pedido a la zona de producción",
+                "Se despachan ya hechos: no entran a la compra. Desmarca lo que no vayas a pedir esta vez.",
+                cProd, true, "es-prod", "prod");
+    h += bloque(fMatProd, mMatProd, "Pedido de producción",
+                "Materia prima que necesita la zona de producción para hacer los productos de arriba. " +
+                "Es un pedido aparte, de otra área.",
+                cMatProd, false, "es-prod", "matProd");
+
+    if (fMatPV.length){
+      h += bloque(fMatPV, mMatPV, "Pedido de materia prima del punto de venta",
+                  "Lo que compra directamente el punto de venta. Desmarca lo que ya tengas en bodega " +
+                  "y no entra al PDF.", cMatPV, false, "es-pv", "matPV");
+      var ab = Object.keys(abiertas);
+      if (ab.length){
+        h += '<div class="abiertas"><span class="rot">Se abrieron hasta materia prima:</span> ';
+        ab.forEach(function(k){
+          var a = abiertas[k];
+          h += '<button class="mover" type="button" data-mover="' + esc(a.k) + '" data-a="producto">' +
+               esc(a.n) + ' <b>→ producto</b></button> ';
+        });
+        h += '<p class="nota" style="margin:8px 0 0">Si alguna de estas la despacha producción ya hecha, ' +
+             'tócala y pasa al otro pedido.</p></div>';
+      }
+    }
+
+    if (conCosto){
+      h += '<div class="tarjeta" style="margin-top:18px"><div class="tablawrap"><table><tbody>';
+      if (cProd) h += '<tr><td>Productos a la zona de producción</td><td class="num">' + pesos(cProd) + '</td></tr>';
+      if (fMatProd.length) h += '<tr><td>Pedido de producción</td><td class="num">' + pesos(cMatProd) + '</td></tr>';
+      h += '<tr><td>Materia prima del punto de venta</td><td class="num">' + pesos(cMatPV) + '</td></tr>';
+      h += '<tr><td><b>Costo de insumos</b></td><td class="num"><b>' + pesos(totalCosto) + '</b></td></tr>';
+      h += '<tr><td>Protección 10 %</td><td class="num">' + pesos(prot) + '</td></tr>';
+      h += '<tr class="granTotal"><td><b>Costo total protegido</b></td><td class="num"><b>' +
+           pesos(totalCosto + prot) + '</b></td></tr>';
+      h += '</tbody></table></div></div>';
+    }
+
+    if (problemas.length){
+      h += '<div class="aviso-imp" style="display:block">No se pudo abrir ' + problemas.length +
+           (problemas.length === 1 ? ' preparación' : ' preparaciones') + ': ' +
+           esc(problemas.slice(0,6).join(", ")) + (problemas.length > 6 ? "…" : "") +
+           '. Les falta el rendimiento en la ficha, así que entran a la lista como están.</div>';
+    }
+    if (hayPend){
+      h += '<p class="nota">Los que dicen <b>sin equivalencia</b> se piden por unidad y todavía no ' +
+           'tienen peso cargado: la cantidad es correcta, pero no suman gramos al total.</p>';
+    }
+    cont.innerHTML = h;
+
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-mover]"), function(b){
+      b.addEventListener("click", function(){
+        MANUAL[b.getAttribute("data-mover")] = b.getAttribute("data-a");
+        guardarManual();
+        avisar(b.getAttribute("data-a") === "producto"
+          ? "Queda como producto de producción" : "Se abre en su materia prima");
+        calcularPedido();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-sel]"), function(c){
+      c.addEventListener("change", function(){
+        var k = c.getAttribute("data-sel");
+        if (c.checked) delete EXCLUIDOS[k]; else EXCLUIDOS[k] = 1;
+        calcularPedido();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-todas]"), function(c){
+      c.addEventListener("change", function(){
+        var q = c.getAttribute("data-todas");
+        var cuales = q === "prod" ? fProd : (q === "matProd" ? fMatProd : fMatPV);
+        cuales.forEach(function(f){
+          if (c.checked) delete EXCLUIDOS[f.k]; else EXCLUIDOS[f.k] = 1;
+        });
+        calcularPedido();
+      });
+    });
+
+    ultimoPedido = { prod:mProd, matProd:mMatProd, matPV:mMatPV, activos:activos,
+                     totalCosto:totalCosto, costoProd:cProd, costoMatProd:cMatProd,
+                     costoMatPV:cMatPV, conCosto:conCosto, desmarcadas:desmarcadas };
+  }
+
+  /* --- PDF del pedido --- */
+  var AZUL=[10,113,183], AZUL_S=[222,239,255], VERDE=[23,145,96], VERDE_S=[232,245,226],
+      AMBAR=[184,122,12], AMBAR_S=[255,248,229],
+      TINTA=[37,36,35], GRIS=[96,94,92], TENUE=[138,136,134];
+
+  function pdfDelPedido(){
+    var u = ultimoPedido;
+    if (!u || (!u.prod.length && !u.matProd.length && !u.matPV.length)){
+      avisar("Primero agrega qué vas a producir"); return null;
+    }
+    var jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    var doc = new jsPDF({ unit:"mm", format:"a4", orientation:"portrait" });
+    var W = 210, M = 12, y = 0;
+
+    function tx(t,x,yy,tam,est,col,al){
+      doc.setFont("helvetica", est||"normal"); doc.setFontSize(tam||9);
+      var c = col||TINTA; doc.setTextColor(c[0],c[1],c[2]);
+      if (al) doc.text(String(t), x, yy, {align:al}); else doc.text(String(t), x, yy);
+    }
+    function encabezado(){
+      doc.setFillColor(AZUL[0],AZUL[1],AZUL[2]); doc.rect(0,0,W,3.5,"F");
+      y = M + 1;
+      var lg = logoDeLaPagina();
+      if (lg){ try { doc.addImage(lg,"PNG",M,y,9.5,9.5); } catch(e){} }
+      tx("Recetario Caujaral", M+12.5, y+4, 11, "bold");
+      tx("CLUB LAGOS DE CAUJARAL", M+12.5, y+8, 6, "normal", AZUL);
+      var f = new Date();
+      tx(f.toLocaleDateString("es-CO",{day:"2-digit",month:"long",year:"numeric"}),
+         W-M, y+4, 7.5, "normal", GRIS, "right");
+      tx(f.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"}),
+         W-M, y+8, 7, "normal", TENUE, "right");
+      doc.setDrawColor(AZUL[0],AZUL[1],AZUL[2]); doc.setLineWidth(.5);
+      doc.line(M, y+11.5, W-M, y+11.5);
+      y += 18;
+    }
+
+    encabezado();
+    tx("Pedido de producción", M, y, 16, "bold"); y += 8;
+
+    var alto = 6 + u.activos.length * 4.2;
+    doc.setFillColor(AZUL_S[0],AZUL_S[1],AZUL_S[2]); doc.rect(M, y-4, W-2*M, alto, "F");
+    doc.setFillColor(AZUL[0],AZUL[1],AZUL[2]); doc.rect(M, y-4, 1.4, alto, "F");
+    tx("PRODUCCIÓN SOLICITADA", M+4, y, 6.5, "bold", AZUL); y += 5;
+    u.activos.forEach(function(p){
+      var r = porCodigo[p.c];
+      tx(String(p.cant) + "  " + (r.um||""), M+4, y, 8, "bold");
+      tx(r.n, M+20, y, 8);
+      tx(r.c, W-M-3, y, 7, "normal", TENUE, "right");
+      y += 4.2;
+    });
+    y += 6;
+
+    var cols = u.conCosto
+      ? { idx:M, nom:M+9, cant:M+112, und:M+115, gr:M+152, costo:W-M, maxNom:98 }
+      : { idx:M, nom:M+9, cant:M+134, und:M+137, gr:W-M, maxNom:120 };
+    var tono = AZUL, tonoS = AZUL_S;
+
+    function cabeceraTabla(){
+      doc.setFillColor(tonoS[0],tonoS[1],tonoS[2]); doc.rect(M, y-4, W-2*M, 6, "F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
+      doc.setTextColor(tono[0],tono[1],tono[2]);
+      doc.text("N.o", cols.idx, y);
+      doc.text("Artículo", cols.nom, y);
+      doc.text("Cantidad", cols.cant, y, {align:"right"});
+      doc.text("Und", cols.und, y);
+      doc.text("Gramos/ml", cols.gr, y, {align:"right"});
+      if (u.conCosto) doc.text("Costo", cols.costo, y, {align:"right"});
+      doc.setDrawColor(tono[0],tono[1],tono[2]); doc.setLineWidth(.3);
+      doc.line(M, y+2, W-M, y+2);
+      y += 6;
+    }
+    function titulo(t, sub, col, colS){
+      tono = col; tonoS = colS;
+      if (y > 248){ doc.addPage(); encabezado(); }
+      y += 2;
+      doc.setFillColor(tono[0],tono[1],tono[2]); doc.rect(M, y-3, 2.6, 2.6, "F");
+      tx(t, M+5, y, 11, "bold", tono); y += 4.5;
+      if (sub){ tx(sub, M+5, y, 7, "normal", TENUE); y += 4; }
+      y += 1; cabeceraTabla();
+    }
+    function cuerpo(filas, quePasa, subtotal){
+      filas.forEach(function(f, i){
+        if (y > 270){
+          doc.addPage(); encabezado();
+          doc.setFillColor(tono[0],tono[1],tono[2]); doc.rect(M, y-3, 2.6, 2.6, "F");
+          tx(quePasa + " (continuación)", M+5, y, 11, "bold", tono);
+          y += 8; cabeceraTabla();
+        }
+        if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y-3.4, W-2*M, 5, "F"); }
+        var nom = f.n;
+        while (doc.getTextWidth(nom) > cols.maxNom && nom.length > 4) nom = nom.slice(0,-2);
+        if (nom !== f.n) nom += "…";
+        tx(String(i+1), cols.idx, y, 7.5, "normal", TENUE);
+        tx(nom, cols.nom, y, 8);
+        tx(fmt(f.cant, f.cant<1?3:2), cols.cant, y, 8, "normal", TINTA, "right");
+        tx(f.um, cols.und, y, 6.5, "normal", TENUE);
+        tx(f.sinG && !f.g ? "—" : fmt(f.g, f.g<10?1:0), cols.gr, y, 8, "bold", tono, "right");
+        if (u.conCosto) tx(pesos(f.costo), cols.costo, y, 8, "normal", GRIS, "right");
+        doc.setDrawColor(235); doc.setLineWidth(.12); doc.line(M, y+1.6, W-M, y+1.6);
+        y += 5;
+      });
+      if (u.conCosto){
+        doc.setFillColor(tonoS[0],tonoS[1],tonoS[2]); doc.rect(M, y-2.2, W-2*M, 5.6, "F");
+        tx("Subtotal", cols.nom, y+1.5, 8, "bold", tono);
+        tx(pesos(subtotal), cols.costo, y+1.5, 8, "bold", tono, "right");
+        y += 4;
+      }
+      y += 9;
+    }
+
+    var bloques = [];
+    if (u.prod.length) bloques.push({t:"Pedido a la zona de producción",
+      s:"Se despachan ya hechos. No entran a la compra.", f:u.prod, c:u.costoProd, col:AMBAR, colS:AMBAR_S});
+    if (u.matProd.length) bloques.push({t:"Pedido de producción",
+      s:"Materia prima que necesita la zona de producción.", f:u.matProd, c:u.costoMatProd, col:AMBAR, colS:AMBAR_S});
+    if (u.matPV.length) bloques.push({t:"Pedido de materia prima del punto de venta",
+      s:"Lo que compra el punto de venta.", f:u.matPV, c:u.costoMatPV, col:AZUL, colS:AZUL_S});
+    bloques.forEach(function(b, i){
+      if (i > 0 && bloques.length > 1){ doc.addPage(); encabezado(); }
+      titulo(b.t, b.s, b.col, b.colS);
+      cuerpo(b.f, b.t, b.c);
+    });
+
+    if (u.conCosto){
+      if (y > 285 - 33){ doc.addPage(); encabezado(); }
+      doc.setDrawColor(GRIS[0],GRIS[1],GRIS[2]); doc.setLineWidth(.3);
+      doc.line(M+96, y, W-M, y); y += 5;
+      var p10 = u.totalCosto * 0.1;
+      var lineas = [];
+      if (u.prod.length) lineas.push(["Productos a la zona de producción", u.costoProd, AMBAR, false]);
+      if (u.matProd.length) lineas.push(["Pedido de producción", u.costoMatProd, AMBAR, false]);
+      lineas.push(["Materia prima del punto de venta", u.costoMatPV, AZUL, false]);
+      lineas.push(["Costo de insumos", u.totalCosto, TINTA, true]);
+      lineas.push(["Protección 10 %", p10, GRIS, false]);
+      lineas.forEach(function(p){
+        tx(p[0], M+100, y, 8.5, p[3]?"bold":"normal", p[2]);
+        tx(pesos(p[1]), W-M, y, 8.5, p[3]?"bold":"normal", p[2], "right");
+        y += 5;
+      });
+      doc.setFillColor(VERDE_S[0],VERDE_S[1],VERDE_S[2]);
+      doc.rect(M+96, y-3.6, W-M-(M+96), 6.4, "F");
+      doc.setFillColor(VERDE[0],VERDE[1],VERDE[2]); doc.rect(M+96, y-3.6, 1.2, 6.4, "F");
+      tx("Costo total protegido", M+100, y, 9, "bold", VERDE);
+      tx(pesos(u.totalCosto + p10), W-M-1.5, y, 9, "bold", VERDE, "right");
+      y += 6;
+      if (u.desmarcadas){
+        tx("No se incluyeron " + u.desmarcadas + " renglones que quedaron sin marcar.",
+           M+100, y, 6.5, "normal", TENUE);
+        y += 4;
+      }
+    }
+
+    y += 6;
+    tx("La cantidad es consumo, no faltante: antes de comprar hay que restarle la existencia de bodega,",
+       M, y, 6.5, "normal", TENUE); y += 3.2;
+    tx("sumarle la merma de proceso y redondear a la presentación del proveedor.",
+       M, y, 6.5, "normal", TENUE);
+    return doc;
+  }
+
+  $("pdfPedido").addEventListener("click", function(){
+    var doc = pdfDelPedido(); if (!doc) return;
+    compartirPdf(doc.output("blob"), "Pedido de produccion " + hoyTexto() + ".pdf", "Pedido de producción");
+  });
+  $("imprimirPedido").addEventListener("click", function(){
+    if (!ultimoPedido){ avisar("Primero agrega qué vas a producir"); return; }
+    var av = $("avisoImpPed"); if (av) av.hidden = false;
+    try { window.print(); } catch(e){}
+  });
+
+  // ================= SIMULADOR DE PRECIOS =================
+  var artSel = null, modoSim = "pct", ultimoSim = null, EXC_SIM = {};
+  var PRECIOS = {}, ACOMP = {};
+  try { PRECIOS = JSON.parse(localStorage.getItem("fichas.precios") || "{}"); } catch(e){ PRECIOS = {}; }
+  try { ACOMP = JSON.parse(localStorage.getItem("fichas.acomp") || "{}"); } catch(e){ ACOMP = {}; }
+  function guardarPrecios(){ try { localStorage.setItem("fichas.precios", JSON.stringify(PRECIOS)); } catch(e){} }
+  function guardarAcomp(){ try { localStorage.setItem("fichas.acomp", JSON.stringify(ACOMP)); } catch(e){} }
+
+  var listaArt = ARTICULOS.map(function(a){
+    var rec = {}; a.usos.forEach(function(u){ rec[u.r.c] = 1; });
+    var costo = 0;
+    a.usos.forEach(function(u){ if (u.l[3] > 0) costo = u.l[3]; });
+    a.costoUnit = costo;
+    return { busca:a.k, et:a.n, sub:Object.keys(rec).length + " recetas · " + pesos(costo), k:a.k };
+  });
+
+  $("busArt").addEventListener("input", function(){
+    sugerir(this, $("sugArt"), listaArt, function(o){
+      artSel = porArticulo[o.k];
+      EXC_SIM = {};
+      $("camposSim").hidden = false;
+      $("costoActual").value = pesos(artSel.costoUnit);
+      $("val").value = pesos(artSel.costoUnit * 1.1);
+      $("busArt").value = artSel.n;
+      simular();
+    });
+  });
+  $("modoPct").addEventListener("click", function(){
+    modoSim = "pct"; this.setAttribute("aria-pressed","true");
+    $("modoVal").setAttribute("aria-pressed","false");
+    $("cPct").hidden = false; $("cVal").hidden = true; simular();
+  });
+  $("modoVal").addEventListener("click", function(){
+    modoSim = "valor"; this.setAttribute("aria-pressed","true");
+    $("modoPct").setAttribute("aria-pressed","false");
+    $("cVal").hidden = false; $("cPct").hidden = true; simular();
+  });
+  $("pct").addEventListener("input", simular);
+  $("val").addEventListener("input", function(){ comoPesos(this); simular(); });
+  $("soloVende").addEventListener("change", simular);
+  $("protegerAcomp").addEventListener("change", simular);
+
+  function simular(){
+    var cont = $("resSim");
+    if (!artSel){ cont.innerHTML = ""; return; }
+    var protegerAcomp = $("protegerAcomp").checked;
+    var viejo = artSel.costoUnit;
+    var nuevo = (modoSim === "pct")
+      ? viejo * (1 + (Number($("pct").value) || 0) / 100)
+      : (soloNumero($("val").value) || 0);
+    var deltaUnit = nuevo - viejo;
+    var pctReal = viejo > 0 ? (nuevo / viejo - 1) * 100 : 0;
+
+    var porReceta = {};
+    artSel.usos.forEach(function(u){
+      var f = porReceta[u.r.c] || (porReceta[u.r.c] = { r:u.r, cant:0 });
+      f.cant += u.l[2];
+    });
+    Object.keys(porReceta).forEach(function(c){
+      var f = porReceta[c], t = 0;
+      f.r.i.forEach(function(x){ t += (x[3] || 0) * x[2]; });
+      f.receta  = t * 1.1;
+      f.recetaD = (t + deltaUnit * f.cant) * 1.1;
+      var ac = ACOMP[c] || 0;
+      f.acomp   = protegerAcomp ? ac * 1.1 : ac;
+      f.antes   = f.receta  + f.acomp;
+      f.despues = f.recetaD + f.acomp;
+      f.dif     = f.despues - f.antes;
+    });
+
+    var filas = Object.keys(porReceta).map(function(c){ return porReceta[c]; });
+    var ocultas = 0;
+    if ($("soloVende").checked){
+      var antes = filas.length;
+      filas = filas.filter(function(f){ return String(f.r.c).slice(0,2).toUpperCase() !== "FS"; });
+      ocultas = antes - filas.length;
+    }
+    filas.sort(function(a,b){ return Math.abs(b.dif) - Math.abs(a.dif); });
+
+    var marcadas = filas.filter(function(f){ return !EXC_SIM[f.r.c]; });
+    var impacto = 0;
+    marcadas.forEach(function(f){ impacto += f.dif; });
+    var sinMarcar = filas.length - marcadas.length;
+
+    var h = '<div class="resumen">';
+    h += dato("Costo actual", pesos(viejo));
+    h += '<div class="dato ' + (deltaUnit>0?"roja":deltaUnit<0?"verde":"") +
+         '"><i>Costo simulado</i><b>' + pesos(nuevo) + '</b></div>';
+    h += '<div class="dato ' + (pctReal>0?"roja":pctReal<0?"verde":"") +
+         '"><i>Variación</i><b>' + (pctReal>0?"+":"") + fmt(pctReal,1) + ' %</b></div>';
+    h += dato("Recetas afectadas", filas.length);
+    if (sinMarcar) h += '<div class="dato roja"><i>Sin marcar</i><b>' + sinMarcar + '</b></div>';
+    h += '<div class="dato ' + (impacto>0?"roja":impacto<0?"verde":"") +
+         '"><i>Impacto ' + (sinMarcar ? "de las marcadas" : "sumado") + '</i><b>' +
+         (impacto>0?"+":"") + pesos(impacto) + '</b></div>';
+    h += '</div>';
+
+    h += '<div class="tarjeta" style="padding:0;overflow:hidden"><div class="tablawrap"><table><thead><tr>';
+    h += '<th class="sel"><input type="checkbox" id="simTodas"' + (sinMarcar===0?" checked":"") +
+         ' aria-label="Marcar o desmarcar todas"></th>';
+    h += '<th class="num">N.º</th><th>Código</th><th>Receta</th><th class="num">Usa</th>';
+    h += '<th class="num">Acompañamiento</th><th class="num">Costo total hoy</th>';
+    h += '<th class="num">Con el alza</th><th class="num">Diferencia</th>';
+    h += '<th class="num">Precio de venta</th><th class="num">% costo hoy</th>';
+    h += '<th class="num">% costo nuevo</th></tr></thead><tbody>';
+
+    var n = 0;
+    filas.forEach(function(f){
+      var pv = PRECIOS[f.r.c];
+      var neto = (pv > 0) ? pv / 1.08 : null;
+      var pHoy = neto ? (f.antes/neto)*100 : null;
+      var pNue = neto ? (f.despues/neto)*100 : null;
+      var cls = f.dif > 0.5 ? "sube" : f.dif < -0.5 ? "baja" : "igual";
+      var marcada = !EXC_SIM[f.r.c];
+      if (marcada) n++;
+      var ac = ACOMP[f.r.c];
+      h += '<tr' + (marcada?'':' class="apagada"') + '>';
+      h += '<td class="sel"><input type="checkbox" data-sim="' + esc(f.r.c) + '"' +
+           (marcada?" checked":"") + ' aria-label="Analizar ' + esc(f.r.n) + '"></td>';
+      h += '<td class="idx">' + (marcada ? n : "—") + '</td>';
+      h += '<td><span class="um">' + esc(f.r.c) + '</span></td>';
+      h += '<td>' + esc(f.r.n) + '</td>';
+      h += '<td class="num">' + fmt(f.cant, f.cant<1?3:2) + '</td>';
+      h += '<td class="num"><input class="precio-input acomp" type="text" inputmode="numeric" ' +
+           'autocomplete="off" data-ac="' + esc(f.r.c) + '" value="' + (ac>0?pesos(ac):"") +
+           '" placeholder="$ —" aria-label="Acompañamiento de ' + esc(f.r.n) + '"></td>';
+      h += '<td class="num">' + pesos(f.antes) +
+           (f.acomp ? '<small class="parte">receta ' + pesos(f.receta) + '</small>' : '') + '</td>';
+      h += '<td class="num">' + pesos(f.despues) + '</td>';
+      h += '<td class="num ' + cls + '">' + (f.dif>0?"+":"") + pesos(f.dif) + '</td>';
+      h += '<td class="num"><input class="precio-input" type="text" inputmode="numeric" ' +
+           'autocomplete="off" data-pv="' + esc(f.r.c) + '" value="' + (pv>0?pesos(pv):"") +
+           '" placeholder="$ —" aria-label="Precio de venta de ' + esc(f.r.n) + '"></td>';
+      h += '<td class="num">' + (pHoy===null?'<span class="igual">—</span>':fmt(pHoy,1)+' %') + '</td>';
+      h += '<td class="num ' + (pNue!==null && pNue>(pHoy||0) ? "sube":"") + '">' +
+           (pNue===null?'<span class="igual">—</span>':fmt(pNue,1)+' %') + '</td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table></div></div>';
+
+    h += '<p class="nota">El <b>acompañamiento</b> lo escribes tú y se suma al costo del plato; ' +
+         (protegerAcomp
+           ? 'lleva la misma protección que la receta — si el valor que pones ya es el final, ' +
+             'quítale la marca a <em>Proteger el acompañamiento</em>.'
+           : 'entra tal como lo escribes, sin protección.') +
+         ' <b>Desmarca las recetas que no quieras analizar</b> y salen del impacto y del PDF. ' +
+         'Lo que escribas queda guardado.' +
+         (ocultas ? ' Se ocultaron ' + ocultas + ' subrecetas, porque no se venden.' : '') + '</p>';
+
+    cont.innerHTML = h;
+    ultimoSim = { filas:marcadas, viejo:viejo, nuevo:nuevo, pct:pctReal, impacto:impacto,
+                  ocultas:ocultas, sinMarcar:sinMarcar, protegerAcomp:protegerAcomp };
+
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-pv]"), function(inp){
+      inp.addEventListener("input", function(){ comoPesos(inp); });
+      inp.addEventListener("change", function(){
+        var v = soloNumero(inp.value);
+        if (v > 0) PRECIOS[inp.getAttribute("data-pv")] = v;
+        else delete PRECIOS[inp.getAttribute("data-pv")];
+        guardarPrecios(); simular();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-ac]"), function(inp){
+      inp.addEventListener("input", function(){ comoPesos(inp); });
+      inp.addEventListener("change", function(){
+        var v = soloNumero(inp.value);
+        if (v > 0) ACOMP[inp.getAttribute("data-ac")] = v;
+        else delete ACOMP[inp.getAttribute("data-ac")];
+        guardarAcomp(); simular();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-sim]"), function(c){
+      c.addEventListener("change", function(){
+        var cod = c.getAttribute("data-sim");
+        if (c.checked) delete EXC_SIM[cod]; else EXC_SIM[cod] = 1;
+        simular();
+      });
+    });
+    var todas = $("simTodas");
+    if (todas) todas.addEventListener("change", function(){
+      filas.forEach(function(f){
+        if (todas.checked) delete EXC_SIM[f.r.c]; else EXC_SIM[f.r.c] = 1;
+      });
+      simular();
+    });
+  }
+
+  /* --- PDF del simulador, en hoja horizontal --- */
+  function pdfDelSimulador(){
+    var s = ultimoSim;
+    if (!artSel || !s || !s.filas.length){ avisar("Primero escoge un insumo"); return null; }
+    var jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    var doc = new jsPDF({ unit:"mm", format:"a4", orientation:"landscape" });
+    var W = 297, M = 12, y = 0;
+
+    function tx(t,x,yy,tam,est,col,al){
+      doc.setFont("helvetica", est||"normal"); doc.setFontSize(tam||9);
+      var c = col||TINTA; doc.setTextColor(c[0],c[1],c[2]);
+      if (al) doc.text(String(t), x, yy, {align:al}); else doc.text(String(t), x, yy);
+    }
+    function encabezado(){
+      doc.setFillColor(AZUL[0],AZUL[1],AZUL[2]); doc.rect(0,0,W,3.5,"F");
+      y = M + 1;
+      var lg = logoDeLaPagina();
+      if (lg){ try { doc.addImage(lg,"PNG",M,y,9.5,9.5); } catch(e){} }
+      tx("Recetario Caujaral", M+12.5, y+4, 11, "bold");
+      tx("CLUB LAGOS DE CAUJARAL", M+12.5, y+8, 6, "normal", AZUL);
+      var f = new Date();
+      tx(f.toLocaleDateString("es-CO",{day:"2-digit",month:"long",year:"numeric"}),
+         W-M, y+4, 7.5, "normal", GRIS, "right");
+      tx(f.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"}),
+         W-M, y+8, 7, "normal", TENUE, "right");
+      doc.setDrawColor(AZUL[0],AZUL[1],AZUL[2]); doc.setLineWidth(.5);
+      doc.line(M, y+11.5, W-M, y+11.5);
+      y += 18;
+    }
+
+    encabezado();
+    tx("Impacto de precio", M, y, 16, "bold"); y += 6.5;
+    tx(artSel.n, M, y, 11, "bold", AZUL); y += 9;
+
+    var cajas = [["Costo actual", pesos(s.viejo)], ["Costo simulado", pesos(s.nuevo)],
+                 ["Variacion", (s.pct>0?"+":"") + fmt(s.pct,1) + " %"],
+                 ["Recetas", String(s.filas.length)],
+                 ["Impacto sumado", (s.impacto>0?"+":"") + pesos(s.impacto)]];
+    var ancho = (W - 2*M) / cajas.length - 2;
+    cajas.forEach(function(c, i){
+      var x = M + i * (ancho + 2);
+      doc.setFillColor(AZUL_S[0],AZUL_S[1],AZUL_S[2]); doc.rect(x, y-4, ancho, 11, "F");
+      doc.setFillColor(AZUL[0],AZUL[1],AZUL[2]); doc.rect(x, y-4, ancho, 1, "F");
+      tx(c[0].toUpperCase(), x+3, y+0.5, 6, "normal", GRIS);
+      tx(c[1], x+3, y+5, 10, "bold", i>=2 && s.pct>0 ? [225,0,0] : TINTA);
+    });
+    y += 15;
+
+    var C = { idx:M, cod:M+6, rec:M+22, usa:M+100, acomp:M+126, hoy:M+154,
+              alza:M+180, dif:M+204, pv:M+230, pHoy:M+252, pNue:W-M, maxRec:70 };
+    function cabecera(){
+      doc.setFillColor(AZUL_S[0],AZUL_S[1],AZUL_S[2]); doc.rect(M, y-4, W-2*M, 6, "F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
+      doc.setTextColor(AZUL[0],AZUL[1],AZUL[2]);
+      doc.text("N.o", C.idx, y);
+      doc.text("Codigo", C.cod, y);
+      doc.text("Receta", C.rec, y);
+      doc.text("Usa", C.usa, y, {align:"right"});
+      doc.text("Acompanamiento", C.acomp, y, {align:"right"});
+      doc.text("Costo total hoy", C.hoy, y, {align:"right"});
+      doc.text("Con el alza", C.alza, y, {align:"right"});
+      doc.text("Diferencia", C.dif, y, {align:"right"});
+      doc.text("Precio venta", C.pv, y, {align:"right"});
+      doc.text("% costo hoy", C.pHoy, y, {align:"right"});
+      doc.text("% costo nuevo", C.pNue, y, {align:"right"});
+      doc.setDrawColor(AZUL[0],AZUL[1],AZUL[2]); doc.setLineWidth(.3);
+      doc.line(M, y+2, W-M, y+2);
+      y += 6;
+    }
+    cabecera();
+
+    s.filas.forEach(function(f, i){
+      if (y > 188){
+        doc.addPage(); encabezado();
+        tx("Impacto de precio · " + artSel.n, M, y, 11, "bold"); y += 8; cabecera();
+      }
+      if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y-3.4, W-2*M, 5, "F"); }
+      var nom = f.r.n;
+      while (doc.getTextWidth(nom) > C.maxRec && nom.length > 4) nom = nom.slice(0,-2);
+      if (nom !== f.r.n) nom += "...";
+      tx(String(i+1), C.idx, y, 7.5, "normal", TENUE);
+      tx(f.r.c, C.cod, y, 7.5, "normal", GRIS);
+      tx(nom, C.rec, y, 8);
+      tx(fmt(f.cant, f.cant<1?3:2), C.usa, y, 8, "normal", TINTA, "right");
+      tx(f.acomp ? pesos(f.acomp) : "—", C.acomp, y, 8, "normal", f.acomp?AMBAR:TENUE, "right");
+      tx(pesos(f.antes), C.hoy, y, 8, "normal", TINTA, "right");
+      tx(pesos(f.despues), C.alza, y, 8, "normal", TINTA, "right");
+      tx((f.dif>0?"+":"") + pesos(f.dif), C.dif, y, 8, "bold",
+         f.dif>0.5?[225,0,0]:(f.dif<-0.5?VERDE:TENUE), "right");
+      var pv = PRECIOS[f.r.c];
+      tx(pv>0 ? pesos(pv) : "—", C.pv, y, 8, "normal", pv>0?TINTA:TENUE, "right");
+      var neto = pv>0 ? pv/1.08 : null;
+      tx(neto ? fmt(f.antes/neto*100,1)+" %" : "—", C.pHoy, y, 8, "normal", neto?TINTA:TENUE, "right");
+      tx(neto ? fmt(f.despues/neto*100,1)+" %" : "—", C.pNue, y, 8, "bold",
+         neto?(f.dif>0?[225,0,0]:TINTA):TENUE, "right");
+      doc.setDrawColor(235); doc.setLineWidth(.12); doc.line(M, y+1.6, W-M, y+1.6);
+      y += 5;
+    });
+
+    var alPie = [];
+    if (s.ocultas) alPie.push("No se incluyeron " + s.ocultas + " subrecetas, porque no se venden.");
+    if (s.sinMarcar) alPie.push("Se dejaron por fuera " + s.sinMarcar + " recetas sin marcar.");
+    if (alPie.length){
+      y += 5;
+      alPie.forEach(function(t){ tx(t, M, y, 7, "normal", TENUE); y += 3.6; });
+    }
+    return doc;
+  }
+
+  $("pdfSim").addEventListener("click", function(){
+    var doc = pdfDelSimulador(); if (!doc) return;
+    compartirPdf(doc.output("blob"), "Impacto de precio " + hoyTexto() + ".pdf", "Impacto de precio");
+  });
+  $("imprimirSim").addEventListener("click", function(){
+    if (!artSel){ avisar("Primero escoge un insumo"); return; }
+    var av = $("avisoImpSim"); if (av) av.hidden = false;
+    try { window.print(); } catch(e){}
+  });
+
+  pintarElegidas();
 
   // arranque
   pintarLista();
