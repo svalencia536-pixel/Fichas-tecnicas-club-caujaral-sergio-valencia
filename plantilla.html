@@ -2999,6 +2999,20 @@
     }
   }
 
+  /* Ctrl + P en Pedido y Precios hace lo mismo que el botón Imprimir: saca el
+     reporte con logo, no la página web. Si no se intercepta, el atajo imprime
+     el HTML y salen dos formatos distintos para lo mismo.
+     En el recetario NO se toca: ahí la hoja impresa ES la ficha técnica. */
+  document.addEventListener("keydown", function(e){
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+    if (e.key !== "p" && e.key !== "P") return;
+    if (vista === "pedido" && subPed === "armar" && ultimoPedido){
+      e.preventDefault(); $("imprimirPedido").click();
+    } else if (vista === "precios" && ultimoSim){
+      e.preventDefault(); $("imprimirSim").click();
+    }
+  }, true);
+
   function hoyTexto(){
     var f = new Date(), p = function(n){ return (n<10?"0":"") + n; };
     return f.getFullYear() + "-" + p(f.getMonth()+1) + "-" + p(f.getDate());
@@ -3347,16 +3361,23 @@
     encabezado();
     tx("Pedido de producción", M, y, 16, "bold"); y += 8;
 
-    var alto = 6 + u.activos.length * 4.2;
+    // cada preparación puede necesitar más de un renglón si el nombre es largo
+    doc.setFont("helvetica","normal"); doc.setFontSize(8);
+    var anchoNom = W - 2*M - 20 - 20;
+    var prep = u.activos.map(function(p){
+      var r = porCodigo[p.c];
+      return { r:r, cant:p.cant, lineas: doc.splitTextToSize(r.n, anchoNom) };
+    });
+    var alto = 6;
+    prep.forEach(function(p){ alto += Math.max(4.2, p.lineas.length * 3.6); });
     doc.setFillColor(AZUL_S[0],AZUL_S[1],AZUL_S[2]); doc.rect(M, y-4, W-2*M, alto, "F");
     doc.setFillColor(AZUL[0],AZUL[1],AZUL[2]); doc.rect(M, y-4, 1.4, alto, "F");
     tx("PRODUCCIÓN SOLICITADA", M+4, y, 6.5, "bold", AZUL); y += 5;
-    u.activos.forEach(function(p){
-      var r = porCodigo[p.c];
-      tx(String(p.cant) + "  " + (r.um||""), M+4, y, 8, "bold");
-      tx(r.n, M+20, y, 8);
-      tx(r.c, W-M-3, y, 7, "normal", TENUE, "right");
-      y += 4.2;
+    prep.forEach(function(p){
+      tx(String(p.cant) + "  " + (p.r.um||""), M+4, y, 8, "bold");
+      p.lineas.forEach(function(ln, j){ tx(ln, M+20, y + j*3.6, 8); });
+      tx(p.r.c, W-M-3, y, 7, "normal", TENUE, "right");
+      y += Math.max(4.2, p.lineas.length * 3.6);
     });
     y += 6;
 
@@ -3390,24 +3411,28 @@
     }
     function cuerpo(filas, quePasa, subtotal){
       filas.forEach(function(f, i){
-        if (y > 270){
+        // el nombre del insumo se parte en renglones, no se corta
+        doc.setFont("helvetica","normal"); doc.setFontSize(8);
+        var lineas = doc.splitTextToSize(f.n, cols.maxNom);
+        if (lineas.length > 3) lineas = lineas.slice(0,3);
+        var alto = Math.max(5, 1.2 + lineas.length * 3.5);
+
+        if (y + alto > 278){
           doc.addPage(); encabezado();
           doc.setFillColor(tono[0],tono[1],tono[2]); doc.rect(M, y-3, 2.6, 2.6, "F");
           tx(quePasa + " (continuación)", M+5, y, 11, "bold", tono);
           y += 8; cabeceraTabla();
         }
-        if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y-3.4, W-2*M, 5, "F"); }
-        var nom = f.n;
-        while (doc.getTextWidth(nom) > cols.maxNom && nom.length > 4) nom = nom.slice(0,-2);
-        if (nom !== f.n) nom += "…";
+        if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y-3.4, W-2*M, alto, "F"); }
         tx(String(i+1), cols.idx, y, 7.5, "normal", TENUE);
-        tx(nom, cols.nom, y, 8);
+        lineas.forEach(function(ln, j){ tx(ln, cols.nom, y + j*3.5, 8); });
         tx(fmt(f.cant, f.cant<1?3:2), cols.cant, y, 8, "normal", TINTA, "right");
         tx(f.um, cols.und, y, 6.5, "normal", TENUE);
         tx(f.sinG && !f.g ? "—" : fmt(f.g, f.g<10?1:0), cols.gr, y, 8, "bold", tono, "right");
         if (u.conCosto) tx(pesos(f.costo), cols.costo, y, 8, "normal", GRIS, "right");
-        doc.setDrawColor(235); doc.setLineWidth(.12); doc.line(M, y+1.6, W-M, y+1.6);
-        y += 5;
+        doc.setDrawColor(235); doc.setLineWidth(.12);
+        doc.line(M, y + alto - 3.4, W-M, y + alto - 3.4);
+        y += alto;
       });
       if (u.conCosto){
         doc.setFillColor(tonoS[0],tonoS[1],tonoS[2]); doc.rect(M, y-2.2, W-2*M, 5.6, "F");
@@ -3752,17 +3777,23 @@
     cabecera();
 
     s.filas.forEach(function(f, i){
-      if (y > 188){
+      /* El nombre se parte en los renglones que haga falta en vez de cortarse
+         con puntos suspensivos. Un "RC MEDALLONES DE LOMO DE RES EN MOSTAZA..."
+         no dice qué plato es; cortado deja de servir como reporte. */
+      doc.setFont("helvetica","normal"); doc.setFontSize(8);
+      var lineas = doc.splitTextToSize(f.r.n, C.maxRec);
+      if (lineas.length > 3) lineas = lineas.slice(0,3);
+      var alto = Math.max(5, 1.2 + lineas.length * 3.5);
+
+      if (y + alto > 196){
         doc.addPage(); encabezado();
         tx("Impacto de precio · " + artSel.n, M, y, 11, "bold"); y += 8; cabecera();
       }
-      if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y-3.4, W-2*M, 5, "F"); }
-      var nom = f.r.n;
-      while (doc.getTextWidth(nom) > C.maxRec && nom.length > 4) nom = nom.slice(0,-2);
-      if (nom !== f.r.n) nom += "...";
+      if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y-3.4, W-2*M, alto, "F"); }
+
       tx(String(i+1), C.idx, y, 7.5, "normal", TENUE);
       tx(f.r.c, C.cod, y, 7.5, "normal", GRIS);
-      tx(nom, C.rec, y, 8);
+      lineas.forEach(function(ln, j){ tx(ln, C.rec, y + j*3.5, 8); });
       tx(fmt(f.cant, f.cant<1?3:2), C.usa, y, 8, "normal", TINTA, "right");
       tx(f.acomp ? pesos(f.acomp) : "—", C.acomp, y, 8, "normal", f.acomp?AMBAR:TENUE, "right");
       tx(pesos(f.antes), C.hoy, y, 8, "normal", TINTA, "right");
@@ -3775,8 +3806,9 @@
       tx(neto ? fmt(f.antes/neto*100,1)+" %" : "—", C.pHoy, y, 8, "normal", neto?TINTA:TENUE, "right");
       tx(neto ? fmt(f.despues/neto*100,1)+" %" : "—", C.pNue, y, 8, "bold",
          neto?(f.dif>0?[225,0,0]:TINTA):TENUE, "right");
-      doc.setDrawColor(235); doc.setLineWidth(.12); doc.line(M, y+1.6, W-M, y+1.6);
-      y += 5;
+      doc.setDrawColor(235); doc.setLineWidth(.12);
+      doc.line(M, y + alto - 3.4, W-M, y + alto - 3.4);
+      y += alto;
     });
 
     var alPie = [];
