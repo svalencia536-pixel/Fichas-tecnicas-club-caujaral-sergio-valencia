@@ -853,6 +853,13 @@
   }
   .precio-input::placeholder{color:var(--faint)}
   .precio-input.acomp{border-color:var(--g-FP);background:var(--g-FP-suave);width:104px}
+  /* La unidad en que la cocina lo mide, al lado de los gramos */
+  .nativo{
+    font-family:var(--mono);font-size:10.5px;color:var(--faint);font-weight:400;
+    margin-left:5px;
+  }
+  small.nativo{display:block;margin-left:0;margin-top:1px}
+
   small.parte{
     display:block;font-size:10px;color:var(--faint);font-weight:400;margin-top:1px;
     font-family:var(--mono);
@@ -3107,6 +3114,24 @@
     return { val: v, um: m[2].toUpperCase() };
   }
 
+  /* Cuánto debe dar una producción, EN GRAMOS O ML — con la misma regla que usa
+     el resto del aplicativo: 1 KL son 1.000 g y 1 LT son 1.000 ml. Así la hoja
+     de producción habla el mismo idioma que la ficha y que la lista de mercado.
+
+     Dos caminos: el rendimiento cargado en el libro y, si ese viene en UND, el
+     peso que la propia receta declara en el nombre — el caso del grupo FR,
+     donde "1 UND" en realidad son 5,7 KL. */
+  function rendimientoEnGramos(r, cant){
+    var gr = gramosRendimiento(r);
+    if (gr) return gr * cant;
+    var p = pesoDelNombre(r.n);
+    if (p){
+      var f = (p.um === "KL" || p.um === "KG" || p.um === "LT") ? 1000 : 1;
+      return p.val * f * cant;
+    }
+    return null;
+  }
+
   /* Qué ingredientes entran a la hoja. Con "abrir productos de producción"
      marcado, las subpreparaciones se reemplazan por su materia prima. */
   function ingredientesDe(r, factor, abrirProd, nivel, vistos){
@@ -3159,7 +3184,15 @@
     $("vacioProd").hidden = produccion.length > 0;
     produccion.forEach(function(p, idx){
       var r = porCodigo[p.c];
-      var teorico = r.rd > 0 ? fmt(r.rd * p.cant, (r.rd * p.cant) % 1 ? 2 : 0) + " " + (r.um||"") : "—";
+      /* Lo que debe dar, en gramos. Es la misma equivalencia del resto del
+         aplicativo, y para las del grupo FR es la única manera de que el dato
+         signifique algo: "1 UND" no dice nada, "5.700 g" sí. */
+      var enG = rendimientoEnGramos(r, p.cant);
+      var nativo = r.rd > 0 ? fmt(r.rd * p.cant, (r.rd * p.cant) % 1 ? 2 : 0) + " " + (r.um||"") : null;
+      var teorico = enG
+        ? '<b class="gr">' + fmt(enG, enG < 10 ? 1 : 0) + ' g</b>' +
+          (nativo ? ' <span class="nativo">' + esc(nativo) + '</span>' : '')
+        : (nativo || "—");
       var d = document.createElement("div");
       d.className = "elegida";
       d.innerHTML =
@@ -3212,16 +3245,18 @@
       var ing = ingredientesDe(r, p.cant, abrirProd, 0, [r.c]);
       var costo = 0;
       ing.forEach(function(x){ costo += x.costo; });
-      var gr = gramosRendimiento(r);
       var peso = pesoDelNombre(r.n);
+      var enG = rendimientoEnGramos(r, p.cant);
       return {
         r:r, cant:p.cant, folio:folioDe(i), ing:ing,
         teorico: r.rd > 0 ? r.rd * p.cant : null,
-        teoricoG: gr ? gr * p.cant : null,
-        // equivalencia en peso cuando el rendimiento viene en unidades
+        teoricoG: enG,                    // lo que debe dar, en gramos o ml
+        // el peso que la receta declara en su propio nombre (grupo FR)
         equiv: (peso && String(r.um||"").toUpperCase().trim() === "UND")
                ? { val: peso.val * p.cant, um: peso.um } : null,
         costo: costo,
+        // el costo por kilo o litro producido, que es el que sirve para comparar
+        porKilo: enG ? costo / (enG / 1000) : null,
         porUnidad: (r.rd > 0) ? costo / (r.rd * p.cant) : null
       };
     });
@@ -3261,14 +3296,20 @@
            '" title="Abrir la ficha de ' + esc(f.r.n) + '">' + esc(f.r.c) + '</button></td>';
       h += '<td>' + esc(f.r.n) + '</td>';
       h += '<td class="num">' + f.cant + '</td>';
-      h += '<td class="num">' + (f.teorico === null
-            ? '<span class="pend">sin rendimiento</span>'
-            : '<span class="gr">' + fmt(f.teorico, f.teorico % 1 ? 2 : 0) + ' ' + esc(f.r.um||"") + '</span>') + '</td>';
+      h += '<td class="num">' + (f.teoricoG === null
+            ? (f.teorico === null
+                ? '<span class="pend">sin rendimiento</span>'
+                : '<span class="gr">' + fmt(f.teorico, f.teorico % 1 ? 2 : 0) + ' ' + esc(f.r.um||"") + '</span>')
+            : '<span class="gr">' + fmt(f.teoricoG, f.teoricoG < 10 ? 1 : 0) + ' g</span>' +
+              (f.teorico !== null
+                ? '<small class="nativo">' + fmt(f.teorico, f.teorico % 1 ? 2 : 0) + ' ' + esc(f.r.um||"") + '</small>'
+                : '')) + '</td>';
       h += '<td class="num">' + f.ing.length + '</td>';
       if (conCosto){
         h += '<td class="num">' + pesos(f.costo) + '</td>';
-        h += '<td class="num">' + (f.porUnidad === null ? "—" :
-             pesos(f.porUnidad) + ' <span class="um">/' + esc(f.r.um||"") + '</span>') + '</td>';
+        h += '<td class="num">' + (f.porKilo === null
+             ? (f.porUnidad === null ? "—" : pesos(f.porUnidad) + ' <span class="um">/' + esc(f.r.um||"") + '</span>')
+             : pesos(f.porKilo) + ' <span class="um">/kg</span>') + '</td>';
       }
       h += '<td>' + (f.r.mp
             ? '<span class="conficha">sale impreso</span>'
@@ -3859,8 +3900,10 @@
       tx(f.folio, M+8, y, 7, "normal", GRIS);
       ls.forEach(function(ln,j){ tx(ln, M+32, y + j*3.5, 8); });
       tx(String(f.cant), M+112, y, 8, "bold", TINTA, "right");
-      tx(f.teorico === null ? "—" : fmt(f.teorico, f.teorico % 1 ? 2 : 0) + " " + (f.r.um||""),
-         M+134, y, 8, "normal", TINTA, "right");
+      tx(f.teoricoG === null
+           ? (f.teorico === null ? "—" : fmt(f.teorico, f.teorico % 1 ? 2 : 0) + " " + (f.r.um||""))
+           : fmt(f.teoricoG, f.teoricoG < 10 ? 1 : 0) + " g",
+         M+134, y, 8, "bold", TINTA, "right");
       // espacios para anotar a mano: lo que salió y el consecutivo del sistema
       doc.setDrawColor(150); doc.setLineWidth(.25);
       doc.line(M+138, y+1, M+158, y+1);
@@ -3930,14 +3973,20 @@
       if (titulo.length > 1){ tx(titulo[1], M, y + 1.5, 16, "bold"); y += 7; }
 
       // cajas de datos
-      var equivTxt = f.equiv
-        ? fmt(f.equiv.val, f.equiv.val % 1 ? 2 : 0) + " " + f.equiv.um
-        : null;
+      // en gramos, como todo lo demás del aplicativo
+      var debeDar = f.teoricoG !== null
+        ? fmt(f.teoricoG, f.teoricoG < 10 ? 1 : 0) + " g"
+        : (f.teorico === null ? "—" : fmt(f.teorico, f.teorico % 1 ? 2 : 0) + " " + (f.r.um || ""));
+      // y al lado, en la unidad en que la cocina lo mide
+      var enSuUnidad = [];
+      if (f.teorico !== null) enSuUnidad.push(fmt(f.teorico, f.teorico % 1 ? 2 : 0) + " " + (f.r.um || ""));
+      if (f.equiv) enSuUnidad.push(fmt(f.equiv.val, f.equiv.val % 1 ? 2 : 0) + " " + f.equiv.um);
+      var equivTxt = enSuUnidad.length ? enSuUnidad.join("   ·   ") : null;
+
       var datos = [
         ["CÓDIGO", f.r.c],
         ["RECETAS A PRODUCIR", String(f.cant)],
-        ["DEBE DAR", f.teorico === null ? "—"
-           : fmt(f.teorico, f.teorico % 1 ? 2 : 0) + " " + (f.r.um || "")],
+        ["DEBE DAR", debeDar],
         ["INGREDIENTES", String(f.ing.length)]
       ];
       var xd = M, anchoCaja = (ANCHO - (datos.length - 1) * 3) / datos.length;
@@ -3955,7 +4004,7 @@
       /* La equivalencia en peso: "1 UND" no le dice nada a la cocina si la
          receta rinde 5,7 KL. El dato vive en el nombre y aquí se hace visible. */
       if (equivTxt){
-        tx("Esa cantidad equivale a  " + equivTxt, M, y, 8, "bold", col);
+        tx("Equivale a  " + equivTxt, M, y, 8, "bold", col);
         y += 6;
       }
 
@@ -4030,7 +4079,7 @@
 
       if (u.conCosto){
         tx("Costo de insumos " + pesos(f.costo) + "     Protegido " + pesos(f.costo * 1.1) +
-           (f.porUnidad !== null ? "     Por " + (f.r.um||"und") + " " + pesos(f.porUnidad * 1.1) : ""),
+           (f.porKilo !== null ? "     Por kilo producido " + pesos(f.porKilo * 1.1) : ""),
            W - M, y, 7, "normal", GRIS, "right");
         y += 5;
       }
