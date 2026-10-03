@@ -3953,20 +3953,26 @@
       var ANCHO = W - M*2;
       var linea = [208,208,208];
 
-      // encabezado, igual al de la ficha
+      /* Membrete centrado. Este documento se llama ORDEN DE PRODUCCIÓN CAUJARAL:
+         es el nombre con el que se va a pedir, archivar y auditar, así que va
+         al centro y en grande, no como subtítulo de un encabezado. */
       var lg = logoDeLaPagina();
-      if (lg){ try { doc.addImage(lg, "PNG", M, 10, 9, 9); } catch(e){} }
-      tx("Hoja de producción", M + 12, 14.5, 10, "bold");
-      tx("CLUB LAGOS DE CAUJARAL", M + 12, 18.5, 7, "normal", GRIS);
-      tx(fechaLarga(), W - M, 14.5, 7, "normal", GRIS, "right");
-      tx("Folio " + f.folio, W - M, 18.5, 7, "bold", AZUL, "right");
+      if (lg){ try { doc.addImage(lg, "PNG", M, 9.5, 10, 10); } catch(e){} }
+      doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+      doc.setTextColor(TINTA[0], TINTA[1], TINTA[2]);
+      doc.text("ORDEN DE PRODUCCIÓN CAUJARAL", W / 2, 15.5, { align: "center" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(6.5);
+      doc.setTextColor(AZUL[0], AZUL[1], AZUL[2]);
+      doc.text("CLUB LAGOS DE CAUJARAL", W / 2, 19.5, { align: "center" });
+      tx(fechaLarga(), W - M, 13.5, 6.5, "normal", GRIS, "right");
+      tx("Folio " + f.folio, W - M, 18.5, 7.5, "bold", AZUL, "right");
       doc.setDrawColor(linea[0], linea[1], linea[2]); doc.setLineWidth(.2);
-      doc.line(M, 22, W - M, 22);
+      doc.line(M, 22.5, W - M, 22.5);
 
       // franja del color del grupo y título
       doc.setFillColor(col[0], col[1], col[2]);
       doc.rect(M, 26, ANCHO, 1.2, "F");
-      tx("PRODUCCIÓN", M, 32.5, 7.5, "bold", col);
+      tx("PREPARACIÓN", M, 32.5, 7.5, "bold", col);
       var titulo = doc.splitTextToSize(f.r.n.trim(), ANCHO);
       tx(titulo[0], M, 40, 16, "bold");
       y = 44;
@@ -4142,15 +4148,18 @@
     return doc;
   }
 
+  // el documento se llama así: así se pide, se archiva y se audita
+  function nombreOrden(){
+    return "Orden de produccion Caujaral " + ($("fechaProd").value || hoyTexto()) + ".pdf";
+  }
+  window.__pp=function(){var d=pdfDeProduccion();return d?d.output("datauristring"):null;};
   $("pdfProd").addEventListener("click", function(){
     var doc = pdfDeProduccion(); if (!doc) return;
-    compartirPdf(doc.output("blob"), "Produccion " + ($("fechaProd").value || hoyTexto()) + ".pdf",
-                 "Plan de producción");
+    compartirPdf(doc.output("blob"), nombreOrden(), "Orden de producción Caujaral");
   });
   $("imprimirProd").addEventListener("click", function(){
     var doc = pdfDeProduccion(); if (!doc) return;
-    imprimirPdf(doc, "Produccion " + ($("fechaProd").value || hoyTexto()) + ".pdf",
-                "Plan de producción", "avisoImpProd");
+    imprimirPdf(doc, nombreOrden(), "Orden de producción Caujaral", "avisoImpProd");
   });
 
   // ================= SIMULADOR DE PRECIOS =================
