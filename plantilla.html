@@ -1197,6 +1197,10 @@
           <label for="fechaProd">Fecha de producción</label>
           <input id="fechaProd" type="date">
         </div>
+        <label class="inter" title="Si una preparación lleva otra adentro, la cambia por su materia prima">
+          <input type="checkbox" id="abrirProdProd">
+          Abrir los productos de producción en su materia prima
+        </label>
         <label class="inter" title="Manda también sobre las hojas que se imprimen">
           <input type="checkbox" id="verCostoProd">
           Imprimir con costos
@@ -3091,6 +3095,43 @@
 
   var produccion = [];   // [{c, cant}]
 
+  /* Hay recetas con el peso metido en el nombre —"RECETA PRODUCCION DE SALSA
+     POMODORO CALIENTE (5.7 KL)"— que rinden "1 UND". Decirle a la cocina
+     "debe dar 1 UND" no le sirve de nada: hay que decirle que ese 1 son 5,7 KL.
+     El dato está en el propio nombre, así que se lee de ahí. */
+  function pesoDelNombre(nombre){
+    var m = String(nombre||"").match(/\((\d+[.,]?\d*)\s*(KL|KG|LT|ML|GR|G)\s*\)/i);
+    if (!m) return null;
+    var v = Number(String(m[1]).replace(",", "."));
+    if (!isFinite(v) || v <= 0) return null;
+    return { val: v, um: m[2].toUpperCase() };
+  }
+
+  /* Qué ingredientes entran a la hoja. Con "abrir productos de producción"
+     marcado, las subpreparaciones se reemplazan por su materia prima. */
+  function ingredientesDe(r, factor, abrirProd, nivel, vistos){
+    var salida = [];
+    r.i.forEach(function(x){
+      var art = x[0], um = x[1], cant = x[2] * factor, cu = x[3];
+      var g = (x.length > 4 && x[4] !== null) ? x[4] * factor : null;
+      var clave = norm(art);
+      var sub = porNombre[clave];
+      var propia = sub && sub.c !== r.c;
+      var producto = propia && esProducto(sub, clave);
+      if (propia && nivel < 5 && vistos.indexOf(sub.c) < 0 && (!producto || abrirProd)){
+        var f2 = null, gr = gramosRendimiento(sub);
+        if (g !== null && gr) f2 = g / gr;
+        else if (sub.rd > 0 && String(sub.um||"").toUpperCase().trim() === String(um||"").toUpperCase().trim()) f2 = cant / sub.rd;
+        if (f2 !== null && isFinite(f2) && f2 > 0){
+          salida = salida.concat(ingredientesDe(sub, f2, abrirProd, nivel+1, vistos.concat([sub.c])));
+          return;
+        }
+      }
+      salida.push({ art:art, um:um, cant:cant, g:g, costo: cu * cant });
+    });
+    return salida;
+  }
+
   var listaProd = RECETAS.map(function(r){
     var g = GRUPOS.filter(function(x){ return x.id === r.g; })[0];
     var rend = r.rd > 0 ? (" · rinde " + fmt(r.rd, r.rd % 1 ? 2 : 0) + " " + (r.um||"")) : " · sin rendimiento";
@@ -3144,6 +3185,7 @@
     produccion = []; pintarProduccion(); calcularProduccion();
   });
   $("verCostoProd").addEventListener("change", calcularProduccion);
+  $("abrirProdProd").addEventListener("change", calcularProduccion);
   $("fechaProd").addEventListener("change", calcularProduccion);
   // la fecha arranca en hoy
   (function(){
@@ -3164,15 +3206,21 @@
     if (!activos.length){ cont.innerHTML = ""; ultimaProd = null; return; }
     var conCosto = $("verCostoProd").checked;
 
+    var abrirProd = $("abrirProdProd").checked;
     var filas = activos.map(function(p, i){
       var r = porCodigo[p.c];
+      var ing = ingredientesDe(r, p.cant, abrirProd, 0, [r.c]);
       var costo = 0;
-      r.i.forEach(function(x){ costo += (x[3]||0) * x[2] * p.cant; });
+      ing.forEach(function(x){ costo += x.costo; });
       var gr = gramosRendimiento(r);
+      var peso = pesoDelNombre(r.n);
       return {
-        r:r, cant:p.cant, folio:folioDe(i),
+        r:r, cant:p.cant, folio:folioDe(i), ing:ing,
         teorico: r.rd > 0 ? r.rd * p.cant : null,
         teoricoG: gr ? gr * p.cant : null,
+        // equivalencia en peso cuando el rendimiento viene en unidades
+        equiv: (peso && String(r.um||"").toUpperCase().trim() === "UND")
+               ? { val: peso.val * p.cant, um: peso.um } : null,
         costo: costo,
         porUnidad: (r.rd > 0) ? costo / (r.rd * p.cant) : null
       };
@@ -3216,7 +3264,7 @@
       h += '<td class="num">' + (f.teorico === null
             ? '<span class="pend">sin rendimiento</span>'
             : '<span class="gr">' + fmt(f.teorico, f.teorico % 1 ? 2 : 0) + ' ' + esc(f.r.um||"") + '</span>') + '</td>';
-      h += '<td class="num">' + f.r.i.length + '</td>';
+      h += '<td class="num">' + f.ing.length + '</td>';
       if (conCosto){
         h += '<td class="num">' + pesos(f.costo) + '</td>';
         h += '<td class="num">' + (f.porUnidad === null ? "—" :
@@ -3250,7 +3298,7 @@
       });
     });
 
-    ultimaProd = { filas: filas, conCosto: conCosto, totalCosto: totalCosto,
+    ultimaProd = { filas: filas, conCosto: conCosto, totalCosto: totalCosto, abrirProd: abrirProd,
                    fecha: $("fechaProd").value || "" };
   }
 
@@ -3851,134 +3899,186 @@
       tx(s[1], x, y+7.5, 6, "normal", TENUE);
     });
 
-    // ---------- UNA HOJA POR PREPARACIÓN ----------
+    /* ---------- UNA HOJA POR PREPARACIÓN ----------
+       Con el mismo formato de la ficha técnica: la cocina ya conoce esa hoja,
+       así que la de producción se lee igual —franja de color, título grande,
+       cajas de datos, tabla de filas fijas y bloques con marco—. Lo único
+       propio son los espacios para anotar a mano y las tres firmas. */
     u.filas.forEach(function(f){
       doc.addPage();
-      encabezado("Hoja de producción · " + f.folio);
+      var col = COLOR_GRUPO[f.r.g] || COLOR_GRUPO.OT;
+      var ANCHO = W - M*2;
+      var linea = [208,208,208];
 
-      // título y datos de la preparación
-      tx(f.r.n, M, y, 15, "bold"); y += 7;
-      tx(f.r.c + "  ·  " + f.cant + (f.cant === 1 ? " receta" : " recetas"),
-         M, y, 8.5, "normal", AZUL);
-      y += 8;
+      // encabezado, igual al de la ficha
+      var lg = logoDeLaPagina();
+      if (lg){ try { doc.addImage(lg, "PNG", M, 10, 9, 9); } catch(e){} }
+      tx("Hoja de producción", M + 12, 14.5, 10, "bold");
+      tx("CLUB LAGOS DE CAUJARAL", M + 12, 18.5, 7, "normal", GRIS);
+      tx(fechaLarga(), W - M, 14.5, 7, "normal", GRIS, "right");
+      tx("Folio " + f.folio, W - M, 18.5, 7, "bold", AZUL, "right");
+      doc.setDrawColor(linea[0], linea[1], linea[2]); doc.setLineWidth(.2);
+      doc.line(M, 22, W - M, 22);
 
-      // caja: lo que debe dar y lo que salió
-      var altoCaja = 20;
-      doc.setFillColor(AZUL_S[0],AZUL_S[1],AZUL_S[2]);
-      doc.rect(M, y-4, W-2*M, altoCaja, "F");
-      doc.setFillColor(AZUL[0],AZUL[1],AZUL[2]); doc.rect(M, y-4, 1.4, altoCaja, "F");
-      tx("DEBE DAR", M+5, y+1, 6.5, "bold", GRIS);
-      tx(f.teorico === null ? "sin rendimiento cargado"
-         : fmt(f.teorico, f.teorico % 1 ? 2 : 0) + " " + (f.r.um||""),
-         M+5, y+7, 13, "bold", AZUL);
-      // los espacios a mano
-      var xHora = M+62;
-      casilla("HORA DE INICIO", xHora, 34);
-      casilla("HORA FINAL", xHora+40, 34);
-      casilla("SALIÓ REALMENTE", xHora+80, 44);
-      y += altoCaja + 2;
+      // franja del color del grupo y título
+      doc.setFillColor(col[0], col[1], col[2]);
+      doc.rect(M, 26, ANCHO, 1.2, "F");
+      tx("PRODUCCIÓN", M, 32.5, 7.5, "bold", col);
+      var titulo = doc.splitTextToSize(f.r.n.trim(), ANCHO);
+      tx(titulo[0], M, 40, 16, "bold");
+      y = 44;
+      if (titulo.length > 1){ tx(titulo[1], M, y + 1.5, 16, "bold"); y += 7; }
 
-      /* El consecutivo de la transformación en Zeus: es lo que amarra esta hoja
-         con el movimiento que queda en el sistema. Sin ese número, el papel y
-         el inventario quedan sueltos y no hay cómo cruzarlos después. */
-      doc.setDrawColor(150); doc.setLineWidth(.3);
-      doc.line(M+78, y+5, W-M, y+5);
-      tx("CONSECUTIVO DE LA TRANSFORMACIÓN MANUAL EN ZEUS", M, y+4.5, 7, "bold", GRIS);
-      y += 11;
+      // cajas de datos
+      var equivTxt = f.equiv
+        ? fmt(f.equiv.val, f.equiv.val % 1 ? 2 : 0) + " " + f.equiv.um
+        : null;
+      var datos = [
+        ["CÓDIGO", f.r.c],
+        ["RECETAS A PRODUCIR", String(f.cant)],
+        ["DEBE DAR", f.teorico === null ? "—"
+           : fmt(f.teorico, f.teorico % 1 ? 2 : 0) + " " + (f.r.um || "")],
+        ["INGREDIENTES", String(f.ing.length)]
+      ];
+      var xd = M, anchoCaja = (ANCHO - (datos.length - 1) * 3) / datos.length;
+      datos.forEach(function(par, i){
+        doc.setDrawColor(linea[0], linea[1], linea[2]); doc.setLineWidth(.2);
+        if (i === 2){ doc.setFillColor(AZUL_S[0],AZUL_S[1],AZUL_S[2]);
+                      doc.roundedRect(xd, y + 2, anchoCaja, 11, 1.2, 1.2, "FD"); }
+        else doc.roundedRect(xd, y + 2, anchoCaja, 11, 1.2, 1.2);
+        tx(par[0], xd + 2.5, y + 6, 5.5, "normal", GRIS);
+        tx(par[1], xd + 2.5, y + 10.5, 9, "bold", i === 2 ? AZUL : TINTA);
+        xd += anchoCaja + 3;
+      });
+      y += 19;
 
-      // el costo de esta producción, solo si se pidió
-      if (u.conCosto){
-        tx("Costo de insumos  " + pesos(f.costo) +
-           "      Protegido  " + pesos(f.costo * 1.1) +
-           (f.porUnidad !== null ? "      Por " + (f.r.um||"unidad") + "  " + pesos(f.porUnidad * 1.1) : ""),
-           W-M, y, 7.5, "normal", GRIS, "right");
+      /* La equivalencia en peso: "1 UND" no le dice nada a la cocina si la
+         receta rinde 5,7 KL. El dato vive en el nombre y aquí se hace visible. */
+      if (equivTxt){
+        tx("Esa cantidad equivale a  " + equivTxt, M, y, 8, "bold", col);
         y += 6;
       }
 
-      // ingredientes escalados
-      tx("INGREDIENTES", M, y, 7, "bold", GRIS); y += 4.5;
-      doc.setFillColor(248,248,248); doc.rect(M, y-4, W-2*M, 6, "F");
-      doc.setFont("helvetica","bold"); doc.setFontSize(6.5); doc.setTextColor(GRIS[0],GRIS[1],GRIS[2]);
-      doc.text("N.o", M+1, y);
-      doc.text("Ingrediente", M+8, y);
-      doc.text("Cantidad", M+120, y, {align:"right"});
-      doc.text("Und", M+123, y);
-      doc.text("Gramos/ml", M+160, y, {align:"right"});
-      doc.text("Pesado", W-M-2, y, {align:"right"});
-      doc.setDrawColor(190); doc.setLineWidth(.2); doc.line(M, y+2, W-M, y+2);
-      y += 6;
-
-      f.r.i.forEach(function(x, i){
-        doc.setFont("helvetica","normal"); doc.setFontSize(8);
-        var nom = x[0];
-        var ls = doc.splitTextToSize(nom, 108);
-        if (ls.length > 2) ls = ls.slice(0,2);
-        var alto = Math.max(6.5, 1.2 + ls.length*3.5);
-        if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y-3.4, W-2*M, alto, "F"); }
-        tx(String(i+1), M+1, y, 7, "normal", TENUE);
-        ls.forEach(function(ln,j){ tx(ln, M+8, y + j*3.5, 8); });
-        var cant = x[2] * f.cant;
-        var g = (x.length > 4 && x[4] !== null) ? x[4] * f.cant : null;
-        tx(fmt(cant, cant < 1 ? 3 : 2), M+120, y, 8, "normal", TINTA, "right");
-        tx(x[1], M+123, y, 6.5, "normal", TENUE);
-        tx(g === null ? "—" : fmt(g, g < 10 ? 1 : 0), M+160, y, 8, "bold", AZUL, "right");
-        // casilla para marcar que ya se pesó
-        doc.setDrawColor(160); doc.setLineWidth(.25);
-        doc.rect(W-M-6, y-3, 4, 4);
-        doc.setDrawColor(235); doc.setLineWidth(.12);
-        doc.line(M, y + alto - 3.4, W-M, y + alto - 3.4);
-        y += alto;
+      // lo que se anota a mano, en su propio marco
+      tx("A LLENAR EN LA ESTACIÓN", M, y, 8, "bold");
+      y += 2;
+      doc.setDrawColor(linea[0], linea[1], linea[2]); doc.setLineWidth(.2);
+      doc.roundedRect(M, y, ANCHO, 24, 1.2, 1.2);
+      var anchoC = (ANCHO - 12) / 3;
+      [["HORA DE INICIO", 0], ["HORA FINAL", 1], ["SALIÓ REALMENTE", 2]].forEach(function(c){
+        var x = M + 4 + c[1] * (anchoC + 2);
+        doc.setDrawColor(150); doc.setLineWidth(.3);
+        doc.line(x, y + 9, x + anchoC - 4, y + 9);
+        tx(c[0], x, y + 12.5, 5.5, "bold", GRIS);
       });
-      y += 5;
+      doc.setDrawColor(150); doc.setLineWidth(.3);
+      doc.line(M + 82, y + 19, W - M - 4, y + 19);
+      tx("CONSECUTIVO DE LA TRANSFORMACIÓN MANUAL EN ZEUS", M + 4, y + 18.5, 6, "bold", GRIS);
+      y += 29;
 
-      // método: impreso si existe, rayado si no
-      tx("MÉTODO DE PREPARACIÓN", M, y, 7, "bold", GRIS); y += 4.5;
-      if (f.r.mp){
-        doc.setFont("helvetica","normal"); doc.setFontSize(8.5);
-        doc.setTextColor(TINTA[0],TINTA[1],TINTA[2]);
-        var parr = String(f.r.mp).split(/\n+/).filter(function(s){ return s.trim(); });
-        parr.forEach(function(p){
-          doc.splitTextToSize(p.trim(), W-2*M-4).forEach(function(ln){
-            if (y > H-46){ doc.addPage(); encabezado("Hoja de producción · " + f.folio); }
-            tx(ln, M+2, y, 8.5); y += 4;
-          });
-          y += 1.5;
-        });
-      } else {
-        var caben = Math.floor((H - 52 - y) / 6);
-        renglones(Math.max(4, Math.min(8, caben)));
-        tx("Escríbelo aquí la primera vez que se produzca: después se carga al libro.",
-           M+2, y+1, 6, "normal", TENUE);
-        y += 5;
-      }
+      // ingredientes, con filas fijas para que todas las hojas se vean iguales
+      tx("INGREDIENTES", M, y, 8, "bold");
+      tx(f.ing.length + (f.ing.length === 1 ? " línea" : " líneas") +
+         (u.abrirProd ? " · abiertos hasta materia prima" : ""), M + 30, y, 7, "normal", GRIS);
       y += 3;
 
-      // utensilios y envase, siempre con espacio para escribir
-      if (y > H - 52){ doc.addPage(); encabezado("Hoja de producción · " + f.folio); }
-      var mitad = (W - 2*M) / 2 - 3;
-      var yUt = y;
-      tx("UTENSILIOS", M, y, 7, "bold", GRIS);
-      tx("ENVASE Y ROTULADO", M + mitad + 6, y, 7, "bold", GRIS);
-      y += 4.5;
-      var yIni = y;
+      var colCant = M + 116, colUm = M + 138, colGr = M + 172, colOk = W - M - 2;
+      doc.setFillColor(248, 248, 248);
+      doc.rect(M, y, ANCHO, 6, "F");
+      tx("INGREDIENTE", M + 2, y + 4, 6, "bold", GRIS);
+      doc.setFont("helvetica","bold"); doc.setFontSize(6);
+      doc.setTextColor(GRIS[0], GRIS[1], GRIS[2]);
+      doc.text("CANTIDAD", colCant, y + 4, { align: "right" });
+      doc.text("UNIDAD", colUm, y + 4, { align: "right" });
+      doc.text("GRAMOS / ML", colGr, y + 4, { align: "right" });
+      doc.text("PESADO", colOk, y + 4, { align: "right" });
+      y += 6;
+
+      var FILAS_PROD = 14;
+      var cuantas = Math.max(FILAS_PROD, Math.ceil(f.ing.length / FILAS_PROD) * FILAS_PROD);
+      var altoFila = 6.4;
+      for (var k = 0; k < cuantas; k++){
+        var x = f.ing[k];
+        doc.setDrawColor(235, 235, 235); doc.setLineWidth(.15);
+        doc.line(M, y + altoFila, W - M, y + altoFila);
+        tx(String(k + 1), M + 1.5, y + 4.3, 6, "normal", TENUE);
+        if (x){
+          doc.setFont("helvetica","normal"); doc.setFontSize(8);
+          var nom = doc.splitTextToSize(String(x.art).trim(), colCant - M - 12)[0];
+          tx(nom, M + 7, y + 4.3, 8);
+          doc.setFont("helvetica","normal"); doc.setFontSize(8);
+          doc.setTextColor(TINTA[0], TINTA[1], TINTA[2]);
+          doc.text(fmt(x.cant, x.cant < 1 ? 3 : 2), colCant, y + 4.3, { align: "right" });
+          doc.setFontSize(6); doc.setTextColor(TENUE[0], TENUE[1], TENUE[2]);
+          doc.text(String(x.um), colUm, y + 4.3, { align: "right" });
+          doc.setFontSize(8);
+          if (x.g === null){
+            doc.setTextColor(TENUE[0], TENUE[1], TENUE[2]);
+            doc.text("sin equivalencia", colGr, y + 4.3, { align: "right" });
+          } else {
+            doc.setFont("helvetica","bold");
+            doc.setTextColor(col[0], col[1], col[2]);
+            doc.text(fmt(x.g, x.g < 10 ? 1 : 0), colGr, y + 4.3, { align: "right" });
+          }
+          // casilla para ir marcando lo que ya se pesó
+          doc.setDrawColor(170); doc.setLineWidth(.25);
+          doc.rect(colOk - 4, y + 1.6, 3.6, 3.6);
+        }
+        y += altoFila;
+      }
+      y += 4;
+
+      if (u.conCosto){
+        tx("Costo de insumos " + pesos(f.costo) + "     Protegido " + pesos(f.costo * 1.1) +
+           (f.porUnidad !== null ? "     Por " + (f.r.um||"und") + " " + pesos(f.porUnidad * 1.1) : ""),
+           W - M, y, 7, "normal", GRIS, "right");
+        y += 5;
+      }
+
+      // método, en marco como en la ficha
+      tx("MÉTODO DE PREPARACIÓN", M, y, 8, "bold");
+      y += 2;
+      var altoMet = f.r.mp ? 30 : 34;
+      doc.setDrawColor(linea[0], linea[1], linea[2]); doc.setLineWidth(.2);
+      doc.roundedRect(M, y, ANCHO, altoMet, 1.2, 1.2);
+      if (f.r.mp){
+        doc.setFont("helvetica","normal"); doc.setFontSize(8.5);
+        doc.setTextColor(TINTA[0], TINTA[1], TINTA[2]);
+        doc.text(doc.splitTextToSize(f.r.mp, ANCHO - 6).slice(0, 7), M + 3, y + 5);
+      } else {
+        // rayado para escribirlo a mano: es así como se van llenando
+        doc.setDrawColor(222); doc.setLineWidth(.18);
+        for (var m2 = 0; m2 < 4; m2++) doc.line(M + 3, y + 8 + m2*6, W - M - 3, y + 8 + m2*6);
+        tx("Escríbelo la primera vez que se produzca; después se carga al libro.",
+           M + 3, y + 4.5, 6.5, "normal", TENUE);
+      }
+      y += altoMet + 5;
+
+      // utensilios y envase, también con marco
+      var mitad = (ANCHO - 4) / 2;
+      tx("UTENSILIOS", M, y, 8, "bold");
+      tx("ENVASE Y ROTULADO", M + mitad + 4, y, 8, "bold");
+      y += 2;
+      doc.setDrawColor(linea[0], linea[1], linea[2]); doc.setLineWidth(.2);
+      doc.roundedRect(M, y, mitad, 17, 1.2, 1.2);
+      doc.roundedRect(M + mitad + 4, y, mitad, 17, 1.2, 1.2);
       if (f.r.ut){
         doc.setFont("helvetica","normal"); doc.setFontSize(8);
-        doc.setTextColor(TINTA[0],TINTA[1],TINTA[2]);
-        doc.splitTextToSize(String(f.r.ut), mitad-2).forEach(function(ln){ tx(ln, M+2, y, 8); y += 4; });
+        doc.setTextColor(TINTA[0], TINTA[1], TINTA[2]);
+        doc.text(doc.splitTextToSize(String(f.r.ut), mitad - 6).slice(0, 4), M + 3, y + 5);
       } else {
-        doc.setDrawColor(205); doc.setLineWidth(.2);
-        for (var k=0;k<3;k++){ doc.line(M+2, y, M+mitad, y); y += 6; }
+        doc.setDrawColor(222); doc.setLineWidth(.18);
+        for (var u2 = 0; u2 < 2; u2++) doc.line(M + 3, y + 7 + u2*6, M + mitad - 3, y + 7 + u2*6);
       }
-      var yFinUt = y;
-      y = yIni;
-      doc.setDrawColor(205); doc.setLineWidth(.2);
-      for (var k2=0;k2<3;k2++){ doc.line(M+mitad+8, y, W-M-2, y); y += 6; }
-      y = Math.max(yFinUt, y) + 4;
+      doc.setDrawColor(222); doc.setLineWidth(.18);
+      for (var e2 = 0; e2 < 2; e2++)
+        doc.line(M + mitad + 7, y + 7 + e2*6, W - M - 3, y + 7 + e2*6);
+      y += 23;
 
-      /* Tres firmas, una por cada responsabilidad distinta: quien lo hizo,
-         quien da fe de que está bien, y quien lo recibe en almacén. Es lo que
-         convierte la hoja en el soporte del movimiento de inventario. */
-      y = Math.max(y, H - 34);
+      /* Tres firmas: quien lo hizo, quien da fe de que está bien y quien lo
+         recibe en almacén. Es lo que vuelve la hoja un soporte del movimiento
+         de inventario y no un papel suelto. */
+      y = Math.max(y, H - 26);
       var anchoF = (W - 2*M - 12) / 3;
       [["Produjo", "Cocina"],
        ["Verificó", "Chef · Jefe de costos"],
@@ -3986,15 +4086,14 @@
         var x = M + i * (anchoF + 6);
         doc.setDrawColor(120); doc.setLineWidth(.3);
         doc.line(x, y, x + anchoF, y);
-        tx(s[0].toUpperCase(), x, y+4, 6.5, "bold", GRIS);
-        tx(s[1], x, y+7.5, 6, "normal", TENUE);
+        tx(s[0].toUpperCase(), x, y + 4, 6.5, "bold", GRIS);
+        tx(s[1], x, y + 7.5, 6, "normal", TENUE);
       });
-      tx("Folio " + f.folio, W-M, y+11.5, 6, "normal", TENUE, "right");
     });
-
     return doc;
   }
 
+  window.__pp=function(){var d=pdfDeProduccion();return d?d.output("datauristring"):null;};
   $("pdfProd").addEventListener("click", function(){
     var doc = pdfDeProduccion(); if (!doc) return;
     compartirPdf(doc.output("blob"), "Produccion " + ($("fechaProd").value || hoyTexto()) + ".pdf",
