@@ -3938,8 +3938,9 @@
       var x = M + i * (anchoP + 6);
       doc.setDrawColor(120); doc.setLineWidth(.3);
       doc.line(x, y, x + anchoP, y);
-      tx(s[0].toUpperCase(), x, y+4, 6.5, "bold", GRIS);
-      tx(s[1], x, y+7.5, 6, "normal", TENUE);
+      // el rótulo va centrado bajo su raya, no pegado al borde izquierdo
+      tx(s[0].toUpperCase(), x + anchoP/2, y+4, 6.5, "bold", GRIS, "center");
+      tx(s[1], x + anchoP/2, y+7.5, 6, "normal", TENUE, "center");
     });
 
     /* ---------- UNA HOJA POR PREPARACIÓN ----------
@@ -4141,8 +4142,9 @@
         var x = M + i * (anchoF + 6);
         doc.setDrawColor(120); doc.setLineWidth(.3);
         doc.line(x, y, x + anchoF, y);
-        tx(s[0].toUpperCase(), x, y + 4, 6.5, "bold", GRIS);
-        tx(s[1], x, y + 7.5, 6, "normal", TENUE);
+        // el rótulo va centrado bajo su raya, no pegado al borde izquierdo
+        tx(s[0].toUpperCase(), x + anchoF/2, y + 4, 6.5, "bold", GRIS, "center");
+        tx(s[1], x + anchoF/2, y + 7.5, 6, "normal", TENUE, "center");
       });
     });
     return doc;
@@ -4152,6 +4154,7 @@
   function nombreOrden(){
     return "Orden de produccion Caujaral " + ($("fechaProd").value || hoyTexto()) + ".pdf";
   }
+  window.__pp=function(){var d=pdfDeProduccion();return d?d.output("datauristring"):null;};
   $("pdfProd").addEventListener("click", function(){
     var doc = pdfDeProduccion(); if (!doc) return;
     compartirPdf(doc.output("blob"), nombreOrden(), "Orden de producción Caujaral");
