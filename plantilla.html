@@ -4152,7 +4152,6 @@
   function nombreOrden(){
     return "Orden de produccion Caujaral " + ($("fechaProd").value || hoyTexto()) + ".pdf";
   }
-  window.__pp=function(){var d=pdfDeProduccion();return d?d.output("datauristring"):null;};
   $("pdfProd").addEventListener("click", function(){
     var doc = pdfDeProduccion(); if (!doc) return;
     compartirPdf(doc.output("blob"), nombreOrden(), "Orden de producción Caujaral");
