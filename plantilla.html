@@ -1176,7 +1176,7 @@
       Escoge qué se va a producir hoy y cuántas recetas de cada una. Sale una
       <b>hoja resumen</b> con todo el plan y <b>una hoja por preparación</b> para llevar a la
       estación, con el rendimiento que debería dar y los espacios para anotar a mano la hora de
-      inicio, la hora final y lo que de verdad salió.
+      inicio, la hora final, lo que de verdad salió y el consecutivo de la transformación en Zeus.
     </p>
 
     <div class="tarjeta">
@@ -1197,9 +1197,9 @@
           <label for="fechaProd">Fecha de producción</label>
           <input id="fechaProd" type="date">
         </div>
-        <label class="inter">
+        <label class="inter" title="Manda también sobre las hojas que se imprimen">
           <input type="checkbox" id="verCostoProd">
-          Ver costos
+          Imprimir con costos
         </label>
         <div class="acciones">
           <button class="bot" type="button" id="limpiarProd">Vaciar</button>
@@ -3792,16 +3792,17 @@
     doc.text("N.o", M, y);
     doc.text("Folio", M+8, y);
     doc.text("Preparación", M+32, y);
-    doc.text("Recetas", M+128, y, {align:"right"});
-    doc.text("Debe dar", M+152, y, {align:"right"});
-    doc.text("Salió", W-M-2, y, {align:"right"});
+    doc.text("Recetas", M+112, y, {align:"right"});
+    doc.text("Debe dar", M+134, y, {align:"right"});
+    doc.text("Salió", M+158, y, {align:"right"});
+    doc.text("Consecutivo Zeus", W-M-2, y, {align:"right"});
     doc.setDrawColor(AZUL[0],AZUL[1],AZUL[2]); doc.setLineWidth(.3);
     doc.line(M, y+2, W-M, y+2);
     y += 6;
 
     u.filas.forEach(function(f, i){
       doc.setFont("helvetica","normal"); doc.setFontSize(8);
-      var ls = doc.splitTextToSize(f.r.n, 92);
+      var ls = doc.splitTextToSize(f.r.n, 76);
       if (ls.length > 2) ls = ls.slice(0,2);
       var alto = Math.max(7, 1.2 + ls.length*3.5);
       if (y + alto > H - 40){ doc.addPage(); encabezado("Plan de producción (continuación)"); }
@@ -3809,12 +3810,13 @@
       tx(String(i+1), M, y, 7.5, "normal", TENUE);
       tx(f.folio, M+8, y, 7, "normal", GRIS);
       ls.forEach(function(ln,j){ tx(ln, M+32, y + j*3.5, 8); });
-      tx(String(f.cant), M+128, y, 8, "bold", TINTA, "right");
+      tx(String(f.cant), M+112, y, 8, "bold", TINTA, "right");
       tx(f.teorico === null ? "—" : fmt(f.teorico, f.teorico % 1 ? 2 : 0) + " " + (f.r.um||""),
-         M+152, y, 8, "normal", TINTA, "right");
-      // espacio para anotar lo que salió
+         M+134, y, 8, "normal", TINTA, "right");
+      // espacios para anotar a mano: lo que salió y el consecutivo del sistema
       doc.setDrawColor(150); doc.setLineWidth(.25);
-      doc.line(M+158, y+1, W-M-2, y+1);
+      doc.line(M+138, y+1, M+158, y+1);
+      doc.line(M+162, y+1, W-M-2, y+1);
       doc.setDrawColor(235); doc.setLineWidth(.12);
       doc.line(M, y + alto - 3.4, W-M, y + alto - 3.4);
       y += alto;
@@ -3836,12 +3838,17 @@
       y += 8;
     }
 
-    // firmas del plan
-    y = Math.max(y + 10, H - 38);
-    [["Planificó", M, 55], ["Autorizó", M+62, 55]].forEach(function(s){
+    // firmas del plan, con los mismos responsables de las hojas de trabajo
+    y = Math.max(y + 10, H - 36);
+    var anchoP = (W - 2*M - 12) / 3;
+    [["Planificó", "Jefe de costos"],
+     ["Autorizó", "Chef"],
+     ["Recibió", "Almacén"]].forEach(function(s, i){
+      var x = M + i * (anchoP + 6);
       doc.setDrawColor(120); doc.setLineWidth(.3);
-      doc.line(s[1], y, s[1]+s[2], y);
-      tx(s[0].toUpperCase(), s[1], y+4, 6.5, "bold", GRIS);
+      doc.line(x, y, x + anchoP, y);
+      tx(s[0].toUpperCase(), x, y+4, 6.5, "bold", GRIS);
+      tx(s[1], x, y+7.5, 6, "normal", TENUE);
     });
 
     // ---------- UNA HOJA POR PREPARACIÓN ----------
@@ -3869,7 +3876,24 @@
       casilla("HORA DE INICIO", xHora, 34);
       casilla("HORA FINAL", xHora+40, 34);
       casilla("SALIÓ REALMENTE", xHora+80, 44);
-      y += altoCaja + 4;
+      y += altoCaja + 2;
+
+      /* El consecutivo de la transformación en Zeus: es lo que amarra esta hoja
+         con el movimiento que queda en el sistema. Sin ese número, el papel y
+         el inventario quedan sueltos y no hay cómo cruzarlos después. */
+      doc.setDrawColor(150); doc.setLineWidth(.3);
+      doc.line(M+78, y+5, W-M, y+5);
+      tx("CONSECUTIVO DE LA TRANSFORMACIÓN MANUAL EN ZEUS", M, y+4.5, 7, "bold", GRIS);
+      y += 11;
+
+      // el costo de esta producción, solo si se pidió
+      if (u.conCosto){
+        tx("Costo de insumos  " + pesos(f.costo) +
+           "      Protegido  " + pesos(f.costo * 1.1) +
+           (f.porUnidad !== null ? "      Por " + (f.r.um||"unidad") + "  " + pesos(f.porUnidad * 1.1) : ""),
+           W-M, y, 7.5, "normal", GRIS, "right");
+        y += 6;
+      }
 
       // ingredientes escalados
       tx("INGREDIENTES", M, y, 7, "bold", GRIS); y += 4.5;
@@ -3951,19 +3975,27 @@
       for (var k2=0;k2<3;k2++){ doc.line(M+mitad+8, y, W-M-2, y); y += 6; }
       y = Math.max(yFinUt, y) + 4;
 
-      // firmas de la hoja: es lo que la vuelve un soporte, no un papel suelto
-      y = Math.max(y, H - 32);
-      [["Produjo", M, 56], ["Verificó", M+64, 56], ["Folio " + f.folio, M+128, 54]].forEach(function(s, i){
+      /* Tres firmas, una por cada responsabilidad distinta: quien lo hizo,
+         quien da fe de que está bien, y quien lo recibe en almacén. Es lo que
+         convierte la hoja en el soporte del movimiento de inventario. */
+      y = Math.max(y, H - 34);
+      var anchoF = (W - 2*M - 12) / 3;
+      [["Produjo", "Cocina"],
+       ["Verificó", "Chef · Jefe de costos"],
+       ["Almacenó", "Almacén"]].forEach(function(s, i){
+        var x = M + i * (anchoF + 6);
         doc.setDrawColor(120); doc.setLineWidth(.3);
-        if (i < 2) doc.line(s[1], y, s[1]+s[2], y);
-        tx(i < 2 ? s[0].toUpperCase() : s[0], s[1], y+4, 6.5, i<2?"bold":"normal",
-           i<2 ? GRIS : TENUE);
+        doc.line(x, y, x + anchoF, y);
+        tx(s[0].toUpperCase(), x, y+4, 6.5, "bold", GRIS);
+        tx(s[1], x, y+7.5, 6, "normal", TENUE);
       });
+      tx("Folio " + f.folio, W-M, y+11.5, 6, "normal", TENUE, "right");
     });
 
     return doc;
   }
 
+  window.__pp=function(){var d=pdfDeProduccion();return d?d.output("datauristring"):null;};
   $("pdfProd").addEventListener("click", function(){
     var doc = pdfDeProduccion(); if (!doc) return;
     compartirPdf(doc.output("blob"), "Produccion " + ($("fechaProd").value || hoyTexto()) + ".pdf",
