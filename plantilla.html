@@ -3995,7 +3995,6 @@
     return doc;
   }
 
-  window.__pp=function(){var d=pdfDeProduccion();return d?d.output("datauristring"):null;};
   $("pdfProd").addEventListener("click", function(){
     var doc = pdfDeProduccion(); if (!doc) return;
     compartirPdf(doc.output("blob"), "Produccion " + ($("fechaProd").value || hoyTexto()) + ".pdf",
