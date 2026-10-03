@@ -3943,6 +3943,129 @@
       tx(s[1], x + anchoP/2, y+7.5, 6, "normal", TENUE, "center");
     });
 
+
+    /* El membrete de la segunda hoja en adelante. Este documento se llama
+       ORDEN DE PRODUCCIÓN CAUJARAL: así se pide, se archiva y se audita. */
+    function membrete(derecha){
+      var lg2 = logoDeLaPagina();
+      if (lg2){ try { doc.addImage(lg2, "PNG", M, 9.5, 10, 10); } catch(e){} }
+      doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+      doc.setTextColor(TINTA[0], TINTA[1], TINTA[2]);
+      doc.text("ORDEN DE PRODUCCIÓN CAUJARAL", W / 2, 15.5, { align: "center" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(6.5);
+      doc.setTextColor(AZUL[0], AZUL[1], AZUL[2]);
+      doc.text("CLUB LAGOS DE CAUJARAL", W / 2, 19.5, { align: "center" });
+      tx(fechaLarga(), W - M, 13.5, 6.5, "normal", GRIS, "right");
+      if (derecha) tx(derecha, W - M, 18.5, 7.5, "bold", AZUL, "right");
+      doc.setDrawColor(208, 208, 208); doc.setLineWidth(.2);
+      doc.line(M, 22.5, W - M, 22.5);
+      y = 28;
+    }
+
+    /* ---------- HOJA 2: LOS INSUMOS QUE HAY QUE TENER ----------
+       Todo lo que consume el plan del día, sumado por insumo y en orden
+       alfabético —que es como se recorre una bodega—, con dos columnas en
+       blanco para anotar la existencia física y lo que falta.
+
+       Es la hoja que ataca el problema de fondo: enterarse a mitad de la
+       producción de que no alcanzó un insumo. Esto se revisa ANTES de prender
+       la estufa, no después. */
+    (function(){
+      var acc = {};
+      u.filas.forEach(function(f, idx){
+        f.ing.forEach(function(x){
+          var k = norm(x.art);
+          var a = acc[k] || (acc[k] = { n:x.art, um:x.um, cant:0, g:0, sinG:false, costo:0, de:{} });
+          a.cant += x.cant;
+          if (x.g === null) a.sinG = true; else a.g += x.g;
+          a.costo += x.costo;
+          a.de[idx + 1] = 1;
+        });
+      });
+      var ins = Object.keys(acc).map(function(k){ return acc[k]; });
+      if (!ins.length) return;
+      ins.sort(function(a, b){ return a.n.localeCompare(b.n, "es"); });
+
+      doc.addPage();
+      membrete("Revisión de insumos");
+
+      tx("Insumos que hay que tener", M, y + 4, 15, "bold");
+      y += 11;
+      tx("Todo lo que consume el plan del día, sumado. Revísalo contra la bodega antes de arrancar.",
+         M, y, 8, "normal", GRIS);
+      y += 8;
+
+      var C2 = { idx:M, nom:M+8, folios:M+80, cant:M+110, und:M+113, gr:M+138,
+                 exi:M+164, falta:W-M };
+      function cab2(){
+        doc.setFillColor(AZUL_S[0], AZUL_S[1], AZUL_S[2]);
+        doc.rect(M, y-4, W-2*M, 6, "F");
+        doc.setFont("helvetica","bold"); doc.setFontSize(6);
+        doc.setTextColor(AZUL[0], AZUL[1], AZUL[2]);
+        doc.text("N.o", C2.idx, y);
+        doc.text("INSUMO", C2.nom, y);
+        doc.text("PARA", C2.folios, y);
+        doc.text("CANTIDAD", C2.cant, y, {align:"right"});
+        doc.text("UND", C2.und, y);
+        doc.text("GRAMOS / ML", C2.gr, y, {align:"right"});
+        doc.text("HAY EN BODEGA", C2.exi, y, {align:"right"});
+        doc.text("FALTA", C2.falta, y, {align:"right"});
+        doc.setDrawColor(AZUL[0], AZUL[1], AZUL[2]); doc.setLineWidth(.3);
+        doc.line(M, y+2, W-M, y+2);
+        y += 6;
+      }
+      cab2();
+
+      ins.forEach(function(a, i){
+        doc.setFont("helvetica","normal"); doc.setFontSize(8);
+        var ls = doc.splitTextToSize(a.n, 68);
+        if (ls.length > 2) ls = ls.slice(0, 2);
+        var alto = Math.max(6.6, 1.2 + ls.length * 3.5);
+        if (y + alto > H - 34){
+          doc.addPage(); membrete("Revisión de insumos");
+          tx("Insumos que hay que tener (continuación)", M, y + 4, 12, "bold");
+          y += 12; cab2();
+        }
+        if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y-3.4, W-2*M, alto, "F"); }
+        tx(String(i+1), C2.idx, y, 7, "normal", TENUE);
+        ls.forEach(function(ln, j){ tx(ln, C2.nom, y + j*3.5, 8); });
+        var de = Object.keys(a.de);
+        tx(de.length > 3 ? de.slice(0,3).join(",") + "..." : de.join(","),
+           C2.folios, y, 6.5, "normal", TENUE);
+        tx(fmt(a.cant, a.cant < 1 ? 3 : 2), C2.cant, y, 8, "normal", TINTA, "right");
+        tx(a.um, C2.und, y, 6.5, "normal", TENUE);
+        tx(a.sinG && !a.g ? "—" : fmt(a.g, a.g < 10 ? 1 : 0), C2.gr, y, 8, "bold", AZUL, "right");
+        // los dos espacios que se llenan recorriendo la bodega
+        doc.setDrawColor(165); doc.setLineWidth(.25);
+        doc.line(C2.gr + 6, y + 1, C2.exi, y + 1);
+        doc.line(C2.exi + 4, y + 1, C2.falta, y + 1);
+        doc.setDrawColor(235); doc.setLineWidth(.12);
+        doc.line(M, y + alto - 3.4, W - M, y + alto - 3.4);
+        y += alto;
+      });
+
+      y += 4;
+      tx("La columna PARA dice a cuál producción del plan corresponde cada insumo: " +
+         "si algo falta, se sabe de una cuál hay que mover.", M, y, 6.5, "normal", TENUE);
+      y += 4;
+      if (u.conCosto){
+        tx("Costo de los insumos del día  " + pesos(u.totalCosto) +
+           "     Protegido  " + pesos(u.totalCosto * 1.1), W - M, y, 7.5, "normal", GRIS, "right");
+        y += 5;
+      }
+
+      // firmas de la revisión: quien contó y quien da el visto bueno
+      y = Math.max(y + 8, H - 28);
+      var anchoR = (W - 2*M - 6) / 2;
+      [["Revisó existencias", "Almacén"],
+       ["Visto bueno", "Chef · Jefe de costos"]].forEach(function(s, i){
+        var x = M + i * (anchoR + 6);
+        doc.setDrawColor(120); doc.setLineWidth(.3);
+        doc.line(x, y, x + anchoR, y);
+        tx(s[0].toUpperCase(), x + anchoR/2, y + 4, 6.5, "bold", GRIS, "center");
+        tx(s[1], x + anchoR/2, y + 7.5, 6, "normal", TENUE, "center");
+      });
+    })();
     /* ---------- UNA HOJA POR PREPARACIÓN ----------
        Con el mismo formato de la ficha técnica: la cocina ya conoce esa hoja,
        así que la de producción se lee igual —franja de color, título grande,
@@ -3954,21 +4077,8 @@
       var ANCHO = W - M*2;
       var linea = [208,208,208];
 
-      /* Membrete centrado. Este documento se llama ORDEN DE PRODUCCIÓN CAUJARAL:
-         es el nombre con el que se va a pedir, archivar y auditar, así que va
-         al centro y en grande, no como subtítulo de un encabezado. */
-      var lg = logoDeLaPagina();
-      if (lg){ try { doc.addImage(lg, "PNG", M, 9.5, 10, 10); } catch(e){} }
-      doc.setFont("helvetica", "bold"); doc.setFontSize(13);
-      doc.setTextColor(TINTA[0], TINTA[1], TINTA[2]);
-      doc.text("ORDEN DE PRODUCCIÓN CAUJARAL", W / 2, 15.5, { align: "center" });
-      doc.setFont("helvetica", "normal"); doc.setFontSize(6.5);
-      doc.setTextColor(AZUL[0], AZUL[1], AZUL[2]);
-      doc.text("CLUB LAGOS DE CAUJARAL", W / 2, 19.5, { align: "center" });
-      tx(fechaLarga(), W - M, 13.5, 6.5, "normal", GRIS, "right");
-      tx("Folio " + f.folio, W - M, 18.5, 7.5, "bold", AZUL, "right");
-      doc.setDrawColor(linea[0], linea[1], linea[2]); doc.setLineWidth(.2);
-      doc.line(M, 22.5, W - M, 22.5);
+      // mismo membrete de la hoja de insumos: un solo sitio que lo define
+      membrete("Folio " + f.folio);
 
       // franja del color del grupo y título
       doc.setFillColor(col[0], col[1], col[2]);
@@ -4154,6 +4264,7 @@
   function nombreOrden(){
     return "Orden de produccion Caujaral " + ($("fechaProd").value || hoyTexto()) + ".pdf";
   }
+  window.__pp=function(){var d=pdfDeProduccion();return d?d.output("datauristring"):null;};
   $("pdfProd").addEventListener("click", function(){
     var doc = pdfDeProduccion(); if (!doc) return;
     compartirPdf(doc.output("blob"), nombreOrden(), "Orden de producción Caujaral");
