@@ -3964,6 +3964,10 @@
     return doc;
   }
 
+  window.__pdfProdPrueba = function(){
+    var doc = pdfDeProduccion(); return doc ? doc.output("datauristring") : null;
+  };
+
   $("pdfProd").addEventListener("click", function(){
     var doc = pdfDeProduccion(); if (!doc) return;
     compartirPdf(doc.output("blob"), "Produccion " + ($("fechaProd").value || hoyTexto()) + ".pdf",
