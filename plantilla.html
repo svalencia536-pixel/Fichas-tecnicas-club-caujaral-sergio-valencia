@@ -3929,8 +3929,8 @@
       y += 8;
     }
 
-    // firmas del plan, con los mismos responsables de las hojas de trabajo
-    y = Math.max(y + 10, H - 36);
+    // firmas del plan, con al menos 18 mm libres para que quepa la firma
+    y = Math.max(y + 18, H - 32);
     var anchoP = (W - 2*M - 12) / 3;
     [["Planificó", "Jefe de costos"],
      ["Autorizó", "Chef"],
@@ -4054,8 +4054,8 @@
         y += 5;
       }
 
-      // firmas de la revisión: quien contó y quien da el visto bueno
-      y = Math.max(y + 8, H - 28);
+      // firmas de la revisión, con el mismo espacio libre para firmar
+      y = Math.max(y + 18, H - 32);
       var anchoR = (W - 2*M - 6) / 2;
       [["Revisó existencias", "Almacén"],
        ["Visto bueno", "Chef · Jefe de costos"]].forEach(function(s, i){
@@ -4160,8 +4160,11 @@
       doc.text("PESADO", colOk, y + 4, { align: "right" });
       y += 6;
 
-      var FILAS_PROD = 14;
-      var cuantas = Math.max(FILAS_PROD, Math.ceil(f.ing.length / FILAS_PROD) * FILAS_PROD);
+      /* 12 filas fijas: cubren la preparación más larga del recetario (12
+         ingredientes) y dejan abajo el espacio que de verdad hace falta para
+         firmar. Con 14 las rayas de firma quedaban a 6 mm de los cuadros. */
+      var FILAS_PROD = 12;
+      var cuantas = Math.max(FILAS_PROD, f.ing.length);
       var altoFila = 6.4;
       for (var k = 0; k < cuantas; k++){
         var x = f.ing[k];
@@ -4239,12 +4242,16 @@
       doc.setDrawColor(222); doc.setLineWidth(.18);
       for (var e2 = 0; e2 < 2; e2++)
         doc.line(M + mitad + 7, y + 7 + e2*6, W - M - 3, y + 7 + e2*6);
-      y += 23;
+      y += 17;
 
       /* Tres firmas: quien lo hizo, quien da fe de que está bien y quien lo
          recibe en almacén. Es lo que vuelve la hoja un soporte del movimiento
-         de inventario y no un papel suelto. */
-      y = Math.max(y, H - 26);
+         de inventario y no un papel suelto.
+
+         El Math.max garantiza AL MENOS 18 mm libres entre los cuadros y la
+         raya: una firma necesita espacio para caber. Antes quedaban 6 mm y
+         tocaba firmar encima del marco. */
+      y = Math.max(y + 18, H - 30);
       var anchoF = (W - 2*M - 12) / 3;
       [["Produjo", "Cocina"],
        ["Verificó", "Chef · Jefe de costos"],
@@ -4264,6 +4271,7 @@
   function nombreOrden(){
     return "Orden de produccion Caujaral " + ($("fechaProd").value || hoyTexto()) + ".pdf";
   }
+  window.__pp=function(){var d=pdfDeProduccion();return d?d.output("datauristring"):null;};
   $("pdfProd").addEventListener("click", function(){
     var doc = pdfDeProduccion(); if (!doc) return;
     compartirPdf(doc.output("blob"), nombreOrden(), "Orden de producción Caujaral");
