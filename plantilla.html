@@ -1652,6 +1652,7 @@
     desdePrecios: false, // y al simulador, si se llegó desde allá
     raciones: 1,
     costos: false,
+    part: false,       // el % de participación: interruptor aparte del costo
     rastro: []         // navegacion hacia subrecetas
   };
 
@@ -2190,6 +2191,14 @@
     });
     html += '</div>';
     html += '<label class="interr"><input type="checkbox" id="verCostos"' + (estado.costos ? " checked" : "") + '> Ver costos</label>';
+    /* El % de participación es un análisis aparte: con el costo prendido se ve
+       SOLO el costo, y la participación entra únicamente si se pide. El
+       interruptor solo asoma con el costo a la vista, porque el porcentaje se
+       calcula sobre él y sin costo no tendría de dónde salir. */
+    if (estado.costos){
+      html += '<label class="interr"><input type="checkbox" id="verPart"' +
+              (estado.part ? " checked" : "") + '> Ver % de participación</label>';
+    }
     html += '<button class="imprimir" type="button" id="compartir" title="Enviar esta receta a alguien">' +
             '<span class="solo-ancho">Compartir</span><span class="solo-angosto">Compartir</span></button>';
     html += '<button class="imprimir" type="button" id="imprimir" title="Sale en una sola hoja">' +
@@ -2207,8 +2216,9 @@
     html += '<div class="tablawrap"><table>';
     html += '<thead><tr>';
     html += '<th class="c-idx"></th><th>Ingrediente</th><th class="num">Cantidad</th><th class="c-um">Unidad</th><th class="num">Gramos / ml</th>';
-    if (estado.costos) html += '<th class="num c-cu">Costo und</th><th class="num">Costo línea</th>' +
-                               '<th class="num c-part">% part.</th>';
+    var verPart = estado.costos && estado.part;
+    if (estado.costos) html += '<th class="num c-cu">Costo und</th><th class="num">Costo línea</th>';
+    if (verPart) html += '<th class="num c-part">% part.</th>';
     html += '</tr></thead><tbody>';
 
     /* El costo total se necesita ANTES de pintar las filas, porque cada línea
@@ -2244,10 +2254,12 @@
       if (estado.costos){
         html += '<td class="num c-cu">' + pesos(cu) + '</td>';
         html += '<td class="num">' + pesos(cu * cant) + '</td>';
-        /* Qué parte del costo se lleva este ingrediente, ANTES de la protección
-           —sobre el costo de ingredientes puro, no sobre el protegido—, que es
-           lo que sirve para saber dónde está el peso de la receta. La barrita
-           deja ver el reparto de un vistazo, sin leer los números. */
+      }
+      /* Qué parte del costo se lleva este ingrediente, ANTES de la protección
+         —sobre el costo de ingredientes puro, no sobre el protegido—, que es
+         lo que sirve para saber dónde está el peso de la receta. La barrita
+         deja ver el reparto de un vistazo, sin leer los números. */
+      if (verPart){
         var part = costoDeIngredientes > 0 ? (cu * cant) / costoDeIngredientes * 100 : 0;
         html += '<td class="num c-part">' +
                 '<span class="part-barra" style="width:' + Math.min(100, part).toFixed(1) + '%"></span>' +
@@ -2266,8 +2278,8 @@
       html += '<tr class="relleno">';
       html += '<td class="idx">' + (k+1) + '</td><td class="art"></td>';
       html += '<td class="num"></td><td class="c-um"></td><td class="num"></td>';
-      if (estado.costos) html += '<td class="num c-cu"></td><td class="num"></td>' +
-                                 '<td class="num c-part"></td>';
+      if (estado.costos) html += '<td class="num c-cu"></td><td class="num"></td>';
+      if (verPart) html += '<td class="num c-part"></td>';
       html += '</tr>';
     }
     html += '</tbody>';
@@ -2278,11 +2290,11 @@
       var prot = totalCosto * 0.1;
       html += '<tfoot>';
       html += '<tr><td colspan="6">Costo de ingredientes</td><td class="num">' + pesos(totalCosto) +
-              '</td><td class="num c-part">100 %</td></tr>';
+              '</td>' + (verPart ? '<td class="num c-part">100 %</td>' : '') + '</tr>';
       html += '<tr><td colspan="6">Protección 10 %</td><td class="num">' + pesos(prot) +
-              '</td><td class="num c-part"></td></tr>';
+              '</td>' + (verPart ? '<td class="num c-part"></td>' : '') + '</tr>';
       html += '<tr><td colspan="6">Costo total protegido</td><td class="num">' + pesos(totalCosto + prot) +
-              '</td><td class="num c-part"></td></tr>';
+              '</td>' + (verPart ? '<td class="num c-part"></td>' : '') + '</tr>';
       html += '</tfoot>';
     }
     html += '</table></div>';
@@ -2290,7 +2302,7 @@
     html += '<p class="nota"><b>Lo sólido va en gramos y lo líquido en mililitros.</b> ' +
             '1 KL = 1.000 g · 1 LT = 1.000 ml. Los licores y demás artículos que se piden por unidad ' +
             'se convierten con la presentación del propio nombre — 0,045 de una botella de 1.000 ml son 45 ml.';
-    if (estado.costos){
+    if (verPart){
       html += ' <b>El % de part.</b> es la tajada que se lleva cada insumo del costo de ' +
               'ingredientes, <b>antes de la protección</b>: sirve para ver de un vistazo en qué ' +
               'se va la plata de la receta. Es solo para analizar en pantalla — <b>no sale en la ' +
@@ -2729,6 +2741,8 @@
     });
     var vc = $("verCostos");
     if (vc) vc.addEventListener("change", function(){ estado.costos = this.checked; pintarFicha(); });
+    var vp = $("verPart");
+    if (vp) vp.addEventListener("change", function(){ estado.part = this.checked; pintarFicha(); });
     // El visor bloquea la impresión de la página incrustada, y lo hace EN SILENCIO:
     // window.print() no lanza error, simplemente no abre nada. Por eso no se intenta
     // adivinar si funcionó — siempre se muestra el atajo, y además se intenta.

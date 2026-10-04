@@ -498,6 +498,11 @@ try {
   $paraHash = $json -replace '"generado":"[^"]*"', ''
   $paraHash = $paraHash -replace '"fuente":"[^"]*"', ''
   $paraHash = $paraHash -replace '"corrida":"[^"]*"', ''
+  # La plantilla tambien entra en la huella. Antes solo contaban los datos, asi
+  # que una mejora del aplicativo sin cambio de recetas salia SIN-CAMBIOS y no
+  # se publicaba nunca: habia que borrar el archivo del hash a mano.
+  $tplFn = Join-Path $raiz "plantilla.html"
+  if (Test-Path $tplFn) { $paraHash += [System.IO.File]::ReadAllText($tplFn, [System.Text.Encoding]::UTF8) }
   $md5 = [System.Security.Cryptography.MD5]::Create()
   $hash = [BitConverter]::ToString($md5.ComputeHash([Text.Encoding]::UTF8.GetBytes($paraHash))).Replace("-","")
   $hashPrevio = ""
