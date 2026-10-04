@@ -1608,6 +1608,42 @@
       .replace(/\s+/g, " ").trim();
   }
 
+  /* ---------- el código de inventario de cada artículo ----------
+     Viene de "Codigos articulos.csv": nombre normalizado -> [código, grupo].
+     Sirve para dos cosas en las listas consolidadas de pedido y producción:
+     mostrar el código al lado del artículo, y sobre todo ORDENARLAS como se
+     recorre una bodega —primero el grupo, que son los tres primeros dígitos
+     del código, y dentro del grupo alfabéticamente—. */
+  var ARTS = DATOS.arts || {};
+
+  // Código de un artículo: el de la tabla; si es una receta o subreceta, el suyo.
+  function codigoArticulo(nombre, codRecetaSiAplica){
+    var a = ARTS[norm(nombre)];
+    if (a && a[0]) return a[0];
+    return codRecetaSiAplica || "";
+  }
+  function nombreGrupoArticulo(nombre){
+    var a = ARTS[norm(nombre)];
+    return (a && a[1]) ? a[1] : "";
+  }
+  /* El grupo son los tres primeros caracteres del código. Lo que no tiene
+     código se va al final —en vez de colarse entre los grupos reales— y así
+     además queda a la vista lo que falta por cargar en la tabla. */
+  function grupoArticulo(cod){
+    var c = String(cod || "").trim().toUpperCase();
+    return c ? c.slice(0, 3) : "ZZZ";
+  }
+  /* El orden que pidió costos: grupo y dentro del grupo alfabético. Recibe
+     filas que ya traigan .n (nombre) y opcionalmente .cod (código de receta). */
+  function ordenarPorGrupo(filas){
+    return filas.slice().sort(function(a, b){
+      var ga = grupoArticulo(codigoArticulo(a.n, a.cod));
+      var gb = grupoArticulo(codigoArticulo(b.n, b.cod));
+      if (ga !== gb) return ga < gb ? -1 : 1;
+      return String(a.n).localeCompare(String(b.n), "es");
+    });
+  }
+
   // indices
   var porCodigo = {}, porNombre = {};
   RECETAS.forEach(function(r){
@@ -3173,9 +3209,10 @@
     return salida;
   }
 
-  /* Todo lo que consume el plan del día, sumado por insumo y en orden
-     alfabético —que es como se recorre una bodega—. Lo usan la pantalla y la
-     hoja de revisión: un solo cálculo, dos salidas. */
+  /* Todo lo que consume el plan del día, sumado por insumo y ordenado por
+     GRUPO y dentro del grupo alfabéticamente —que es como se recorre una
+     bodega—. Lo usan la pantalla y la hoja de revisión: un solo cálculo, dos
+     salidas. */
   function consolidarInsumos(filas){
     var acc = {};
     filas.forEach(function(f, idx){
@@ -3189,8 +3226,7 @@
       });
     });
     var ins = Object.keys(acc).map(function(k){ return acc[k]; });
-    ins.sort(function(a, b){ return a.n.localeCompare(b.n, "es"); });
-    return ins;
+    return ordenarPorGrupo(ins);
   }
 
   var listaProd = RECETAS.map(function(r){
@@ -3370,18 +3406,21 @@
       h += '<h2 class="sec es-pv" style="margin-top:22px">Insumos que hay que tener ' +
            '<span class="um">· ' + ins.length + (ins.length === 1 ? ' insumo' : ' insumos') +
            ' · ' + fmt(totalG, 0) + ' g</span></h2>';
-      h += '<p class="nota" style="margin:0 0 9px">Todo lo que consume el plan, sumado y en orden ' +
-           'alfabético. Esta misma relación sale en el PDF con dos columnas en blanco para anotar ' +
-           'la existencia de bodega.</p>';
+      h += '<p class="nota" style="margin:0 0 9px">Todo lo que consume el plan, sumado y ordenado ' +
+           '<b>por grupo</b> —los tres primeros dígitos del código— y dentro del grupo ' +
+           'alfabéticamente, como se recorre una bodega. Esta misma relación sale en el PDF con ' +
+           'dos columnas en blanco para anotar la existencia.</p>';
       h += '<div class="tablawrap"><table><thead><tr>';
-      h += '<th class="num">N.º</th><th>Insumo</th><th class="opc">Para</th>';
+      h += '<th class="num">N.º</th><th>Código</th><th>Insumo</th><th class="opc">Para</th>';
       h += '<th class="num">Cantidad</th><th>Unidad</th><th class="num">Gramos / ml</th>';
       if (conCosto) h += '<th class="num">Costo</th>';
       h += '</tr></thead><tbody>';
       ins.forEach(function(a, i){
         var de = Object.keys(a.de);
+        var cdA = codigoArticulo(a.n);
         h += '<tr>';
         h += '<td class="idx">' + (i+1) + '</td>';
+        h += '<td><span class="cod">' + esc(cdA || "—") + '</span></td>';
         h += '<td>' + esc(a.n) + '</td>';
         h += '<td class="de opc">' + esc(de.join(", ")) + '</td>';
         h += '<td class="num">' + fmt(a.cant, a.cant < 1 ? 3 : 2) + '</td>';
@@ -3394,7 +3433,7 @@
       });
       h += '</tbody>';
       if (conCosto){
-        h += '<tfoot><tr><td colspan="5">Costo de los insumos del día</td>' +
+        h += '<tfoot><tr><td colspan="6">Costo de los insumos del día</td>' +
              '<td class="num">' + pesos(totalCosto) + '</td></tr></tfoot>';
       }
       h += '</table></div>';
@@ -3787,9 +3826,11 @@
     });
     y += 6;
 
+    /* El código entra como columna propia: en el papel es lo que hace legible
+       el orden —los tres primeros dígitos son el grupo— y lo que se teclea. */
     var cols = u.conCosto
-      ? { idx:M, nom:M+9, cant:M+112, und:M+115, gr:M+152, costo:W-M, maxNom:98 }
-      : { idx:M, nom:M+9, cant:M+134, und:M+137, gr:W-M, maxNom:120 };
+      ? { idx:M, cod:M+7, nom:M+25, cant:M+112, und:M+115, gr:M+152, costo:W-M, maxNom:82 }
+      : { idx:M, cod:M+7, nom:M+25, cant:M+134, und:M+137, gr:W-M, maxNom:104 };
     var tono = AZUL, tonoS = AZUL_S;
 
     function cabeceraTabla(){
@@ -3797,6 +3838,7 @@
       doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
       doc.setTextColor(tono[0],tono[1],tono[2]);
       doc.text("N.o", cols.idx, y);
+      doc.text("Código", cols.cod, y);
       doc.text("Artículo", cols.nom, y);
       doc.text("Cantidad", cols.cant, y, {align:"right"});
       doc.text("Und", cols.und, y);
@@ -3831,6 +3873,7 @@
         }
         if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y-3.4, W-2*M, alto, "F"); }
         tx(String(i+1), cols.idx, y, 7.5, "normal", TENUE);
+        tx(codigoArticulo(f.n, f.cod) || "—", cols.cod, y, 7, "normal", GRIS);
         lineas.forEach(function(ln, j){ tx(ln, cols.nom, y + j*3.5, 8); });
         tx(fmt(f.cant, f.cant<1?3:2), cols.cant, y, 8, "normal", TINTA, "right");
         tx(f.um, cols.und, y, 6.5, "normal", TENUE);
@@ -3849,6 +3892,10 @@
       y += 9;
     }
 
+    /* En el papel las tres listas van ordenadas por GRUPO —los tres primeros
+       dígitos del código— y dentro del grupo alfabéticamente, que es como se
+       recorre una bodega y como se revisa el pedido contra la existencia. En
+       pantalla se dejan por costo, que es el orden con que se analiza. */
     var bloques = [];
     if (u.prod.length) bloques.push({t:"Pedido a la zona de producción",
       s:"Se despachan ya hechos. No entran a la compra.", f:u.prod, c:u.costoProd, col:AMBAR, colS:AMBAR_S});
@@ -3859,7 +3906,7 @@
     bloques.forEach(function(b, i){
       if (i > 0 && bloques.length > 1){ doc.addPage(); encabezado(); }
       titulo(b.t, b.s, b.col, b.colS);
-      cuerpo(b.f, b.t, b.c);
+      cuerpo(ordenarPorGrupo(b.f), b.t, b.c);
     });
 
     if (u.conCosto){
@@ -4065,11 +4112,13 @@
 
       tx("Insumos que hay que tener", M, y + 4, 15, "bold");
       y += 11;
-      tx("Todo lo que consume el plan del día, sumado. Revísalo contra la bodega antes de arrancar.",
-         M, y, 8, "normal", GRIS);
+      tx("Todo lo que consume el plan del día, sumado y ordenado por grupo. " +
+         "Revísalo contra la bodega antes de arrancar.", M, y, 8, "normal", GRIS);
       y += 8;
 
-      var C2 = { idx:M, nom:M+8, folios:M+80, cant:M+110, und:M+113, gr:M+138,
+      /* El código va al lado del insumo: es lo que hace legible el orden —los
+         tres primeros dígitos son el grupo— y lo que se teclea en Zeus. */
+      var C2 = { idx:M, cod:M+6, nom:M+24, folios:M+80, cant:M+110, und:M+113, gr:M+138,
                  exi:M+164, falta:W-M };
       function cab2(){
         doc.setFillColor(AZUL_S[0], AZUL_S[1], AZUL_S[2]);
@@ -4077,6 +4126,7 @@
         doc.setFont("helvetica","bold"); doc.setFontSize(6);
         doc.setTextColor(AZUL[0], AZUL[1], AZUL[2]);
         doc.text("N.o", C2.idx, y);
+        doc.text("CÓDIGO", C2.cod, y);
         doc.text("INSUMO", C2.nom, y);
         doc.text("PARA", C2.folios, y);
         doc.text("CANTIDAD", C2.cant, y, {align:"right"});
@@ -4092,7 +4142,7 @@
 
       ins.forEach(function(a, i){
         doc.setFont("helvetica","normal"); doc.setFontSize(8);
-        var ls = doc.splitTextToSize(a.n, 68);
+        var ls = doc.splitTextToSize(a.n, 54);
         if (ls.length > 2) ls = ls.slice(0, 2);
         var alto = Math.max(6.6, 1.2 + ls.length * 3.5);
         if (y + alto > H - 34){
@@ -4102,6 +4152,7 @@
         }
         if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y-3.4, W-2*M, alto, "F"); }
         tx(String(i+1), C2.idx, y, 7, "normal", TENUE);
+        tx(codigoArticulo(a.n) || "—", C2.cod, y, 7, "normal", GRIS);
         ls.forEach(function(ln, j){ tx(ln, C2.nom, y + j*3.5, 8); });
         var de = Object.keys(a.de);
         tx(de.length > 3 ? de.slice(0,3).join(",") + "..." : de.join(","),

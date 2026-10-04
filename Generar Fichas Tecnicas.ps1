@@ -28,7 +28,14 @@ try {
   # Esto permite correr el proceso cada pocos minutos sin costo: abrir y leer los Excel
   # toma ~20 segundos, pero comparar una fecha toma milesimas.
   $fuenteFn = Join-Path $raiz "ultima fuente.txt"
-  $marcaActual = ($encontrados | ForEach-Object { $_.LastWriteTimeUtc.Ticks } | Sort-Object) -join ","
+  # La marca incluye la PLANTILLA y las tablas que se editan a mano: si solo
+  # cambia el aplicativo y no las recetas, antes la corrida salia por aqui
+  # diciendo SIN-CAMBIOS y la mejora no se publicaba nunca.
+  $propios = @("plantilla.html", "Codigos articulos.csv", "Equivalencias UND.csv") |
+             ForEach-Object { Join-Path $raiz $_ } | Where-Object { Test-Path $_ } |
+             ForEach-Object { (Get-Item $_).LastWriteTimeUtc.Ticks }
+  $marcaActual = ((@($encontrados | ForEach-Object { $_.LastWriteTimeUtc.Ticks }) + @($propios)) |
+                  Sort-Object) -join ","
   if ((Test-Path $fuenteFn) -and (Test-Path $salida)) {
     $marcaPrevia = (Get-Content $fuenteFn -Raw).Trim()
     if ($marcaPrevia -eq $marcaActual) {
@@ -380,6 +387,30 @@ try {
     "tabla de equivalencias creada: {0}" -f $eqFn
   }
 
+  # ---- codigo de inventario de cada articulo ----
+  # "Codigos articulos.csv" es la tabla que amarra el nombre del articulo con su
+  # codigo de Zeus y su grupo. De ahi sale el ORDEN de las listas consolidadas de
+  # pedido y produccion: primero por grupo (los tres primeros digitos del codigo)
+  # y dentro del grupo alfabeticamente, que es como se recorre una bodega.
+  # Se edita a mano igual que la tabla de equivalencias: las filas con el codigo
+  # en blanco son las que faltan por completar.
+  $cdFn = Join-Path $raiz "Codigos articulos.csv"
+  $codArt = @{}
+  $sinCodigo = 0
+  if (Test-Path $cdFn) {
+    foreach ($f in (Import-Csv -Path $cdFn -Encoding UTF8)) {
+      $a = ("" + $f.Articulo).Trim()
+      if ($a -eq "") { continue }
+      $cd = ("" + $f.Codigo).Trim()
+      if ($cd -eq "") { $script:sinCodigo++; continue }
+      $gn = ("" + $f.NombreGrupo).Trim()
+      $codArt[$a.ToUpper()] = [pscustomobject]@{ cod = $cd; gru = $gn }
+    }
+    "codigos de articulo: {0} cargados, {1} sin codigo todavia" -f $codArt.Count, $sinCodigo
+  } else {
+    "  aviso: no existe 'Codigos articulos.csv': las listas consolidadas se ordenan solo alfabeticamente"
+  }
+
   # ---- fotos de los platos ----
   # En la hoja BASE, columna I "FOTO", va el NOMBRE del archivo (ej: "arroz con pollo.jpg").
   # Las imagenes viven en la subcarpeta "Fotos". Se reducen y se empotran en la pagina,
@@ -490,7 +521,21 @@ try {
     }
     [void]$sb.Append(']}')
   }
-  [void]$sb.Append(']}')
+  [void]$sb.Append(']')
+
+  # El catalogo de codigos va aparte y no repetido en cada linea: es un diccionario
+  # nombre normalizado -> [codigo, nombre del grupo]. Con el se ordenan las listas
+  # consolidadas por grupo y se muestra el codigo al lado del articulo.
+  [void]$sb.Append(',"arts":{')
+  $p3 = $true
+  foreach ($k in ($codArt.Keys | Sort-Object)) {
+    if (-not $p3) { [void]$sb.Append(',') }
+    $p3 = $false
+    [void]$sb.Append('"'); [void]$sb.Append((Esc (NormEnc $k))); [void]$sb.Append('":["')
+    [void]$sb.Append((Esc $codArt[$k].cod)); [void]$sb.Append('","')
+    [void]$sb.Append((Esc $codArt[$k].gru)); [void]$sb.Append('"]')
+  }
+  [void]$sb.Append('}}')
   $json = $sb.ToString()
 
   # ---- huella del contenido, ignorando la fecha de generacion ----
