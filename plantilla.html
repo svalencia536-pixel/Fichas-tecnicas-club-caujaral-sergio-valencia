@@ -3581,10 +3581,12 @@
   $("abrirProd").addEventListener("change", calcularPedido);
   $("verCostoPed").addEventListener("change", calcularPedido);
 
-  function ordenarPorCosto(obj){
-    var f = Object.keys(obj).map(function(k){ return obj[k]; });
-    f.sort(function(a,b){ return b.costo - a.costo; });
-    return f;
+  /* Las tres listas del pedido salen en el orden de la bodega —grupo y dentro
+     del grupo alfabético—, el mismo en pantalla y en el papel. Antes la
+     pantalla iba por costo de mayor a menor: se veía bien para analizar, pero
+     no servía para recorrer la bodega ni para cotejar contra el impreso. */
+  function ordenarCubo(obj){
+    return ordenarPorGrupo(Object.keys(obj).map(function(k){ return obj[k]; }));
   }
   function sumaDe(filas, campo){
     var t = 0; filas.forEach(function(f){ t += f[campo]; }); return t;
@@ -3596,7 +3598,9 @@
     h += '<th class="sel"><input type="checkbox" data-todas="' + cubo + '"' +
          (todas ? " checked" : "") + ' aria-label="Seleccionar todo"></th>';
     h += '<th class="num">N.º</th>';
-    if (esProd) h += '<th>Código</th>';
+    // El código va en TODAS las listas, no solo en la de productos: es lo que
+    // hace legible el orden por grupo y lo que se teclea en el sistema.
+    h += '<th>Código</th>';
     h += '<th>' + (esProd ? "Producto" : "Insumo") + '</th>';
     h += '<th class="num">Cantidad</th><th>Unidad</th><th class="num">Gramos / ml</th>';
     if (conCosto) h += '<th class="num">Costo</th>';
@@ -3611,7 +3615,7 @@
       h += '<td class="sel"><input type="checkbox" data-sel="' + esc(f.k) + '"' +
            (marcada ? " checked" : "") + ' aria-label="Incluir ' + esc(f.n) + '"></td>';
       h += '<td class="idx">' + (marcada ? n : "—") + '</td>';
-      if (esProd) h += '<td><span class="um">' + esc(f.cod) + '</span></td>';
+      h += '<td><span class="um">' + esc(codigoArticulo(f.n, f.cod) || "—") + '</span></td>';
       h += '<td>' + esc(f.n) + (f.manual ? ' <span class="marcamano">a mano</span>' : '') + '</td>';
       h += '<td class="num">' + fmt(f.cant, f.cant < 1 ? 3 : 2) + '</td>';
       h += '<td><span class="um">' + esc(f.um) + '</span></td>';
@@ -3633,7 +3637,7 @@
       var marcs = filas.filter(function(f){ return !EXCLUIDOS[f.k]; });
       var rot = (marcs.length === filas.length) ? "Subtotal"
               : "Subtotal de los " + marcs.length + " marcados (de " + filas.length + ")";
-      h += '<tfoot><tr><td colspan="' + (esProd ? 7 : 6) + '">' + rot + '</td>' +
+      h += '<tfoot><tr><td colspan="7">' + rot + '</td>' +
            '<td class="num">' + pesos(sumaDe(marcs,"costo")) + '</td>' +
            '<td class="opc"></td><td class="opc"></td></tr></tfoot>';
     }
@@ -3656,9 +3660,9 @@
       sumarPedido(r, p.cant, cubos, abrirProd, 0, r.n, problemas, [r.c], abiertas, false);
     });
 
-    var fProd = ordenarPorCosto(cubos.prod),
-        fMatProd = ordenarPorCosto(cubos.matProd),
-        fMatPV = ordenarPorCosto(cubos.matPV);
+    var fProd = ordenarCubo(cubos.prod),
+        fMatProd = ordenarCubo(cubos.matProd),
+        fMatPV = ordenarCubo(cubos.matPV);
     function marcs(f){ return f.filter(function(x){ return !EXCLUIDOS[x.k]; }); }
     var mProd = marcs(fProd), mMatProd = marcs(fMatProd), mMatPV = marcs(fMatPV);
     var cProd = sumaDe(mProd,"costo"), cMatProd = sumaDe(mMatProd,"costo"),
