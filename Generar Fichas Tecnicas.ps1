@@ -644,6 +644,9 @@ try {
     Copy-Item (Join-Path $raiz "plantilla.html") (Join-Path $repo "plantilla.html") -Force
     Copy-Item (Join-Path $raiz "Generar Fichas Tecnicas.ps1") (Join-Path $repo "Generar Fichas Tecnicas.ps1") -Force
     if (Test-Path $eqFn) { Copy-Item $eqFn (Join-Path $repo "Equivalencias UND.csv") -Force }
+    # La tabla de codigos tambien va al repo: sin ella el proceso no se puede
+    # reconstruir en otro equipo, que es justo lo que pide la entrega a TI.
+    if (Test-Path $cdFn) { Copy-Item $cdFn (Join-Path $repo "Codigos articulos.csv") -Force }
 
     # Publicar en la web. Decision de Sergio del 06/08/2026: que cada cambio del
     # libro salga solo, sin tener que empujarlo a mano. Railway redespliega al
