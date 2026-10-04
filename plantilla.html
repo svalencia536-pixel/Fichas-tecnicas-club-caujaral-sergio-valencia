@@ -1639,14 +1639,18 @@
     var c = String(cod || "").trim().toUpperCase();
     return c ? c.slice(0, 3) : "ZZZ";
   }
-  /* El orden que pidió costos: grupo y dentro del grupo alfabético. Recibe
-     filas que ya traigan .n (nombre) y opcionalmente .cod (código de receta). */
+  /* El orden que pidió costos: grupo y dentro del grupo alfabético. Vale para
+     cualquier fila que traiga el nombre en .n o en .art —las listas
+     consolidadas usan .n, los ingredientes de una receta usan .art— y, si es
+     una receta, su código en .cod. */
+  function nombreDeFila(f){ return f.n || f.art || ""; }
   function ordenarPorGrupo(filas){
     return filas.slice().sort(function(a, b){
-      var ga = grupoArticulo(codigoArticulo(a.n, a.cod));
-      var gb = grupoArticulo(codigoArticulo(b.n, b.cod));
+      var na = nombreDeFila(a), nb = nombreDeFila(b);
+      var ga = grupoArticulo(codigoArticulo(na, a.cod));
+      var gb = grupoArticulo(codigoArticulo(nb, b.cod));
       if (ga !== gb) return ga < gb ? -1 : 1;
-      return String(a.n).localeCompare(String(b.n), "es");
+      return String(na).localeCompare(String(nb), "es");
     });
   }
 
@@ -3320,7 +3324,10 @@
     var abrirProd = $("abrirProdProd").checked;
     var filas = activos.map(function(p, i){
       var r = porCodigo[p.c];
-      var ing = ingredientesDe(r, p.cant, abrirProd, 0, [r.c]);
+      /* Los ingredientes de cada hoja también salen en el orden de la bodega:
+         es la misma lista, y si una sale ordenada y la otra no, cotejarlas se
+         vuelve un rompecabezas. */
+      var ing = ordenarPorGrupo(ingredientesDe(r, p.cant, abrirProd, 0, [r.c]));
       var costo = 0;
       ing.forEach(function(x){ costo += x.costo; });
       var peso = pesoDelNombre(r.n);
@@ -4283,10 +4290,12 @@
          (u.abrirProd ? " · abiertos hasta materia prima" : ""), M + 30, y, 7, "normal", GRIS);
       y += 3;
 
+      var colCod = M + 7, colNom = M + 25;
       var colCant = M + 116, colUm = M + 138, colGr = M + 172, colOk = W - M - 2;
       doc.setFillColor(248, 248, 248);
       doc.rect(M, y, ANCHO, 6, "F");
-      tx("INGREDIENTE", M + 2, y + 4, 6, "bold", GRIS);
+      tx("CÓDIGO", colCod, y + 4, 6, "bold", GRIS);
+      tx("INGREDIENTE", colNom, y + 4, 6, "bold", GRIS);
       doc.setFont("helvetica","bold"); doc.setFontSize(6);
       doc.setTextColor(GRIS[0], GRIS[1], GRIS[2]);
       doc.text("CANTIDAD", colCant, y + 4, { align: "right" });
@@ -4308,8 +4317,9 @@
         tx(String(k + 1), M + 1.5, y + 4.3, 6, "normal", TENUE);
         if (x){
           doc.setFont("helvetica","normal"); doc.setFontSize(8);
-          var nom = doc.splitTextToSize(String(x.art).trim(), colCant - M - 12)[0];
-          tx(nom, M + 7, y + 4.3, 8);
+          tx(codigoArticulo(x.art) || "—", colCod, y + 4.3, 6.5, "normal", TENUE);
+          var nom = doc.splitTextToSize(String(x.art).trim(), colCant - colNom - 6)[0];
+          tx(nom, colNom, y + 4.3, 8);
           doc.setFont("helvetica","normal"); doc.setFontSize(8);
           doc.setTextColor(TINTA[0], TINTA[1], TINTA[2]);
           doc.text(fmt(x.cant, x.cant < 1 ? 3 : 2), colCant, y + 4.3, { align: "right" });
