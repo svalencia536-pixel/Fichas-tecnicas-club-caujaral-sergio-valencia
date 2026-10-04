@@ -1618,9 +1618,15 @@
 
   // Código de un artículo: el de la tabla; si es una receta o subreceta, el suyo.
   function codigoArticulo(nombre, codRecetaSiAplica){
-    var a = ARTS[norm(nombre)];
+    var k = norm(nombre);
+    var a = ARTS[k];
     if (a && a[0]) return a[0];
-    return codRecetaSiAplica || "";
+    if (codRecetaSiAplica) return codRecetaSiAplica;
+    // Las subrecetas que no están en la tabla de códigos igual tienen el suyo
+    // propio en el libro: así una SB o un "ARMA TU MENÚ" no cae en el montón
+    // de los que no tienen código.
+    var sub = porNombre[k];
+    return sub ? sub.c : "";
   }
   function nombreGrupoArticulo(nombre){
     var a = ARTS[norm(nombre)];
