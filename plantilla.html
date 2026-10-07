@@ -4558,7 +4558,11 @@
       filas = filas.filter(function(f){ return String(f.r.c).slice(0,2).toUpperCase() !== "FS"; });
       ocultas = antes - filas.length;
     }
-    filas.sort(function(a,b){ return Math.abs(b.dif) - Math.abs(a.dif); });
+    /* Orden alfabético y fijo. Antes iba por el tamaño del impacto, y eso hacía
+       que al escribir un precio o un gramaje las filas saltaran de sitio: uno
+       perdía de vista el plato que estaba analizando. El impacto ya se ve en su
+       columna; el orden sirve para encontrar, no para rankear. */
+    filas.sort(function(a,b){ return a.r.n.localeCompare(b.r.n, "es"); });
 
     var marcadas = filas.filter(function(f){ return !EXC_SIM[f.r.c]; });
     var impacto = 0;
