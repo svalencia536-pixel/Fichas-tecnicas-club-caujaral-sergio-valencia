@@ -1391,6 +1391,18 @@
           <input type="checkbox" id="protegerAcomp" checked>
           Proteger el acompañamiento
         </label>
+        <label class="inter" style="padding-bottom:9px"
+               title="Simula un cambio de receta: cuántos gramos van al plato">
+          <input type="checkbox" id="cambiaG">
+          Cambia gramaje
+        </label>
+        <div class="campo" id="cTodas" hidden>
+          <label for="gTodas">Gramaje para todas</label>
+          <div style="display:flex;gap:6px">
+            <input id="gTodas" type="number" step="5" min="0" placeholder="g">
+            <button class="bot" type="button" id="aplicarG">Aplicar</button>
+          </div>
+        </div>
         <div class="acciones" style="padding-bottom:5px">
           <button class="bot" type="button" id="imprimirSim">Imprimir</button>
           <button class="bot principal" type="button" id="pdfSim">Compartir PDF</button>
@@ -4427,6 +4439,10 @@
 
   // ================= SIMULADOR DE PRECIOS =================
   var artSel = null, modoSim = "pct", ultimoSim = null, EXC_SIM = {};
+  /* El gramaje simulado NO se guarda, a diferencia del precio de venta y del
+     acompañamiento: esos son decisiones tomadas, un gramaje de simulación no.
+     Si quedara pegado, mañana el costo saldría distinto sin saber por qué. */
+  var GRAM = {};
   var PRECIOS = {}, ACOMP = {};
   try { PRECIOS = JSON.parse(localStorage.getItem("fichas.precios") || "{}"); } catch(e){ PRECIOS = {}; }
   try { ACOMP = JSON.parse(localStorage.getItem("fichas.acomp") || "{}"); } catch(e){ ACOMP = {}; }
@@ -4444,7 +4460,7 @@
   $("busArt").addEventListener("input", function(){
     sugerir(this, $("sugArt"), listaArt, function(o){
       artSel = porArticulo[o.k];
-      EXC_SIM = {};
+      EXC_SIM = {}; GRAM = {};
       $("camposSim").hidden = false;
       $("costoActual").value = pesos(artSel.costoUnit);
       $("val").value = pesos(artSel.costoUnit * 1.1);
@@ -4466,6 +4482,21 @@
   $("val").addEventListener("input", function(){ comoPesos(this); simular(); });
   $("soloVende").addEventListener("change", simular);
   $("protegerAcomp").addEventListener("change", simular);
+  $("cambiaG").addEventListener("change", function(){
+    $("cTodas").hidden = !this.checked;
+    if (!this.checked) GRAM = {};
+    simular();
+  });
+  /* El mismo gramaje para todas: sirve cuando el cambio es parejo —bajar la
+     porción de 250 a 200 en toda la carta—. Solo toca las recetas que admiten
+     gramaje; las que no tienen equivalencia se quedan como están. */
+  $("aplicarG").addEventListener("click", function(){
+    var v = Number($("gTodas").value);
+    if (!isFinite(v) || v < 0){ avisar("Escribe un gramaje"); return; }
+    if (!ultimoSim || !ultimoSim.todas){ return; }
+    ultimoSim.todas.forEach(function(f){ if (f.equiv) GRAM[f.r.c] = v; });
+    simular();
+  });
 
   function simular(){
     var cont = $("resSim");
@@ -4478,16 +4509,39 @@
     var deltaUnit = nuevo - viejo;
     var pctReal = viejo > 0 ? (nuevo / viejo - 1) * 100 : 0;
 
+    var cambiaG = $("cambiaG").checked;
+
     var porReceta = {};
     artSel.usos.forEach(function(u){
-      var f = porReceta[u.r.c] || (porReceta[u.r.c] = { r:u.r, cant:0 });
+      var f = porReceta[u.r.c] || (porReceta[u.r.c] = { r:u.r, cant:0, g:0, sinG:false, linea:0 });
       f.cant += u.l[2];
+      // lo que esta receta paga hoy por este artículo, con SU propio costo
+      f.linea += (u.l[3] || 0) * u.l[2];
+      if (u.l.length > 4 && u.l[4] !== null) f.g += u.l[4]; else f.sinG = true;
     });
     Object.keys(porReceta).forEach(function(c){
       var f = porReceta[c], t = 0;
       f.r.i.forEach(function(x){ t += (x[3] || 0) * x[2]; });
+
+      /* Cuántos gramos pesa una unidad de este artículo en la receta: 1.000 si
+         viene por kilo o litro, y la presentación si viene por unidad —250 en
+         un lomo porcionado—. Es lo que permite escribir el gramaje en gramos,
+         que es como lo piensa la cocina, y devolverlo a la cantidad con que se
+         costea. Si el artículo no tiene equivalencia cargada no se puede, y esa
+         receta se deja como está. */
+      f.equiv = (!f.sinG && f.cant > 0 && f.g > 0) ? (f.g / f.cant) : null;
+      f.gNuevo = (cambiaG && f.equiv && GRAM[c] !== undefined) ? GRAM[c] : f.g;
+
+      /* La línea vieja sale y entra la nueva, escalada por los dos cambios: el
+         del precio y el del gramaje. Se parte del costo que ESTA receta paga
+         hoy —no del costo del artículo suelto— porque un mismo insumo puede
+         entrar con dos presentaciones distintas y ahí los dos números no
+         coinciden. Así, sin cambios, la cuenta devuelve exactamente el costo
+         de hoy y no un redondeo parecido. */
+      var fPrecio = viejo > 0 ? (nuevo / viejo) : 1;
+      var fGramo  = (f.equiv && f.g > 0) ? (f.gNuevo / f.g) : 1;
       f.receta  = t * 1.1;
-      f.recetaD = (t + deltaUnit * f.cant) * 1.1;
+      f.recetaD = (t - f.linea + f.linea * fPrecio * fGramo) * 1.1;
       var ac = ACOMP[c] || 0;
       f.acomp   = protegerAcomp ? ac * 1.1 : ac;
       f.antes   = f.receta  + f.acomp;
