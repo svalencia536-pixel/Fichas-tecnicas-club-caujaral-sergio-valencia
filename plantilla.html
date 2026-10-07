@@ -4547,6 +4547,8 @@
       f.antes   = f.receta  + f.acomp;
       f.despues = f.recetaD + f.acomp;
       f.dif     = f.despues - f.antes;
+      // sin esto el redondeo de los flotantes saca "$ -0", que parece un error
+      if (Math.abs(f.dif) < 0.5) f.dif = 0;
     });
 
     var filas = Object.keys(porReceta).map(function(c){ return porReceta[c]; });
@@ -4570,6 +4572,12 @@
     h += '<div class="dato ' + (pctReal>0?"roja":pctReal<0?"verde":"") +
          '"><i>Variación</i><b>' + (pctReal>0?"+":"") + fmt(pctReal,1) + ' %</b></div>';
     h += dato("Recetas afectadas", filas.length);
+    if (cambiaG){
+      var gH = 0, gN = 0;
+      marcadas.forEach(function(f){ gH += f.g; gN += f.gNuevo; });
+      h += '<div class="dato ' + (gN>gH?"roja":gN<gH?"verde":"") + '"><i>Gramaje sumado</i><b>' +
+           fmt(gH,0) + ' → ' + fmt(gN,0) + ' g</b></div>';
+    }
     if (sinMarcar) h += '<div class="dato roja"><i>Sin marcar</i><b>' + sinMarcar + '</b></div>';
     h += '<div class="dato ' + (impacto>0?"roja":impacto<0?"verde":"") +
          '"><i>Impacto ' + (sinMarcar ? "de las marcadas" : "sumado") + '</i><b>' +
@@ -4580,8 +4588,9 @@
     h += '<th class="sel"><input type="checkbox" id="simTodas"' + (sinMarcar===0?" checked":"") +
          ' aria-label="Marcar o desmarcar todas"></th>';
     h += '<th class="num">N.º</th><th>Código</th><th>Receta</th><th class="num">Usa</th>';
+    if (cambiaG) h += '<th class="num">Gramaje hoy</th><th class="num">Gramaje nuevo</th>';
     h += '<th class="num">Acompañamiento</th><th class="num">Costo total hoy</th>';
-    h += '<th class="num">Con el alza</th><th class="num">Diferencia</th>';
+    h += '<th class="num">' + (cambiaG ? "Con el cambio" : "Con el alza") + '</th><th class="num">Diferencia</th>';
     h += '<th class="num">Precio de venta</th><th class="num">% costo hoy</th>';
     h += '<th class="num">% costo nuevo</th></tr></thead><tbody>';
 
@@ -4604,6 +4613,15 @@
            '" title="Abrir la ficha de ' + esc(f.r.n) + '">' + esc(f.r.c) + '</button></td>';
       h += '<td>' + esc(f.r.n) + '</td>';
       h += '<td class="num">' + fmt(f.cant, f.cant<1?3:2) + '</td>';
+      if (cambiaG){
+        h += '<td class="num">' + (f.equiv ? '<span class="gr">' + fmt(f.g, f.g<10?1:0) + '</span>'
+                                           : '<span class="pend">sin equivalencia</span>') + '</td>';
+        h += '<td class="num">' + (f.equiv
+          ? '<input class="precio-input" type="number" step="5" min="0" data-g="' + esc(f.r.c) +
+            // sin separador de miles: un input numérico no lo entiende
+            '" value="' + (Math.round(f.gNuevo * 100) / 100) + '" aria-label="Gramaje nuevo de ' + esc(f.r.n) + '">'
+          : '<span class="igual">—</span>') + '</td>';
+      }
       h += '<td class="num"><input class="precio-input acomp" type="text" inputmode="numeric" ' +
            'autocomplete="off" data-ac="' + esc(f.r.c) + '" value="' + (ac>0?pesos(ac):"") +
            '" placeholder="$ —" aria-label="Acompañamiento de ' + esc(f.r.n) + '"></td>';
@@ -4630,9 +4648,31 @@
          'Lo que escribas queda guardado.' +
          (ocultas ? ' Se ocultaron ' + ocultas + ' subrecetas, porque no se venden.' : '') + '</p>';
 
+    if (cambiaG){
+      h += '<p class="nota">El <b>gramaje nuevo</b> se escribe en gramos o mililitros y se ' +
+           'recostea con el mismo costo por gramo, que es como cobra el proveedor. Si al ' +
+           'cotizar el corte más pequeño te cobran distinto, esa diferencia va en ' +
+           '<em>Variación %</em> y los dos efectos corren juntos. ' +
+           '<b>El gramaje no queda guardado</b>: es un análisis, no una decisión.</p>';
+    }
+
     cont.innerHTML = h;
     ultimoSim = { filas:marcadas, viejo:viejo, nuevo:nuevo, pct:pctReal, impacto:impacto,
-                  ocultas:ocultas, sinMarcar:sinMarcar, protegerAcomp:protegerAcomp };
+                  ocultas:ocultas, sinMarcar:sinMarcar, protegerAcomp:protegerAcomp,
+                  cambiaG:cambiaG, todas:filas };
+
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-g]"), function(inp){
+      inp.addEventListener("change", function(){
+        var cod = inp.getAttribute("data-g");
+        var v = Number(inp.value);
+        if (isFinite(v) && v >= 0) GRAM[cod] = v; else delete GRAM[cod];
+        simular();
+        // devolver el foco al mismo campo: sin esto hay que volver a buscarlo
+        // con el mouse después de cada cifra que se escribe
+        var vuelve = $("resSim").querySelector('[data-g="' + cod + '"]');
+        if (vuelve) vuelve.focus();
+      });
+    });
 
     Array.prototype.forEach.call(cont.querySelectorAll("[data-pv]"), function(inp){
       inp.addEventListener("input", function(){ comoPesos(inp); });
@@ -4712,13 +4752,20 @@
     }
 
     encabezado();
-    tx("Impacto de precio", M, y, 16, "bold"); y += 6.5;
+    // el papel dice qué se simuló: con gramaje no es el mismo reporte
+    var titulo = s.cambiaG ? "Impacto de precio y gramaje" : "Impacto de precio";
+    tx(titulo, M, y, 16, "bold"); y += 6.5;
     tx(artSel.n, M, y, 11, "bold", AZUL); y += 9;
 
     var cajas = [["Costo actual", pesos(s.viejo)], ["Costo simulado", pesos(s.nuevo)],
                  ["Variacion", (s.pct>0?"+":"") + fmt(s.pct,1) + " %"],
                  ["Recetas", String(s.filas.length)],
                  ["Impacto sumado", (s.impacto>0?"+":"") + pesos(s.impacto)]];
+    if (s.cambiaG){
+      var gH = 0, gN = 0;
+      s.filas.forEach(function(f){ gH += f.g; gN += f.gNuevo; });
+      cajas.splice(3, 0, ["Gramaje", fmt(gH,0) + " a " + fmt(gN,0) + " g"]);
+    }
     var ancho = (W - 2*M) / cajas.length - 2;
     cajas.forEach(function(c, i){
       var x = M + i * (ancho + 2);
@@ -4729,8 +4776,13 @@
     });
     y += 15;
 
-    var C = { idx:M, cod:M+6, rec:M+22, usa:M+100, acomp:M+126, hoy:M+154,
-              alza:M+180, dif:M+204, pv:M+230, pHoy:M+252, pNue:W-M, maxRec:70 };
+    /* Con gramaje entran dos columnas más, así que la hoja se reparte distinta
+       y los rótulos se acortan: en horizontal no sobra ni un milímetro. */
+    var C = s.cambiaG
+      ? { idx:M, cod:M+6, rec:M+22, usa:M+84, gHoy:M+100, gNue:M+118, acomp:M+142,
+          hoy:M+168, alza:M+192, dif:M+214, pv:M+237, pHoy:M+258, pNue:W-M, maxRec:58 }
+      : { idx:M, cod:M+6, rec:M+22, usa:M+100, acomp:M+126, hoy:M+154,
+          alza:M+180, dif:M+204, pv:M+230, pHoy:M+252, pNue:W-M, maxRec:70 };
     function cabecera(){
       doc.setFillColor(AZUL_S[0],AZUL_S[1],AZUL_S[2]); doc.rect(M, y-4, W-2*M, 6, "F");
       doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
@@ -4739,13 +4791,17 @@
       doc.text("Codigo", C.cod, y);
       doc.text("Receta", C.rec, y);
       doc.text("Usa", C.usa, y, {align:"right"});
-      doc.text("Acompanamiento", C.acomp, y, {align:"right"});
-      doc.text("Costo total hoy", C.hoy, y, {align:"right"});
-      doc.text("Con el alza", C.alza, y, {align:"right"});
-      doc.text("Diferencia", C.dif, y, {align:"right"});
-      doc.text("Precio venta", C.pv, y, {align:"right"});
-      doc.text("% costo hoy", C.pHoy, y, {align:"right"});
-      doc.text("% costo nuevo", C.pNue, y, {align:"right"});
+      if (s.cambiaG){
+        doc.text("G. hoy", C.gHoy, y, {align:"right"});
+        doc.text("G. nuevo", C.gNue, y, {align:"right"});
+      }
+      doc.text(s.cambiaG ? "Acomp." : "Acompanamiento", C.acomp, y, {align:"right"});
+      doc.text(s.cambiaG ? "Costo hoy" : "Costo total hoy", C.hoy, y, {align:"right"});
+      doc.text(s.cambiaG ? "Con el cambio" : "Con el alza", C.alza, y, {align:"right"});
+      doc.text(s.cambiaG ? "Dif." : "Diferencia", C.dif, y, {align:"right"});
+      doc.text(s.cambiaG ? "P. venta" : "Precio venta", C.pv, y, {align:"right"});
+      doc.text(s.cambiaG ? "% hoy" : "% costo hoy", C.pHoy, y, {align:"right"});
+      doc.text(s.cambiaG ? "% nuevo" : "% costo nuevo", C.pNue, y, {align:"right"});
       doc.setDrawColor(AZUL[0],AZUL[1],AZUL[2]); doc.setLineWidth(.3);
       doc.line(M, y+2, W-M, y+2);
       y += 6;
@@ -4763,7 +4819,7 @@
 
       if (y + alto > 196){
         doc.addPage(); encabezado();
-        tx("Impacto de precio · " + artSel.n, M, y, 11, "bold"); y += 8; cabecera();
+        tx(titulo + " · " + artSel.n, M, y, 11, "bold"); y += 8; cabecera();
       }
       if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y-3.4, W-2*M, alto, "F"); }
 
@@ -4771,6 +4827,13 @@
       tx(f.r.c, C.cod, y, 7.5, "normal", GRIS);
       lineas.forEach(function(ln, j){ tx(ln, C.rec, y + j*3.5, 8); });
       tx(fmt(f.cant, f.cant<1?3:2), C.usa, y, 8, "normal", TINTA, "right");
+      if (s.cambiaG){
+        tx(f.equiv ? fmt(f.g, f.g<10?1:0) : "—", C.gHoy, y, 8, "normal", TENUE, "right");
+        var cambio = f.equiv && Math.abs(f.gNuevo - f.g) > 0.001;
+        tx(f.equiv ? fmt(f.gNuevo, f.gNuevo<10?1:0) : "—", C.gNue, y, 8,
+           cambio ? "bold" : "normal",
+           cambio ? (f.gNuevo < f.g ? VERDE : [225,0,0]) : TENUE, "right");
+      }
       tx(f.acomp ? pesos(f.acomp) : "—", C.acomp, y, 8, "normal", f.acomp?AMBAR:TENUE, "right");
       tx(pesos(f.antes), C.hoy, y, 8, "normal", TINTA, "right");
       tx(pesos(f.despues), C.alza, y, 8, "normal", TINTA, "right");
@@ -4793,14 +4856,17 @@
     return doc;
   }
 
+  // el nombre del archivo también dice qué se simuló
+  function nombreSim(){
+    return (ultimoSim && ultimoSim.cambiaG) ? "Impacto de precio y gramaje" : "Impacto de precio";
+  }
   $("pdfSim").addEventListener("click", function(){
     var doc = pdfDelSimulador(); if (!doc) return;
-    compartirPdf(doc.output("blob"), "Impacto de precio " + hoyTexto() + ".pdf", "Impacto de precio");
+    compartirPdf(doc.output("blob"), nombreSim() + " " + hoyTexto() + ".pdf", nombreSim());
   });
   $("imprimirSim").addEventListener("click", function(){
     var doc = pdfDelSimulador(); if (!doc) return;
-    imprimirPdf(doc, "Impacto de precio " + hoyTexto() + ".pdf",
-                "Impacto de precio", "avisoImpSim");
+    imprimirPdf(doc, nombreSim() + " " + hoyTexto() + ".pdf", nombreSim(), "avisoImpSim");
   });
 
   pintarElegidas();

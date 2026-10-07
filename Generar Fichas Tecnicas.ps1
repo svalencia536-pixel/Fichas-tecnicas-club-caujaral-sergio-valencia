@@ -3,6 +3,11 @@
 # Imprime al final una linea de estado que la tarea programada usa para decidir:
 #   ESTADO=SIN-CAMBIOS | ESTADO=ACTUALIZADO | ESTADO=ERROR
 
+# Con -SinPublicar genera la pagina y la copia al repo, pero NO hace commit ni
+# push: sirve para revisar un cambio antes de que salga a Railway. La tarea
+# programada nunca lo usa.
+param([switch]$SinPublicar)
+
 $ErrorActionPreference = "Stop"
 
 $raiz   = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -634,7 +639,11 @@ try {
     $html = $html.Replace('__LOGO__', '')
   }
   [System.IO.File]::WriteAllText($salida, $html, (New-Object System.Text.UTF8Encoding($false)))
-  [System.IO.File]::WriteAllText($hashFn, $hash, (New-Object System.Text.UTF8Encoding($false)))
+  # Con -SinPublicar NO se deja la huella: si quedara, la siguiente corrida de
+  # verdad diria SIN-CAMBIOS y el cambio no saldria nunca a Railway.
+  if (-not $SinPublicar) {
+    [System.IO.File]::WriteAllText($hashFn, $hash, (New-Object System.Text.UTF8Encoding($false)))
+  }
 
   # Copia al repositorio, si existe. Sin esto la version de Railway se queda
   # atras sin que se note: el generador vive en OneDrive y el repo en Proyectos.
@@ -662,7 +671,9 @@ try {
       $remotos = & git -C $repo remote 2>$null
       if ($LASTEXITCODE -eq 0 -and $remotos) { $tieneRemoto = $true }
 
-      if (-not $tieneRemoto) {
+      if ($SinPublicar) {
+        "  -SinPublicar: la pagina quedo generada y copiada al repo, SIN commit ni push"
+      } elseif (-not $tieneRemoto) {
         "  repositorio sin remoto todavia: no se publica en la web"
       } else {
         & git -C $repo add -A 2>&1 | Out-Null
@@ -695,9 +706,11 @@ try {
     ("lineas=" + $lineas),
     ("conMetodo=" + $conMetodo)
   )
-  [System.IO.File]::WriteAllLines($conteoFn, $lineasConteo, (New-Object System.Text.UTF8Encoding($false)))
-  # marca de los archivos fuente, para la salida temprana de la proxima corrida
-  [System.IO.File]::WriteAllText($fuenteFn, $marcaActual, (New-Object System.Text.UTF8Encoding($false)))
+  if (-not $SinPublicar) {
+    [System.IO.File]::WriteAllLines($conteoFn, $lineasConteo, (New-Object System.Text.UTF8Encoding($false)))
+    # marca de los archivos fuente, para la salida temprana de la proxima corrida
+    [System.IO.File]::WriteAllText($fuenteFn, $marcaActual, (New-Object System.Text.UTF8Encoding($false)))
+  }
 
   "archivo={0}" -f $salida
   "ESTADO=ACTUALIZADO"
