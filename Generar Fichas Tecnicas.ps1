@@ -44,6 +44,24 @@ try {
   if ((Test-Path $fuenteFn) -and (Test-Path $salida)) {
     $marcaPrevia = (Get-Content $fuenteFn -Raw).Trim()
     if ($marcaPrevia -eq $marcaActual) {
+      # Aunque no haya nada nuevo que generar, puede haber quedado un commit sin
+      # subir porque el push fallo (la red del club intercepta el certificado).
+      # Se reintenta aqui: es lo unico que corre en una salida temprana, y sin
+      # esto el cambio se quedaba varado hasta que alguien tocara el libro.
+      $repoChk = "C:\Users\SergioValencia\Proyectos\fichas-tecnicas-caujaral"
+      if (-not $SinPublicar -and (Test-Path $repoChk)) {
+        $erroresAntes = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        try {
+          $cuenta = & git -C $repoChk rev-list --count "@{u}..HEAD" 2>$null
+          if ($LASTEXITCODE -eq 0 -and $cuenta -and [int]$cuenta -gt 0) {
+            "  {0} commit(s) quedaron sin subir: se reintenta el push" -f $cuenta
+            $sp = & git -C $repoChk push 2>&1
+            if ($LASTEXITCODE -eq 0) { "  publicado en la web: lo pendiente ya subio" }
+            else { foreach ($l in $sp) { "     " + $l } }
+          }
+        } catch { } finally { $ErrorActionPreference = $erroresAntes }
+      }
       "ESTADO=SIN-CAMBIOS"
       exit 0
     }
@@ -678,7 +696,24 @@ try {
       } else {
         & git -C $repo add -A 2>&1 | Out-Null
         $pendiente = & git -C $repo status --porcelain 2>$null
-        if (-not $pendiente) {
+        # Commits hechos que NO alcanzaron a subir (el push fallo por la red).
+        # Sin esto quedaban varados para siempre: la carpeta ya estaba limpia,
+        # asi que la corrida siguiente decia "sin cambios" y nunca reintentaba,
+        # y Railway seguia sirviendo una version vieja sin que nada avisara.
+        $varados = 0
+        $cuenta = & git -C $repo rev-list --count "@{u}..HEAD" 2>$null
+        if ($LASTEXITCODE -eq 0 -and $cuenta) { $varados = [int]$cuenta }
+
+        if (-not $pendiente -and $varados -gt 0) {
+          "  hay {0} commit(s) sin subir de una corrida anterior: se reintenta el push" -f $varados
+          $salidaPush = & git -C $repo push 2>&1
+          if ($LASTEXITCODE -eq 0) {
+            "  publicado en la web: lo que estaba pendiente ya subio"
+          } else {
+            "  aviso: el push volvio a fallar. Siguen {0} commit(s) pendientes." -f $varados
+            foreach ($l in $salidaPush) { "     " + $l }
+          }
+        } elseif (-not $pendiente) {
           "  repositorio sin cambios: no hay nada que publicar"
         } else {
           $mensaje = "Actualizacion del libro de recetas " + (Get-Date -Format "yyyy-MM-dd HH:mm") +
