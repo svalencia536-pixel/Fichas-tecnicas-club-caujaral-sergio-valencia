@@ -4956,6 +4956,9 @@
      uno QUIERE, para llegar al precio. Es la cuenta que se hace cuando entra un
      plato nuevo a la carta. */
   var recCost = null, ultimoCost = null, metaCost = 45, pvCost = 0;
+  /* Cuál atajo quedó marcado. Se guarda el rótulo y no el número porque hay
+     dos grupos con el mismo 45 %: comparando por cifra se encendían los dos. */
+  var metaCostEt = "Alimentos";
 
   // Los objetivos del club, para no tener que recordarlos ni teclearlos.
   var METAS_COSTO = [
@@ -4971,7 +4974,7 @@
       $("camposCost").hidden = false;
       $("busCost").value = recCost.n;
       $("porcCost").value = 1;
-      metaCost = 45;
+      metaCost = 45; metaCostEt = "Alimentos";
       // el precio que ya esté guardado entra como punto de partida
       pvCost = PRECIOS[recCost.c] || 0;
       costear();
@@ -5064,8 +5067,9 @@
     h += '<div class="tarjeta"><h2 class="sec">3 · A qué % lo quieres vender</h2>';
     h += '<div class="rapidos" style="margin-bottom:10px">';
     METAS_COSTO.forEach(function(m){
-      h += '<button class="chip" type="button" data-meta="' + m.p + '" aria-pressed="' +
-           (meta === m.p) + '">' + esc(m.et) + ' · ' + m.p + ' %</button>';
+      h += '<button class="chip" type="button" data-meta="' + m.p + '" data-et="' + esc(m.et) +
+           '" aria-pressed="' + (meta === m.p && metaCostEt === m.et) + '">' +
+           esc(m.et) + ' · ' + m.p + ' %</button>';
     });
     h += '</div>';
     h += '<div class="fila-dato"><span>% de costo meta</span>' +
@@ -5172,6 +5176,7 @@
     Array.prototype.forEach.call(cont.querySelectorAll("[data-meta]"), function(b){
       b.addEventListener("click", function(){
         metaCost = Number(b.getAttribute("data-meta"));
+        metaCostEt = b.getAttribute("data-et");
         costear();
       });
     });
@@ -5180,6 +5185,7 @@
       var v = Number(this.value);
       if (!isFinite(v) || v <= 0) return;
       metaCost = v;
+      metaCostEt = "";   // al escribir a mano, ningún atajo queda marcado
       // se refresca solo lo que depende de la meta: si se repinta todo, el
       // campo pierde el foco a media cifra y hay que volver a hacer clic
       var neto = c.total / (v/100);
@@ -5187,7 +5193,7 @@
       $("precioSug").textContent = pesos(neto * (1 + imp/100));
       pintarVeredicto(c, imp, v, pvCost);
       Array.prototype.forEach.call(cont.querySelectorAll("[data-meta]"), function(b){
-        b.setAttribute("aria-pressed", String(Number(b.getAttribute("data-meta")) === v));
+        b.setAttribute("aria-pressed", "false");
       });
       if (ultimoCost){ ultimoCost.meta = v; ultimoCost.neto = neto; ultimoCost.sugerido = neto * (1 + imp/100); }
     });
