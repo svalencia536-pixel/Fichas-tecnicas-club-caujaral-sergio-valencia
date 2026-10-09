@@ -1421,6 +1421,16 @@
             <button class="bot" type="button" id="aplicarG">Aplicar</button>
           </div>
         </div>
+        <!-- La pregunta al revés: en vez de "si bajo a 45 g, ¿qué pasa?",
+             "¿a cuántos gramos tengo que bajar para llegar a este % de costo?".
+             Solo se puede responder donde hay precio de venta cargado. -->
+        <div class="campo" id="cObjetivo" hidden>
+          <label for="pctObj">Llevar al % de costo</label>
+          <div style="display:flex;gap:6px">
+            <input id="pctObj" type="number" step="0.5" min="1" max="99" placeholder="35">
+            <button class="bot" type="button" id="aplicarObj">Aplicar</button>
+          </div>
+        </div>
         <div class="acciones" style="padding-bottom:5px">
           <button class="bot" type="button" id="imprimirSim">Imprimir</button>
           <button class="bot principal" type="button" id="pdfSim">Compartir PDF</button>
@@ -4591,9 +4601,11 @@
   $("protegerAcomp").addEventListener("change", simular);
   $("cambiaG").addEventListener("change", function(){
     $("cTodas").hidden = !this.checked;
+    $("cObjetivo").hidden = !this.checked;
     if (!this.checked) GRAM = {};
     simular();
   });
+  $("pctObj").addEventListener("input", simular);
   /* El mismo gramaje para todas: sirve cuando el cambio es parejo —bajar la
      porción de 250 a 200 en toda la carta—. Solo toca las recetas que admiten
      gramaje; las que no tienen equivalencia se quedan como están. */
@@ -4603,6 +4615,23 @@
     if (!ultimoSim || !ultimoSim.todas){ return; }
     ultimoSim.todas.forEach(function(f){ if (f.equiv) GRAM[f.r.c] = v; });
     simular();
+  });
+  /* Pone de una vez el gramaje objetivo en todas las que se pueda. Las que no
+     tienen precio de venta, o las que no llegan ni quitando el insumo, se
+     quedan como están: forzarlas sería inventar un número. */
+  $("aplicarObj").addEventListener("click", function(){
+    if (!ultimoSim || !ultimoSim.todas){ return; }
+    var puestas = 0, sinPrecio = 0, imposibles = 0;
+    ultimoSim.todas.forEach(function(f){
+      if (!f.objetivo){ sinPrecio++; return; }
+      if (!f.objetivo.posible){ imposibles++; return; }
+      GRAM[f.r.c] = Math.round(f.objetivo.g * 10) / 10;
+      puestas++;
+    });
+    simular();
+    avisar(puestas + " puestas" +
+           (sinPrecio ? " · " + sinPrecio + " sin precio" : "") +
+           (imposibles ? " · " + imposibles + " no alcanzan" : ""));
   });
 
   function simular(){
@@ -4617,6 +4646,7 @@
     var pctReal = viejo > 0 ? (nuevo / viejo - 1) * 100 : 0;
 
     var cambiaG = $("cambiaG").checked;
+    var objPct = cambiaG ? (Number($("pctObj").value) || 0) : 0;
 
     var porReceta = {};
     artSel.usos.forEach(function(u){
@@ -4656,6 +4686,23 @@
       f.dif     = f.despues - f.antes;
       // sin esto el redondeo de los flotantes saca "$ -0", que parece un error
       if (Math.abs(f.dif) < 0.5) f.dif = 0;
+
+      /* El despeje al revés: cuántos gramos de ESTE insumo hacen que el plato
+         quede en el % de costo que se pide. Se parte del precio de venta
+         cargado —sin él la pregunta no tiene respuesta— y se devuelve el
+         gramaje. Si sale negativo, ni quitando el insumo por completo se llega:
+         el problema está en otra parte de la receta. */
+      f.objetivo = null;
+      if (objPct > 0 && f.equiv && f.g > 0 && f.linea > 0){
+        var pvObj = PRECIOS[c];
+        if (pvObj > 0){
+          var netoObj = pvObj / 1.08;
+          var costoObj = netoObj * objPct / 100;      // lo que el plato puede costar
+          var recetaObj = costoObj - f.acomp;          // sin el acompañamiento
+          var gr = ((recetaObj / 1.1) - t + f.linea) / (f.linea * fPrecio);
+          f.objetivo = { g: f.g * gr, posible: gr > 0 };
+        }
+      }
     });
 
     var filas = Object.keys(porReceta).map(function(c){ return porReceta[c]; });
@@ -4700,6 +4747,7 @@
          ' aria-label="Marcar o desmarcar todas"></th>';
     h += '<th class="num">N.º</th><th>Código</th><th>Receta</th><th class="num">Usa</th>';
     if (cambiaG) h += '<th class="num">Gramaje hoy</th><th class="num">Gramaje nuevo</th>';
+    if (objPct > 0) h += '<th class="num">Para ' + fmt(objPct,1) + ' %</th>';
     h += '<th class="num">Acompañamiento</th><th class="num">Costo total hoy</th>';
     h += '<th class="num">' + (cambiaG ? "Con el cambio" : "Con el alza") + '</th><th class="num">Diferencia</th>';
     h += '<th class="num">Precio de venta</th><th class="num">% costo hoy</th>';
@@ -4732,6 +4780,21 @@
             // sin separador de miles: un input numérico no lo entiende
             '" value="' + (Math.round(f.gNuevo * 100) / 100) + '" aria-label="Gramaje nuevo de ' + esc(f.r.n) + '">'
           : '<span class="igual">—</span>') + '</td>';
+      }
+      if (objPct > 0){
+        h += '<td class="num">';
+        if (!f.objetivo){
+          h += '<span class="igual" title="Hace falta el precio de venta">—</span>';
+        } else if (!f.objetivo.posible){
+          h += '<span class="pend" title="Ni quitando el insumo se llega: el costo está en otra parte">' +
+               'no alcanza</span>';
+        } else {
+          var recorta = f.objetivo.g < f.g;
+          h += '<button class="cod" type="button" data-obj="' + esc(f.r.c) + '" title="' +
+               (recorta ? "Hay que recortar" : "Sobra margen") + ' · clic para ponerlo">' +
+               fmt(f.objetivo.g, f.objetivo.g < 10 ? 1 : 0) + ' g</button>';
+        }
+        h += '</td>';
       }
       h += '<td class="num"><input class="precio-input acomp" type="text" inputmode="numeric" ' +
            'autocomplete="off" data-ac="' + esc(f.r.c) + '" value="' + (ac>0?pesos(ac):"") +
@@ -4766,11 +4829,33 @@
            '<em>Variación %</em> y los dos efectos corren juntos. ' +
            '<b>El gramaje no queda guardado</b>: es un análisis, no una decisión.</p>';
     }
+    if (objPct > 0){
+      h += '<p class="nota">La columna <b>Para ' + fmt(objPct,1) + ' %</b> responde la pregunta al ' +
+           'revés: <b>con cuántos gramos de este insumo el plato queda en ese % de costo</b>, ' +
+           'al precio de venta que tiene cargado. Si la cifra es menor que el gramaje de hoy hay que ' +
+           'recortar; si es mayor, es que sobra margen. Haz clic y queda puesta. ' +
+           'Las que dicen <b>no alcanza</b> no llegan ni quitando el insumo por completo —ahí el ' +
+           'costo está en otra parte de la receta—, y las que salen en guion todavía no tienen ' +
+           'precio de venta.</p>';
+    }
 
     cont.innerHTML = h;
     ultimoSim = { filas:marcadas, viejo:viejo, nuevo:nuevo, pct:pctReal, impacto:impacto,
                   ocultas:ocultas, sinMarcar:sinMarcar, protegerAcomp:protegerAcomp,
                   cambiaG:cambiaG, todas:filas };
+
+    // un clic en el gramaje objetivo lo pone como gramaje nuevo
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-obj]"), function(b){
+      b.addEventListener("click", function(){
+        var cod = b.getAttribute("data-obj");
+        filas.forEach(function(f){
+          if (f.r.c === cod && f.objetivo && f.objetivo.posible){
+            GRAM[cod] = Math.round(f.objetivo.g * 10) / 10;
+          }
+        });
+        simular();
+      });
+    });
 
     Array.prototype.forEach.call(cont.querySelectorAll("[data-g]"), function(inp){
       inp.addEventListener("change", function(){
