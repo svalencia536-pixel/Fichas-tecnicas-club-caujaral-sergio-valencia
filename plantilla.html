@@ -853,6 +853,23 @@
   }
   .precio-input::placeholder{color:var(--faint)}
   .precio-input.acomp{border-color:var(--g-FP);background:var(--g-FP-suave);width:104px}
+
+  /* ---------- filas de cuentas del costeo rápido ----------
+     Rótulo a la izquierda, cifra a la derecha: la forma en que se lee una
+     liquidación en papel, que es de donde viene este formato. */
+  .fila-dato{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:6px 0;border-bottom:1px solid var(--line-soft);font-size:14px;
+  }
+  .fila-dato:last-child{border-bottom:0}
+  .fila-dato span{color:var(--muted)}
+  .fila-dato b{font-variant-numeric:tabular-nums;font-weight:600}
+  .fila-dato.fuerte{padding-top:10px;border-top:1px solid var(--line);border-bottom:0}
+  .fila-dato.fuerte span{color:var(--ink);font-weight:600}
+  .fila-dato.fuerte b{font-size:17px}
+  .fila-dato.azul b{color:var(--accent)}
+  /* la protección fuera del 10 % se marca: ese costeo deja de ser comparable */
+  .fila-dato.ojo b{color:var(--g-FP)}
   /* La unidad en que la cocina lo mide, al lado de los gramos */
   .nativo{
     font-family:var(--mono);font-size:10.5px;color:var(--faint);font-weight:400;
@@ -1115,6 +1132,7 @@
       <button class="ctrl seccion" type="button" id="navProduccion" aria-pressed="false">Producción</button>
       <button class="ctrl seccion" type="button" id="navPedido" aria-pressed="false">Pedido</button>
       <button class="ctrl seccion" type="button" id="navPrecios" aria-pressed="false">Precios</button>
+      <button class="ctrl seccion" type="button" id="navCosteo" aria-pressed="false">Costeo rápido</button>
       <button class="ctrl" type="button" id="btnVista" aria-pressed="false">
         <span id="btnVistaTxt">Ver en celular</span>
       </button>
@@ -1416,6 +1434,60 @@
     </div>
 
     <div id="resSim"></div>
+  </main>
+
+  <!-- ============ COSTEO RAPIDO ============
+       Un plato a la vez, de arriba abajo: lo que cuesta, a qué % lo quiero, qué
+       debería cobrar y qué precio voy a poner de verdad. El último paso es el
+       que cierra el ejercicio: el precio sugerido nunca es el de la carta —se
+       redondea— y ahí es donde hay que ver en qué % queda de verdad. -->
+  <main class="pantalla" id="vCosteo" hidden>
+    <h1 class="tit">Costeo rápido</h1>
+
+    <div class="tarjeta">
+      <h2 class="sec">1 · Qué plato vas a costear</h2>
+      <div class="buscador">
+        <input id="busCost" type="search" autocomplete="off"
+               placeholder="Escribe el plato… (baby beef, ceviche, pizza)"
+               aria-label="Buscar plato para costear">
+        <div class="sugerencias" id="sugCost" hidden></div>
+      </div>
+
+      <div class="campos" id="camposCost" hidden>
+        <div class="campo">
+          <label for="protCost">Protección %</label>
+          <input id="protCost" type="number" step="1" min="0" value="10">
+        </div>
+        <div class="campo">
+          <label for="porcCost">Porciones que salen</label>
+          <input id="porcCost" type="number" step="1" min="1" value="1">
+        </div>
+        <div class="campo">
+          <label for="impCost">Impuesto %</label>
+          <input id="impCost" type="number" step="1" min="0" value="8">
+        </div>
+        <label class="inter" style="padding-bottom:9px"
+               title="Agrega la columna de domicilio con su comisión de plataforma">
+          <input type="checkbox" id="verDom">
+          Vender por domicilio
+        </label>
+        <div class="campo" id="cComision" hidden>
+          <label for="comDom">Comisión plataforma %</label>
+          <input id="comDom" type="number" step="1" min="0" value="30">
+        </div>
+        <div class="acciones" style="padding-bottom:5px">
+          <button class="bot" type="button" id="imprimirCost">Imprimir</button>
+          <button class="bot principal" type="button" id="pdfCost">Compartir PDF</button>
+        </div>
+      </div>
+      <p class="aviso-imp" id="avisoImpCost" hidden>
+        Se mandó a la impresora <b>el mismo reporte que sale al compartir</b>, con el logo del club.
+        Si no se abrió el cuadro de impresión, el visor lo bloqueó: usa <b>Compartir PDF</b>
+        e imprime desde el archivo.
+      </p>
+    </div>
+
+    <div id="resCost"></div>
   </main>
 </div>
 
@@ -3019,14 +3091,16 @@
   function verPantalla(cual){
     vista = cual;
     var esPedido = (cual === "pedido"), esPrecios = (cual === "precios"),
-        esProd = (cual === "produccion");
+        esProd = (cual === "produccion"), esCosteo = (cual === "costeo");
     $("navPedido").setAttribute("aria-pressed", String(esPedido));
     $("navPrecios").setAttribute("aria-pressed", String(esPrecios));
     $("navProduccion").setAttribute("aria-pressed", String(esProd));
+    $("navCosteo").setAttribute("aria-pressed", String(esCosteo));
     $("subPedido").hidden = !esPedido;
     $("vistaRecetario").hidden = (cual !== "recetario");
     $("vProduccion").hidden = !esProd;
     $("vPrecios").hidden = !esPrecios;
+    $("vCosteo").hidden = !esCosteo;
     $("vArmar").hidden = !(esPedido && subPed === "armar");
     $("vComo").hidden  = !(esPedido && subPed === "como");
     // el simulador se imprime en horizontal; todo lo demás, vertical
@@ -3047,6 +3121,9 @@
   });
   $("navPrecios").addEventListener("click", function(){
     verPantalla(vista === "precios" ? "recetario" : "precios");
+  });
+  $("navCosteo").addEventListener("click", function(){
+    verPantalla(vista === "costeo" ? "recetario" : "costeo");
   });
   $("subArmar").addEventListener("click", function(){ verSubPedido("armar"); });
   $("subComo").addEventListener("click", function(){ verSubPedido("como"); });
@@ -4871,6 +4948,421 @@
   $("imprimirSim").addEventListener("click", function(){
     var doc = pdfDelSimulador(); if (!doc) return;
     imprimirPdf(doc, nombreSim() + " " + hoyTexto() + ".pdf", nombreSim(), "avisoImpSim");
+  });
+
+  // ================= COSTEO RAPIDO =================
+  /* Un plato a la vez. Va al revés del simulador: allá se parte del precio de
+     venta para ver en qué % de costo quedó; aquí se parte del costo y del % que
+     uno QUIERE, para llegar al precio. Es la cuenta que se hace cuando entra un
+     plato nuevo a la carta. */
+  var recCost = null, ultimoCost = null, metaCost = 45, pvCost = 0;
+
+  // Los objetivos del club, para no tener que recordarlos ni teclearlos.
+  var METAS_COSTO = [
+    { et:"Alimentos", p:45 },
+    { et:"Jugos y refrescantes", p:40 },
+    { et:"Cervezas y coctelería", p:45 },
+    { et:"Licores y vinos", p:65 }
+  ];
+
+  $("busCost").addEventListener("input", function(){
+    sugerir(this, $("sugCost"), listaRecetas, function(o){
+      recCost = porCodigo[o.c];
+      $("camposCost").hidden = false;
+      $("busCost").value = recCost.n;
+      $("porcCost").value = 1;
+      metaCost = 45;
+      // el precio que ya esté guardado entra como punto de partida
+      pvCost = PRECIOS[recCost.c] || 0;
+      costear();
+    });
+  });
+  $("verDom").addEventListener("change", function(){
+    $("cComision").hidden = !this.checked;
+    costear();
+  });
+  ["protCost","porcCost","impCost","comDom"].forEach(function(id){
+    $(id).addEventListener("input", function(){ costear(); });
+  });
+
+  function numDe(id, pordefecto){
+    var v = Number($(id).value);
+    return (isFinite(v) && v >= 0) ? v : pordefecto;
+  }
+
+  /* El costo de una porción: materia prima + protección + acompañamiento, todo
+     dividido entre las porciones que salen. El acompañamiento se comparte con
+     el simulador —es el mismo dato, escrito una sola vez. */
+  function costoDeLaPorcion(){
+    var mp = 0;
+    recCost.i.forEach(function(x){ mp += (x[3] || 0) * x[2]; });
+    var prot = numDe("protCost", 10);
+    var porc = Math.max(1, numDe("porcCost", 1));
+    var ac = ACOMP[recCost.c] || 0;
+    return { mp:mp, prot:prot, vprot: mp * prot / 100, ac:ac, porc:porc,
+             total: (mp * (1 + prot/100) + ac) / porc };
+  }
+
+  function costear(){
+    var cont = $("resCost");
+    if (!recCost){ cont.innerHTML = ""; ultimoCost = null; return; }
+
+    var c = costoDeLaPorcion();
+    var imp = numDe("impCost", 8);
+    var meta = metaCost, pv = pvCost;
+
+    var neto = meta > 0 ? c.total / (meta/100) : 0;
+    var sugerido = neto * (1 + imp/100);
+
+    var h = '';
+
+    // --- el plato y sus insumos, con el % que se lleva cada uno
+    h += '<div class="tarjeta" style="padding:0;overflow:hidden">';
+    h += '<div style="padding:14px 16px 0"><h2 class="sec" style="margin:0">' +
+         esc(recCost.n) + ' <span class="um">' + esc(recCost.c) +
+         (recCost.cat ? ' · ' + esc(recCost.cat) : '') + '</span></h2></div>';
+    h += '<div class="tablawrap"><table><thead><tr>';
+    h += '<th class="num">N.º</th><th>Insumo</th><th class="num">Cantidad</th><th class="c-um">Unidad</th>';
+    h += '<th class="num">Valor</th><th class="num">% part.</th>';
+    h += '</tr></thead><tbody>';
+    var lineas = recCost.i.map(function(x, i){
+      return { n:x[0], um:x[1], cant:x[2], v:(x[3]||0)*x[2] };
+    }).sort(function(a,b){ return b.v - a.v; });
+    lineas.forEach(function(x, i){
+      var p = c.mp > 0 ? x.v / c.mp * 100 : 0;
+      h += '<tr><td class="idx">' + (i+1) + '</td>';
+      h += '<td>' + esc(x.n) + '</td>';
+      h += '<td class="num">' + fmt(x.cant, x.cant < 1 ? 3 : 2) + '</td>';
+      h += '<td class="c-um"><span class="um">' + esc(x.um) + '</span></td>';
+      h += '<td class="num">' + pesos(x.v) + '</td>';
+      h += '<td class="num">' + fmt(p,1) + ' %</td></tr>';
+    });
+    h += '</tbody><tfoot><tr><td colspan="4">Total materia prima</td>' +
+         '<td class="num">' + pesos(c.mp) + '</td><td class="num">100 %</td></tr></tfoot>';
+    h += '</table></div></div>';
+
+    // --- lo que cuesta y a qué % se quiere vender
+    h += '<div class="dosup" style="margin-top:14px">';
+
+    h += '<div class="tarjeta"><h2 class="sec">2 · Lo que cuesta</h2>';
+    h += filaDato("Total materia prima", pesos(c.mp));
+    h += filaDato("Protección " + fmt(c.prot,0) + " %", pesos(c.vprot),
+                  c.prot !== 10 ? "ojo" : "");
+    h += '<div class="fila-dato"><span>Acompañamiento</span>' +
+         '<input class="precio-input" type="text" inputmode="numeric" id="acCost" ' +
+         'value="' + (c.ac > 0 ? pesos(c.ac) : "") + '" placeholder="$ —" ' +
+         'aria-label="Acompañamiento del plato"></div>';
+    if (c.porc > 1) h += filaDato("Porciones", fmt(c.porc,0));
+    h += filaDato("Costo por porción", pesos(c.total), "fuerte");
+    if (c.prot !== 10){
+      h += '<p class="nota" style="margin:8px 0 0">La protección quedó en <b>' + fmt(c.prot,0) +
+           ' %</b> y el resto del aplicativo usa <b>10 %</b>: este costeo no es comparable ' +
+           'con lo que muestran la ficha, Pedido y Precios.</p>';
+    }
+    h += '</div>';
+
+    h += '<div class="tarjeta"><h2 class="sec">3 · A qué % lo quieres vender</h2>';
+    h += '<div class="rapidos" style="margin-bottom:10px">';
+    METAS_COSTO.forEach(function(m){
+      h += '<button class="chip" type="button" data-meta="' + m.p + '" aria-pressed="' +
+           (meta === m.p) + '">' + esc(m.et) + ' · ' + m.p + ' %</button>';
+    });
+    h += '</div>';
+    h += '<div class="fila-dato"><span>% de costo meta</span>' +
+         '<input class="precio-input" type="number" step="0.5" min="1" max="99" id="metaCost" ' +
+         'value="' + meta + '" aria-label="Porcentaje de costo meta"></div>';
+    h += '<div class="fila-dato"><span>Precio sin impuesto</span><b id="netoCost">' +
+         pesos(neto) + '</b></div>';
+    h += '<div class="fila-dato fuerte azul"><span>Precio sugerido</span><b id="precioSug">' +
+         pesos(sugerido) + '</b></div>';
+    h += '</div>';
+
+    h += '</div>';
+
+    // --- el precio que de verdad se va a poner
+    h += '<div class="tarjeta" style="margin-top:14px">';
+    h += '<h2 class="sec">4 · El precio que vas a poner</h2>';
+    h += '<div class="campos" style="padding:0 0 10px">';
+    h += '<div class="campo"><label for="pvCost">Precio de venta</label>' +
+         '<input id="pvCost" type="text" inputmode="numeric" value="' +
+         (pv > 0 ? pesos(pv) : "") + '" placeholder="$ —"></div>';
+    h += '<div class="campo"><label>&nbsp;</label>' +
+         '<button class="bot" type="button" id="redondearCost">Redondear al mil</button></div>';
+    h += '</div>';
+    h += '<div id="verdictoCost"></div>';
+    h += '</div>';
+
+    cont.innerHTML = h;
+
+    // el veredicto se pinta aparte: es lo único que cambia al teclear el precio
+    pintarVeredicto(c, imp, meta, pv);
+
+    ultimoCost = { r:recCost, c:c, imp:imp, meta:meta, pv:pv, neto:neto, sugerido:sugerido,
+                   lineas:lineas, dom:$("verDom").checked, com:numDe("comDom", 30) };
+
+    conectarCosteo(c, imp, meta);
+  }
+
+  function filaDato(rot, dato, clase){
+    return '<div class="fila-dato ' + (clase||"") + '"><span>' + rot + '</span><b>' + dato + '</b></div>';
+  }
+
+  function pintarVeredicto(c, imp, meta, pv){
+    var v = $("verdictoCost");
+    if (!v) return;
+    if (!(pv > 0)){
+      v.innerHTML = '<p class="nota" style="margin:0">Escribe el precio para ver en qué queda.</p>';
+      return;
+    }
+    var neto = pv / (1 + imp/100);
+    var pctReal = neto > 0 ? c.total / neto * 100 : 0;
+    var util = neto - c.total;
+    var margen = neto > 0 ? util / neto * 100 : 0;
+    var dif = pctReal - meta;
+    var bien = Math.abs(dif) <= 1;
+    var tono = bien ? "verde" : (dif > 0 ? "roja" : "verde");
+
+    var h = '<div class="resumen">';
+    h += '<div class="dato ' + tono + '"><i>Costo real</i><b>' + fmt(pctReal,1) + ' %</b></div>';
+    h += dato("Utilidad bruta", pesos(util));
+    h += dato("Margen bruto", fmt(margen,0) + " %");
+    h += dato("Impuesto", pesos(pv - neto));
+    h += '</div>';
+    h += '<p class="nota" style="margin:10px 0 0">' +
+         (bien ? 'Queda <b>en la meta</b> de ' + fmt(meta,1) + ' %.'
+               : 'Queda <b>' + fmt(Math.abs(dif),1) + ' puntos ' + (dif > 0 ? "por encima" : "por debajo") +
+                 '</b> de la meta de ' + fmt(meta,1) + ' %.') + '</p>';
+
+    /* El domicilio es otra cuenta, no el mismo plato con otro precio: la
+       comisión de la plataforma sale del precio antes de que quede algo. Sin
+       esta columna un plato puede verse sano en mesa y estar perdiendo plata
+       en cada despacho. */
+    if ($("verDom").checked){
+      var com = numDe("comDom", 30);
+      var netoDom = neto * (1 - com/100);
+      var utilDom = netoDom - c.total;
+      var pctDom = netoDom > 0 ? c.total / netoDom * 100 : 0;
+      var margenDom = netoDom > 0 ? utilDom / netoDom * 100 : 0;
+      h += '<h2 class="sec" style="margin-top:18px">Por domicilio</h2>';
+      h += '<div class="resumen">';
+      h += dato("Comisión " + fmt(com,0) + " %", pesos(neto - netoDom));
+      h += '<div class="dato ' + (pctDom > 100 ? "roja" : (pctDom > meta ? "roja" : "verde")) +
+           '"><i>Costo real</i><b>' + (netoDom > 0 ? fmt(pctDom,1) + " %" : "—") + '</b></div>';
+      h += '<div class="dato ' + (utilDom < 0 ? "roja" : "") + '"><i>Utilidad bruta</i><b>' +
+           pesos(utilDom) + '</b></div>';
+      h += '<div class="dato ' + (margenDom < 0 ? "roja" : "") + '"><i>Margen bruto</i><b>' +
+           fmt(margenDom,0) + ' %</b></div>';
+      h += '</div>';
+      if (utilDom < 0){
+        h += '<p class="nota" style="margin:10px 0 0"><b>A este precio el domicilio pierde plata.</b> ' +
+             'Para que quede en la misma meta tendría que cobrarse ' +
+             pesos(c.total / (meta/100) / (1 - com/100) * (1 + imp/100)) + '.</p>';
+      } else {
+        h += '<p class="nota" style="margin:10px 0 0">Para quedar en la misma meta por domicilio, ' +
+             'el precio tendría que ser ' +
+             pesos(c.total / (meta/100) / (1 - com/100) * (1 + imp/100)) + '.</p>';
+      }
+    }
+    v.innerHTML = h;
+  }
+
+  function conectarCosteo(c, imp, meta){
+    var cont = $("resCost");
+
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-meta]"), function(b){
+      b.addEventListener("click", function(){
+        metaCost = Number(b.getAttribute("data-meta"));
+        costear();
+      });
+    });
+    var mc = $("metaCost");
+    if (mc) mc.addEventListener("input", function(){
+      var v = Number(this.value);
+      if (!isFinite(v) || v <= 0) return;
+      metaCost = v;
+      // se refresca solo lo que depende de la meta: si se repinta todo, el
+      // campo pierde el foco a media cifra y hay que volver a hacer clic
+      var neto = c.total / (v/100);
+      $("netoCost").textContent = pesos(neto);
+      $("precioSug").textContent = pesos(neto * (1 + imp/100));
+      pintarVeredicto(c, imp, v, pvCost);
+      Array.prototype.forEach.call(cont.querySelectorAll("[data-meta]"), function(b){
+        b.setAttribute("aria-pressed", String(Number(b.getAttribute("data-meta")) === v));
+      });
+      if (ultimoCost){ ultimoCost.meta = v; ultimoCost.neto = neto; ultimoCost.sugerido = neto * (1 + imp/100); }
+    });
+
+    var ac = $("acCost");
+    if (ac){
+      ac.addEventListener("input", function(){ comoPesos(ac); });
+      ac.addEventListener("change", function(){
+        var v = soloNumero(ac.value);
+        if (v > 0) ACOMP[recCost.c] = v; else delete ACOMP[recCost.c];
+        guardarAcomp(); costear();
+      });
+    }
+
+    /* El precio se guarda en el mismo sitio que usa el simulador: lo que se
+       define aquí aparece allá sin volver a teclearlo. */
+    var pvc = $("pvCost");
+    if (pvc){
+      pvc.addEventListener("input", function(){
+        pvCost = comoPesos(pvc) || 0;
+        if (ultimoCost) ultimoCost.pv = pvCost;
+        pintarVeredicto(c, imp, metaCost, pvCost);
+      });
+      pvc.addEventListener("change", function(){
+        var v = soloNumero(pvc.value);
+        if (v > 0) PRECIOS[recCost.c] = v; else delete PRECIOS[recCost.c];
+        guardarPrecios();
+        avisar(v > 0 ? "Precio guardado" : "Precio borrado");
+      });
+    }
+    var rc = $("redondearCost");
+    if (rc) rc.addEventListener("click", function(){
+      var sug = c.total / (metaCost/100) * (1 + imp/100);
+      pvCost = Math.ceil(sug / 1000) * 1000;
+      PRECIOS[recCost.c] = pvCost; guardarPrecios();
+      if (ultimoCost) ultimoCost.pv = pvCost;
+      $("pvCost").value = pesos(pvCost);
+      pintarVeredicto(c, imp, metaCost, pvCost);
+      avisar("Precio guardado");
+    });
+  }
+
+  /* --- La hoja de costeo en PDF: el mismo orden de la pantalla --- */
+  function pdfDelCosteo(){
+    var u = ultimoCost;
+    if (!u){ avisar("Primero escoge un plato"); return null; }
+    var jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    var doc = new jsPDF({ unit:"mm", format:"a4" });
+    var W = 210, H = 297, M = 14, y = 0;
+    var ANCHO = W - M*2;
+
+    function tx(t,x,yy,tam,est,col,al){
+      doc.setFont("helvetica", est||"normal"); doc.setFontSize(tam||9);
+      var c = col||TINTA; doc.setTextColor(c[0],c[1],c[2]);
+      if (al) doc.text(String(t), x, yy, {align:al}); else doc.text(String(t), x, yy);
+    }
+    function linea(yy){ doc.setDrawColor(222); doc.setLineWidth(.2); doc.line(M, yy, W-M, yy); }
+    function par(rot, dato, yy, fuerte){
+      tx(rot, M+2, yy, fuerte?9:8, "normal", GRIS);
+      tx(dato, W-M-2, yy, fuerte?10:8.5, fuerte?"bold":"normal", fuerte?TINTA:TINTA, "right");
+    }
+
+    var lg = logoDeLaPagina();
+    if (lg){ try { doc.addImage(lg, "PNG", M, 10, 9, 9); } catch(e){} }
+    tx("Costeo rápido", M + 12, 14.5, 11, "bold");
+    tx("CLUB LAGOS DE CAUJARAL", M + 12, 18.5, 6.5, "normal", AZUL);
+    var hoy = new Date().toLocaleDateString("es-CO",
+      { weekday:"long", day:"2-digit", month:"long", year:"numeric" });
+    tx(hoy, W - M, 14.5, 7, "normal", GRIS, "right");
+    tx(u.r.c, W - M, 18.5, 7.5, "bold", AZUL, "right");
+    doc.setDrawColor(AZUL[0],AZUL[1],AZUL[2]); doc.setLineWidth(.5);
+    doc.line(M, 22, W-M, 22);
+    y = 30;
+
+    var tit = doc.splitTextToSize(u.r.n, ANCHO);
+    tx(tit[0], M, y, 15, "bold"); y += 7;
+    if (tit.length > 1){ tx(tit[1], M, y, 15, "bold"); y += 7; }
+    if (u.r.cat){ tx(u.r.cat, M, y, 8, "normal", GRIS); y += 6; }
+    y += 2;
+
+    // insumos
+    tx("INSUMOS", M, y, 8, "bold"); y += 3;
+    doc.setFillColor(AZUL_S[0],AZUL_S[1],AZUL_S[2]); doc.rect(M, y, ANCHO, 6, "F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
+    doc.setTextColor(AZUL[0],AZUL[1],AZUL[2]);
+    doc.text("INSUMO", M+2, y+4);
+    doc.text("CANTIDAD", M+108, y+4, {align:"right"});
+    doc.text("UND", M+124, y+4, {align:"right"});
+    doc.text("VALOR", M+152, y+4, {align:"right"});
+    doc.text("% PART.", W-M-2, y+4, {align:"right"});
+    y += 6;
+    u.lineas.forEach(function(x, i){
+      if (y > H - 80){ doc.addPage(); y = 24; }
+      if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y, ANCHO, 5.6, "F"); }
+      var nom = doc.splitTextToSize(String(x.n), 100)[0];
+      tx(nom, M+2, y+4, 8);
+      tx(fmt(x.cant, x.cant<1?3:2), M+108, y+4, 8, "normal", TINTA, "right");
+      tx(x.um, M+124, y+4, 6.5, "normal", TENUE, "right");
+      tx(pesos(x.v), M+152, y+4, 8, "normal", TINTA, "right");
+      tx(fmt(u.c.mp > 0 ? x.v/u.c.mp*100 : 0, 1) + " %", W-M-2, y+4, 8, "normal", GRIS, "right");
+      y += 5.6;
+    });
+    linea(y); y += 6;
+
+    // los dos bloques de cuentas
+    if (y > H - 95){ doc.addPage(); y = 24; }
+    tx("LO QUE CUESTA", M, y, 8, "bold"); y += 5;
+    par("Total materia prima", pesos(u.c.mp), y); y += 5;
+    par("Protección " + fmt(u.c.prot,0) + " %", pesos(u.c.vprot), y); y += 5;
+    if (u.c.ac > 0){ par("Acompañamiento", pesos(u.c.ac), y); y += 5; }
+    if (u.c.porc > 1){ par("Porciones", fmt(u.c.porc,0), y); y += 5; }
+    linea(y); y += 5;
+    par("Costo por porción", pesos(u.c.total), y, true); y += 9;
+
+    tx("EL PRECIO", M, y, 8, "bold"); y += 5;
+    par("% de costo meta", fmt(u.meta,1) + " %", y); y += 5;
+    par("Precio sin impuesto", pesos(u.neto), y); y += 5;
+    par("Precio sugerido", pesos(u.sugerido), y); y += 5;
+    par("Impuesto " + fmt(u.imp,0) + " %", pesos(u.sugerido - u.neto), y); y += 5;
+    linea(y); y += 5;
+
+    if (u.pv > 0){
+      var neto = u.pv / (1 + u.imp/100);
+      var pctReal = neto > 0 ? u.c.total/neto*100 : 0;
+      var util = neto - u.c.total;
+      doc.setFillColor(VERDE_S[0],VERDE_S[1],VERDE_S[2]);
+      doc.rect(M, y-3.5, ANCHO, 8, "F");
+      doc.setFillColor(VERDE[0],VERDE[1],VERDE[2]); doc.rect(M, y-3.5, 1.4, 8, "F");
+      tx("PRECIO DE VENTA", M+4, y+1.5, 9, "bold", VERDE);
+      tx(pesos(u.pv), W-M-2, y+1.5, 11, "bold", VERDE, "right");
+      y += 10;
+      par("Costo real", fmt(pctReal,1) + " %", y, true); y += 6;
+      par("Utilidad bruta", pesos(util), y); y += 5;
+      par("Margen bruto", fmt(neto > 0 ? util/neto*100 : 0, 0) + " %", y); y += 5;
+
+      if (u.dom){
+        y += 4;
+        tx("POR DOMICILIO", M, y, 8, "bold"); y += 5;
+        var netoDom = neto * (1 - u.com/100);
+        var utilDom = netoDom - u.c.total;
+        par("Comisión " + fmt(u.com,0) + " %", pesos(neto - netoDom), y); y += 5;
+        par("Costo real", netoDom > 0 ? fmt(u.c.total/netoDom*100,1) + " %" : "—", y, true); y += 6;
+        tx("Utilidad bruta", M+2, y, 8, "normal", GRIS);
+        tx(pesos(utilDom), W-M-2, y, 8.5, "bold", utilDom < 0 ? [225,0,0] : TINTA, "right");
+        y += 5;
+        par("Margen bruto", fmt(netoDom > 0 ? utilDom/netoDom*100 : 0, 0) + " %", y); y += 5;
+        if (utilDom < 0){
+          tx("A este precio el domicilio pierde plata. Para la misma meta tendría que cobrarse " +
+             pesos(u.c.total/(u.meta/100)/(1-u.com/100)*(1+u.imp/100)) + ".",
+             M+2, y+2, 7.5, "normal", [225,0,0]);
+          y += 6;
+        }
+      }
+    }
+
+    // firmas, como en la ficha
+    y = Math.max(y + 10, H - 26);
+    var anchoF = (W - 2*M - 6) / 2;
+    [["Costeó", "Jefe de costos"], ["Aprobó", "Chef"]].forEach(function(s, i){
+      var x = M + i * (anchoF + 6);
+      doc.setDrawColor(120); doc.setLineWidth(.3);
+      doc.line(x, y, x + anchoF, y);
+      tx(s[0].toUpperCase(), x + anchoF/2, y + 4, 6.5, "bold", GRIS, "center");
+      tx(s[1], x + anchoF/2, y + 7.5, 6, "normal", TENUE, "center");
+    });
+    return doc;
+  }
+
+  $("pdfCost").addEventListener("click", function(){
+    var doc = pdfDelCosteo(); if (!doc) return;
+    compartirPdf(doc.output("blob"), "Costeo " + recCost.n + " " + hoyTexto() + ".pdf", "Costeo rápido");
+  });
+  $("imprimirCost").addEventListener("click", function(){
+    var doc = pdfDelCosteo(); if (!doc) return;
+    imprimirPdf(doc, "Costeo " + recCost.n + " " + hoyTexto() + ".pdf", "Costeo rápido", "avisoImpCost");
   });
 
   pintarElegidas();
