@@ -1446,11 +1446,41 @@
 
     <div class="tarjeta">
       <h2 class="sec">1 · Qué plato vas a costear</h2>
-      <div class="buscador">
-        <input id="busCost" type="search" autocomplete="off"
-               placeholder="Escribe el plato… (baby beef, ceviche, pizza)"
-               aria-label="Buscar plato para costear">
-        <div class="sugerencias" id="sugCost" hidden></div>
+
+      <div class="campo" style="padding-bottom:10px">
+        <div class="segmento">
+          <button type="button" id="modoCarta" aria-pressed="true">Uno de la carta</button>
+          <button type="button" id="modoNuevo" aria-pressed="false">Plato nuevo</button>
+        </div>
+      </div>
+
+      <div id="bloqueCarta">
+        <div class="buscador">
+          <input id="busCost" type="search" autocomplete="off"
+                 placeholder="Escribe el plato… (baby beef, ceviche, pizza)"
+                 aria-label="Buscar plato para costear">
+          <div class="sugerencias" id="sugCost" hidden></div>
+        </div>
+      </div>
+
+      <!-- Armar un plato que todavía no está en el libro: se escoge insumo por
+           insumo y se costea en el acto. No se guarda en ninguna parte — es
+           para resolver "cuánto me costaría esto" y sacar la hoja. -->
+      <div id="bloqueNuevo" hidden>
+        <div class="campo" style="padding-bottom:8px">
+          <label for="nomNuevo">Nombre del plato</label>
+          <input id="nomNuevo" type="text" autocomplete="off"
+                 placeholder="Ej: Lomo al pimiento con papa criolla">
+        </div>
+        <div class="buscador">
+          <input id="busIng" type="search" autocomplete="off"
+                 placeholder="Agrega un insumo… (lomo, queso, aceite)"
+                 aria-label="Buscar insumo para agregar al plato nuevo">
+          <div class="sugerencias" id="sugIng" hidden></div>
+        </div>
+        <div id="lineasNuevo"></div>
+        <p class="nota" id="vacioNuevo">Agrega insumos y el costo se arma solo.
+          Este plato <b>no se guarda</b>: es para costearlo e imprimirlo.</p>
       </div>
 
       <div class="campos" id="camposCost" hidden>
@@ -4980,6 +5010,137 @@
       costear();
     });
   });
+  /* ---------- PLATO NUEVO ----------
+     Se arma una receta de mentiras con la misma forma que las del libro
+     —{c, n, cat, i:[[articulo, unidad, cantidad, costo, gramos]]}— para que
+     todo lo de abajo (el costeo, el PDF) funcione sin cambiarle una línea. */
+  var nuevas = [];   // {art, um, cu, equiv, g}
+
+  function datosDelArticulo(k){
+    var a = porArticulo[k];
+    if (!a || !a.usos.length) return null;
+    var cu = 0, um = "", equiv = null;
+    a.usos.forEach(function(u){
+      if (!cu && u.l[3] > 0){ cu = u.l[3]; um = u.l[1]; }
+      // cuántos gramos pesa una unidad de este artículo
+      if (equiv === null && u.l.length > 4 && u.l[4] !== null && u.l[2] > 0){
+        equiv = u.l[4] / u.l[2];
+      }
+    });
+    if (!um) um = a.usos[0].l[1];
+    return { n:a.n, k:k, cu:cu, um:um, equiv:equiv };
+  }
+
+  var listaIng = null;
+  function armarListaIng(){
+    if (listaIng) return listaIng;
+    listaIng = ARTICULOS.map(function(a){
+      var d = datosDelArticulo(a.k);
+      return { busca:a.k, et:a.n,
+               sub:(d && d.cu > 0 ? pesos(d.cu) + " por " + d.um : "sin costo cargado"),
+               k:a.k };
+    });
+    return listaIng;
+  }
+
+  function modoCosteo(nuevo){
+    $("modoCarta").setAttribute("aria-pressed", String(!nuevo));
+    $("modoNuevo").setAttribute("aria-pressed", String(nuevo));
+    $("bloqueCarta").hidden = nuevo;
+    $("bloqueNuevo").hidden = !nuevo;
+    recCost = null; ultimoCost = null; pvCost = 0;
+    metaCost = 45; metaCostEt = "Alimentos";
+    $("camposCost").hidden = true;
+    $("resCost").innerHTML = "";
+    if (nuevo) rearmarNuevo(); else { nuevas = []; }
+  }
+  $("modoCarta").addEventListener("click", function(){ modoCosteo(false); });
+  $("modoNuevo").addEventListener("click", function(){ modoCosteo(true); });
+
+  $("busIng").addEventListener("input", function(){
+    sugerir(this, $("sugIng"), armarListaIng(), function(o){
+      var d = datosDelArticulo(o.k);
+      if (!d) return;
+      // El gramaje se escribe en gramos cuando el artículo tiene equivalencia,
+      // que es como lo piensa la cocina; si no la tiene, en su propia unidad.
+      nuevas.push({ art:d.n, k:d.k, um:d.um, cu:d.cu, equiv:d.equiv,
+                    g: d.equiv ? 100 : 1 });
+      rearmarNuevo();
+    });
+  });
+  $("nomNuevo").addEventListener("input", function(){ rearmarNuevo(); });
+
+  function rearmarNuevo(){
+    var cont = $("lineasNuevo");
+    $("vacioNuevo").hidden = nuevas.length > 0;
+    var h = "";
+    if (nuevas.length){
+      h += '<div class="tablawrap"><table><thead><tr>';
+      h += '<th class="num">N.º</th><th>Insumo</th><th class="num">Cantidad</th>';
+      h += '<th>Unidad</th><th class="num">Costo</th><th class="opc"></th>';
+      h += '</tr></thead><tbody>';
+      nuevas.forEach(function(x, i){
+        var cant = x.equiv ? (x.g / x.equiv) : x.g;
+        h += '<tr><td class="idx">' + (i+1) + '</td>';
+        h += '<td>' + esc(x.art) + '</td>';
+        h += '<td class="num"><input class="precio-input" type="number" step="5" min="0" ' +
+             'data-ln="' + i + '" value="' + (Math.round(x.g * 1000) / 1000) +
+             '" aria-label="Cantidad de ' + esc(x.art) + '"></td>';
+        h += '<td><span class="um">' + (x.equiv ? "g / ml" : esc(x.um)) + '</span>' +
+             (x.equiv ? '<small class="nativo" data-nat="' + i + '">' +
+                        fmt(cant, cant < 1 ? 3 : 2) + ' ' + esc(x.um) + '</small>' : '') +
+             '</td>';
+        h += '<td class="num" data-costo="' + i + '">' + pesos(x.cu * cant) + '</td>';
+        h += '<td class="opc"><button class="quitar" type="button" data-quitar="' + i +
+             '" aria-label="Quitar ' + esc(x.art) + '">&times;</button></td></tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+    cont.innerHTML = h;
+
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-ln]"), function(inp){
+      inp.addEventListener("input", function(){
+        var i = Number(inp.getAttribute("data-ln"));
+        var v = Number(inp.value);
+        var x = nuevas[i];
+        x.g = (isFinite(v) && v >= 0) ? v : 0;
+        /* Se refresca SOLO esa fila —su costo y la equivalencia— en vez de
+           volver a dibujar la tabla: si se redibuja, el campo pierde el foco
+           a media cifra y hay que volver a hacer clic para seguir escribiendo. */
+        var cant = x.equiv ? (x.g / x.equiv) : x.g;
+        var celda = cont.querySelector('[data-costo="' + i + '"]');
+        if (celda) celda.textContent = pesos(x.cu * cant);
+        var nat = cont.querySelector('[data-nat="' + i + '"]');
+        if (nat) nat.textContent = fmt(cant, cant < 1 ? 3 : 2) + " " + x.um;
+        recostearNuevo();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-quitar]"), function(b){
+      b.addEventListener("click", function(){
+        nuevas.splice(Number(b.getAttribute("data-quitar")), 1);
+        rearmarNuevo();
+      });
+    });
+    recostearNuevo();
+  }
+
+  function recostearNuevo(){
+    if (!nuevas.length){
+      recCost = null; $("camposCost").hidden = true; $("resCost").innerHTML = "";
+      return;
+    }
+    var nom = $("nomNuevo").value.trim() || "Plato nuevo sin nombre";
+    recCost = {
+      c: "NUEVO", n: nom, cat: "", um: "UND", rd: 1,
+      i: nuevas.map(function(x){
+        var cant = x.equiv ? (x.g / x.equiv) : x.g;
+        return [x.art, x.um, cant, x.cu, x.equiv ? x.g : null];
+      })
+    };
+    $("camposCost").hidden = false;
+    costear();
+  }
+
   $("verDom").addEventListener("change", function(){
     $("cComision").hidden = !this.checked;
     costear();
@@ -5021,9 +5182,11 @@
 
     // --- el plato y sus insumos, con el % que se lleva cada uno
     h += '<div class="tarjeta" style="padding:0;overflow:hidden">';
+    var esNuevo = (recCost.c === "NUEVO");
     h += '<div style="padding:14px 16px 0"><h2 class="sec" style="margin:0">' +
-         esc(recCost.n) + ' <span class="um">' + esc(recCost.c) +
-         (recCost.cat ? ' · ' + esc(recCost.cat) : '') + '</span></h2></div>';
+         esc(recCost.n) + ' <span class="um">' +
+         (esNuevo ? "plato nuevo · no está en el libro" : esc(recCost.c) +
+           (recCost.cat ? ' · ' + esc(recCost.cat) : '')) + '</span></h2></div>';
     h += '<div class="tablawrap"><table><thead><tr>';
     h += '<th class="num">N.º</th><th>Insumo</th><th class="num">Cantidad</th><th class="c-um">Unidad</th>';
     h += '<th class="num">Valor</th><th class="num">% part.</th>';
@@ -5204,7 +5367,9 @@
       ac.addEventListener("change", function(){
         var v = soloNumero(ac.value);
         if (v > 0) ACOMP[recCost.c] = v; else delete ACOMP[recCost.c];
-        guardarAcomp(); costear();
+        // un plato que no existe en el libro no deja rastro guardado
+        if (recCost.c !== "NUEVO") guardarAcomp();
+        costear();
       });
     }
 
@@ -5218,6 +5383,7 @@
         pintarVeredicto(c, imp, metaCost, pvCost);
       });
       pvc.addEventListener("change", function(){
+        if (recCost.c === "NUEVO") return;   // no está en el libro: no hay dónde guardarlo
         var v = soloNumero(pvc.value);
         if (v > 0) PRECIOS[recCost.c] = v; else delete PRECIOS[recCost.c];
         guardarPrecios();
@@ -5228,11 +5394,11 @@
     if (rc) rc.addEventListener("click", function(){
       var sug = c.total / (metaCost/100) * (1 + imp/100);
       pvCost = Math.ceil(sug / 1000) * 1000;
-      PRECIOS[recCost.c] = pvCost; guardarPrecios();
+      if (recCost.c !== "NUEVO"){ PRECIOS[recCost.c] = pvCost; guardarPrecios(); }
       if (ultimoCost) ultimoCost.pv = pvCost;
       $("pvCost").value = pesos(pvCost);
       pintarVeredicto(c, imp, metaCost, pvCost);
-      avisar("Precio guardado");
+      avisar(recCost.c === "NUEVO" ? "Precio puesto" : "Precio guardado");
     });
   }
 
@@ -5263,7 +5429,7 @@
     var hoy = new Date().toLocaleDateString("es-CO",
       { weekday:"long", day:"2-digit", month:"long", year:"numeric" });
     tx(hoy, W - M, 14.5, 7, "normal", GRIS, "right");
-    tx(u.r.c, W - M, 18.5, 7.5, "bold", AZUL, "right");
+    tx(u.r.c === "NUEVO" ? "PLATO NUEVO" : u.r.c, W - M, 18.5, 7.5, "bold", AZUL, "right");
     doc.setDrawColor(AZUL[0],AZUL[1],AZUL[2]); doc.setLineWidth(.5);
     doc.line(M, 22, W-M, 22);
     y = 30;
