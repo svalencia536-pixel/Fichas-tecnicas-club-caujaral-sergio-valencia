@@ -6210,17 +6210,21 @@
     doc.line(M, 22, W-M, 22);
     y = 29;
 
-    /* Los datos del encabezado en dos columnas: entran los siete campos en
-       menos de tres centimetros y queda sitio para la tabla. */
-    var izq = [["Fecha", fechaBonita(d.fecha)], ["Bodega", d.bodega || "-"],
-               ["Bodega", d.bodega || "-"]];
-    var der = [["Centro de costo", d.centro || "-"], ["Tipo de baja", d.tipo],
+    /* Los cinco datos del encabezado en dos columnas. Quedaron cinco y no seis
+       desde que se quito Ambiente, asi que la columna derecha lleva uno menos
+       y no se inventa un renglon vacio con rotulo. */
+    var izq = [["Fecha", fechaBonita(d.fecha)],
+               ["Bodega", d.bodega || "-"],
+               ["Centro de costo", d.centro || "-"]];
+    var der = [["Tipo de baja", d.tipo],
                ["Reportado por", d.quien]];
     for (var i = 0; i < 3; i++){
       tx(izq[i][0].toUpperCase(), M, y, 6.5, "bold", GRIS);
       tx(izq[i][1], M + 30, y, 9);
-      tx(der[i][0].toUpperCase(), M + 100, y, 6.5, "bold", GRIS);
-      tx(der[i][1], M + 132, y, 9);
+      if (der[i]){
+        tx(der[i][0].toUpperCase(), M + 100, y, 6.5, "bold", GRIS);
+        tx(der[i][1], M + 132, y, 9);
+      }
       y += 6;
     }
     y += 2; linea(y); y += 7;
@@ -6285,15 +6289,21 @@
        ELABORO sale con el nombre ya puesto porque es quien reporta; los otros
        tres van en blanco para que los llene quien firma. Necesitan 34 mm de
        alto cada uno: con menos no cabe una firma de verdad. */
+    /* Un bloque de firma se lee de arriba abajo: quien firma, con que cargo,
+       el espacio en blanco para firmar, la raya, y debajo de la raya quien es
+       y cuando. Se quito el rotulo "Firma" que iba bajo la raya: la raya ya es
+       el renglon de la firma, y ese rotulo empujaba el nombre y la fecha lejos,
+       haciendo ver que el nombre estaba flotando y no amarrado a su raya. */
     function bloqueFirma(x, ancho, rotulo, cargo, nombre){
       tx(rotulo, x, y, 7.5, "bold", AZUL);
       tx(cargo, x, y + 4, 6.5, "normal", GRIS);
+      // de y+6 a y+22 queda el blanco donde se firma: 16 mm, que es lo que
+      // ocupa una firma a mano sin quedar apretada
       doc.setDrawColor(120); doc.setLineWidth(.3);
-      doc.line(x, y + 24, x + ancho, y + 24);
-      tx("Firma", x, y + 28, 6, "normal", TENUE);
-      tx("Nombre: " + (nombre || "______________________"), x, y + 32.5, 6.5, "normal",
+      doc.line(x, y + 22, x + ancho, y + 22);
+      tx("Nombre: " + (nombre || "______________________"), x, y + 26, 6.5, "normal",
          nombre ? TINTA : TENUE);
-      tx("Fecha: ____ / ____ / ______", x, y + 37, 6.5, "normal", TENUE);
+      tx("Fecha: ____ / ____ / ______", x, y + 30, 6.5, "normal", TENUE);
     }
     var firmas = [
       ["ELABORO", "Reporta la baja", d.quien],
@@ -6303,12 +6313,12 @@
     ];
     var anchoF = (ANCHO - 8) / 2;
     for (var f = 0; f < 4; f++){
-      if (f === 2 && y + 44 > H - 14){ y = pagina() + 4; }
+      if (f === 2 && y + 38 > H - 14){ y = pagina() + 4; }
       var col = f % 2, fila = Math.floor(f / 2);
-      if (col === 0 && f > 0 && fila > 0){ y += 44; }
+      if (col === 0 && f > 0 && fila > 0){ y += 38; }
       bloqueFirma(M + col * (anchoF + 8), anchoF, firmas[f][0], firmas[f][1], firmas[f][2]);
     }
-    y += 46;
+    y += 40;
 
     // ---- evidencia fotografica, cada foto con su articulo
     var conFoto = d.lineas.filter(function(x){ return x.fotos.length; });
@@ -6380,22 +6390,26 @@
       (d.obs ? "Observaciones:\n" + d.obs + "\n\n" : "") +
       "El PDF lleva la evidencia fotografica y los espacios de firma.\n";
 
-    var blob = doc.output("blob");
-    var archivo = null;
-    try { archivo = new File([blob], bjNombreArchivo(), { type:"application/pdf" }); } catch(e){}
+    /* Dos cosas tienen que pasar, y ninguna puede reemplazar a la otra:
+       el PDF tiene que salir del aplicativo, y el correo tiene que abrirse
+       con los cinco destinatarios puestos.
 
-    if (archivo && navigator.canShare && navigator.canShare({ files:[archivo] })){
-      navigator.share({ files:[archivo], title:asunto, text:cuerpo })
-        .then(function(){ bjGuardar("enviado"); })
-        .catch(function(){ });
-      return;
-    }
+       La hoja de compartir del sistema entrega el archivo pero NO tiene campo
+       de destinatarios: por ahi el correo sale en blanco y toca escribir las
+       cinco direcciones a mano. El enlace de correo si lleva destinatarios,
+       asunto y cuerpo, pero por seguridad del navegador no puede adjuntar un
+       archivo. Asi que se hacen las dos: primero se entrega el PDF, y enseguida
+       se abre el correo ya dirigido para adjuntarlo. */
     compartirPdf(doc.output("blob"), bjNombreArchivo(), "Baja de mercancia");
-    var url = "mailto:" + encodeURIComponent(BJ_CORREOS.join(",")) +
+    var url = "mailto:" + BJ_CORREOS.join(",") +
               "?subject=" + encodeURIComponent(asunto) +
               "&body=" + encodeURIComponent(cuerpo);
-    try { window.location.href = url; } catch(e){}
-    avisar("Se bajo el PDF: adjuntalo al correo que se abrio");
+    // se le da un respiro a la descarga o a la hoja de compartir antes de
+    // abrir el correo: encadenarlos sin pausa cancela el primero
+    setTimeout(function(){
+      try { window.location.href = url; } catch(e){}
+    }, 900);
+    avisar("Adjunta el PDF al correo que se abre");
     bjGuardar("enviado");
   });
 
