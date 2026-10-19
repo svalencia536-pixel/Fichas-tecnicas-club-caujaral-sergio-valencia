@@ -6380,54 +6380,93 @@
     var d = bjDatos();
     var asunto = "Reporte de Baja de Mercancia - " + (d.bodega || "Sin bodega") +
                  " - " + fechaBonita(d.fecha);
-    /* El cuerpo del correo lleva el detalle completo, no solo los totales.
-       Quien lo recibe en el celular tiene que poder saber que se dio de baja
-       sin abrir el adjunto; el PDF queda para firmar y archivar. */
-    var detalle = d.lineas.map(function(x, i){
-      return "  " + (i+1) + ". [" + (x.cod || "sin codigo") + "] " + x.art + "\n" +
-             "     " + fmt(x.cant, x.cant % 1 ? 3 : 0) + " " + x.um +
-             "  x  " + pesos(x.cu) + "  =  " + pesos(x.cant * x.cu) + "\n" +
-             (x.obs ? "     Observacion: " + x.obs + "\n" : "") +
-             "     Fotografias: " + x.fotos.length + "\n";
-    }).join("\n");
+    /* ---------- El cuerpo del correo ----------
+       Una linea por articulo: que era y cuanto costo. Quien lo abre en el
+       celular necesita saber que se perdio y por cuanto, sin tener que bajar
+       el adjunto; el detalle fino —la observacion de cada articulo y las
+       fotos— va en el PDF, que es el documento que se firma.
 
-    var cuerpo = "Reporte de baja de mercancia " + d.consec + "\n" +
-      "=================================================\n\n" +
-      "Fecha: " + fechaBonita(d.fecha) + "\n" +
-      "Bodega: " + (d.bodega || "-") + "\n" +
-      "Centro de costo: " + (d.centro || "-") + "\n" +
-      "Tipo de baja: " + d.tipo + "\n" +
-      "Reportado por: " + d.quien + "\n\n" +
-      "DETALLE DE LA BAJA\n" +
-      "-------------------------------------------------\n" +
-      detalle + "\n" +
-      "RESUMEN ECONOMICO\n" +
-      "-------------------------------------------------\n" +
-      "  Total articulos: " + fmt(d.t.art, 0) + "\n" +
-      "  Total unidades:  " + fmt(d.t.und, d.t.und % 1 ? 3 : 0) + "\n" +
-      "  VALOR TOTAL DE LA BAJA: " + pesos(d.t.val) + "\n\n" +
-      (d.obs ? "OBSERVACIONES ADICIONALES Y/O SUGERENCIAS\n" +
-               "-------------------------------------------------\n" +
-               d.obs + "\n\n" : "") +
-      "-------------------------------------------------\n" +
-      "Se adjunta el PDF con la evidencia fotografica (" + d.t.fotos +
-      (d.t.fotos === 1 ? " foto" : " fotos") + ") y los espacios de firma de\n" +
-      "ELABORO, VERIFICO, APROBO y CONTABILIZA.\n";
+       El limite que manda aqui no es el gusto sino Windows: un enlace mailto
+       de mas de ~2.000 caracteres lo abre truncado o, peor, con el cuerpo en
+       blanco. Por eso el detalle se recorta si hace falta, pero el encabezado,
+       el total y las observaciones nunca: son lo que hace que el correo sirva
+       por si solo. */
+    var TOPE_URL = 1900;
 
-    /* Dos cosas tienen que pasar, y ninguna puede reemplazar a la otra:
-       el PDF tiene que salir del aplicativo, y el correo tiene que abrirse
-       con los cinco destinatarios puestos.
+    function detalleSimple(hasta){
+      var n = (hasta === undefined) ? d.lineas.length : hasta;
+      var t = d.lineas.slice(0, n).map(function(x, i){
+        return "  " + (i+1) + ". " + x.art + "\n" +
+               "     " + fmt(x.cant, x.cant % 1 ? 3 : 0) + " " + x.um +
+               "   ->   " + pesos(x.cant * x.cu) + "\n";
+      }).join("");
+      var faltan = d.lineas.length - n;
+      if (faltan > 0){
+        t += "  ... y " + faltan + (faltan === 1 ? " articulo mas" : " articulos mas") +
+             ", en el PDF adjunto.\n";
+      }
+      return t;
+    }
+    function detalleMinimo(){
+      return "  " + fmt(d.t.art, 0) + " articulos. El detalle va en el PDF adjunto.\n";
+    }
 
-       La hoja de compartir del sistema entrega el archivo pero NO tiene campo
-       de destinatarios: por ahi el correo sale en blanco y toca escribir las
-       cinco direcciones a mano. El enlace de correo si lleva destinatarios,
-       asunto y cuerpo, pero por seguridad del navegador no puede adjuntar un
-       archivo. Asi que se hacen las dos: primero se entrega el PDF, y enseguida
-       se abre el correo ya dirigido para adjuntarlo. */
+    function armarCuerpo(detalle){
+      return "Reporte de baja de mercancia " + d.consec + "\n" +
+        "=================================================\n\n" +
+        "Fecha: " + fechaBonita(d.fecha) + "\n" +
+        "Bodega: " + (d.bodega || "-") + "\n" +
+        "Centro de costo: " + (d.centro || "-") + "\n" +
+        "Tipo de baja: " + d.tipo + "\n" +
+        "Reportado por: " + d.quien + "\n\n" +
+        "QUE SE DIO DE BAJA\n" +
+        "-------------------------------------------------\n" +
+        detalle + "\n" +
+        "LO QUE COSTO ESTA BAJA: " + pesos(d.t.val) + "\n" +
+        "-------------------------------------------------\n" +
+        "  Total articulos: " + fmt(d.t.art, 0) + "\n" +
+        "  Total unidades:  " + fmt(d.t.und, d.t.und % 1 ? 3 : 0) + "\n\n" +
+        (d.obs ? "OBSERVACIONES ADICIONALES Y/O SUGERENCIAS\n" +
+                 "-------------------------------------------------\n" +
+                 d.obs + "\n\n" : "") +
+        "-------------------------------------------------\n" +
+        "Se adjunta el PDF con la evidencia fotografica (" + d.t.fotos +
+        (d.t.fotos === 1 ? " foto" : " fotos") + "), la observacion de cada\n" +
+        "articulo y los espacios de firma de ELABORO, VERIFICO, APROBO y\n" +
+        "CONTABILIZA.\n";
+    }
+
+    function enlaceDe(c){
+      return "mailto:" + BJ_CORREOS.join(",") +
+             "?subject=" + encodeURIComponent(asunto) +
+             "&body=" + encodeURIComponent(c);
+    }
+
+    /* Se manda el detalle mas completo que QUEPA: se intenta con todos los
+       articulos y se va quitando de a uno hasta que el enlace entre en el
+       tope. Asi una baja de doce articulos sigue mostrando los primeros y
+       avisa cuantos faltan, en vez de quedarse sin detalle del todo. */
+    var cuerpo, url;
+    for (var n = d.lineas.length; n >= 1; n--){
+      cuerpo = armarCuerpo(detalleSimple(n));
+      url = enlaceDe(cuerpo);
+      if (url.length <= TOPE_URL) break;
+    }
+    if (url.length > TOPE_URL){
+      cuerpo = armarCuerpo(detalleMinimo());
+      url = enlaceDe(cuerpo);
+    }
+    /* Ultimo recurso: una observacion general larguisima podria seguir
+       pasandose. Antes de dejar que el correo salga mutilado se recorta ella,
+       que es lo unico de largo libre que queda, y se dice donde esta completa. */
+    if (url.length > TOPE_URL && d.obs){
+      var guardada = d.obs;
+      d.obs = d.obs.slice(0, 200) + "... (texto completo en el PDF)";
+      cuerpo = armarCuerpo(detalleMinimo());
+      url = enlaceDe(cuerpo);
+      d.obs = guardada;
+    }
     compartirPdf(doc.output("blob"), bjNombreArchivo(), "Baja de mercancia");
-    var url = "mailto:" + BJ_CORREOS.join(",") +
-              "?subject=" + encodeURIComponent(asunto) +
-              "&body=" + encodeURIComponent(cuerpo);
     // se le da un respiro a la descarga o a la hoja de compartir antes de
     // abrir el correo: encadenarlos sin pausa cancela el primero
     setTimeout(function(){
