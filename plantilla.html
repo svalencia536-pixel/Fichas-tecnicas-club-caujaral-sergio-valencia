@@ -852,6 +852,39 @@
     font-variant-numeric:tabular-nums;
   }
   .precio-input::placeholder{color:var(--faint)}
+
+  /* ---------- Bajas de mercancía ----------
+     Las miniaturas son el corazón de esta pantalla: hay que ver qué se
+     fotografió sin abrir nada, y poder quitar una foto mala de un toque. */
+  .obliga{color:var(--g-FP);font-weight:700}
+  .fotos{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px}
+  .fotos:empty{margin:0}
+  .mini{position:relative;display:inline-block;line-height:0}
+  .mini img{
+    width:52px;height:52px;object-fit:cover;border-radius:6px;
+    border:1px solid var(--line);background:var(--surface-2);
+  }
+  .mini button{
+    position:absolute;top:-5px;right:-5px;width:18px;height:18px;padding:0;
+    border-radius:50%;border:1px solid var(--line);background:var(--surface);
+    color:var(--muted);font-size:12px;line-height:1;cursor:pointer;
+  }
+  .mini button:hover{color:#fff;background:#c62828;border-color:#c62828}
+  .bot.chico{
+    display:inline-block;padding:4px 9px;font-size:12px;cursor:pointer;
+    white-space:nowrap;
+  }
+  #vBajas textarea{
+    width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--surface);color:var(--ink);font:inherit;font-size:14px;resize:vertical;
+  }
+  #bjHistorial select{
+    padding:3px 6px;border:1px solid var(--line);border-radius:6px;
+    background:var(--surface);color:var(--ink);font-size:12px;
+  }
+  /* En el papel no van ni las miniaturas ni los botones: lo que se imprime
+     es el PDF, que arma su propia hoja con la evidencia a tamaño legible. */
+  @media print{ #vBajas{display:none} }
   .precio-input.acomp{border-color:var(--g-FP);background:var(--g-FP-suave);width:104px}
 
   /* ---------- filas de cuentas del costeo rápido ----------
@@ -1133,6 +1166,7 @@
       <button class="ctrl seccion" type="button" id="navPedido" aria-pressed="false">Pedido</button>
       <button class="ctrl seccion" type="button" id="navPrecios" aria-pressed="false">Precios</button>
       <button class="ctrl seccion" type="button" id="navCosteo" aria-pressed="false">Costeo rápido</button>
+      <button class="ctrl seccion" type="button" id="navBajas" aria-pressed="false">Bajas</button>
       <button class="ctrl" type="button" id="btnVista" aria-pressed="false">
         <span id="btnVistaTxt">Ver en celular</span>
       </button>
@@ -1529,8 +1563,106 @@
 
     <div id="resCost"></div>
   </main>
-</div>
 
+
+  <!-- ============ BAJAS DE MERCANCÍA ============
+       Reemplaza el reporte por WhatsApp. Lo que hoy se manda como foto suelta y
+       un mensaje, aquí sale como un documento con el costo ya calculado, la
+       evidencia pegada y los cuatro espacios de firma. El PDF ES el reporte:
+       no hay servidor donde guardarlo, así que lo que no quede impreso o
+       compartido no queda en ninguna parte. -->
+  <main class="pantalla" id="vBajas" hidden>
+    <h1 class="tit">Bajas de mercancía</h1>
+    <p class="intro">
+      Registra deterioros, mermas y pérdidas con su evidencia y su costo.
+      Al final sale el PDF para firmar y enviar.
+    </p>
+
+    <div class="tarjeta">
+      <h2 class="sec">1 · Encabezado</h2>
+      <div class="campos">
+        <div class="campo">
+          <label for="bjConsec">Consecutivo</label>
+          <input id="bjConsec" type="text" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label for="bjFecha">Fecha</label>
+          <input id="bjFecha" type="date">
+        </div>
+        <div class="campo">
+          <label for="bjAmbiente">Ambiente</label>
+          <input id="bjAmbiente" type="text" list="lAmbiente" autocomplete="off"
+                 placeholder="Ej: Banquetes">
+          <datalist id="lAmbiente"></datalist>
+        </div>
+        <div class="campo">
+          <label for="bjBodega">Bodega</label>
+          <input id="bjBodega" type="text" list="lBodega" autocomplete="off"
+                 placeholder="Ej: Almacén de A&amp;B">
+          <datalist id="lBodega"></datalist>
+        </div>
+        <div class="campo">
+          <label for="bjCentro">Centro de costo</label>
+          <input id="bjCentro" type="text" list="lCentro" autocomplete="off">
+          <datalist id="lCentro"></datalist>
+        </div>
+        <div class="campo">
+          <label for="bjQuien">Reportado por <b class="obliga">*</b></label>
+          <input id="bjQuien" type="text" list="lQuien" autocomplete="off"
+                 placeholder="Nombre completo">
+          <datalist id="lQuien"></datalist>
+        </div>
+      </div>
+      <div class="campo" style="padding-top:4px">
+        <label>Tipo de baja</label>
+        <div class="segmento">
+          <button type="button" id="bjNatural" aria-pressed="true">Deterioro natural</button>
+          <button type="button" id="bjDescuido" aria-pressed="false">Descuido / mala manipulación</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2 class="sec">2 · Qué se da de baja</h2>
+      <div class="buscador">
+        <input id="bjBuscar" type="search" autocomplete="off"
+               placeholder="Agrega un artículo… (lomo, leche, aguardiente)"
+               aria-label="Buscar artículo para dar de baja">
+        <div class="sugerencias" id="bjSug" hidden></div>
+      </div>
+      <div id="bjLineas"></div>
+      <p class="nota" id="bjVacio">Agrega artículos: el código, la unidad y el costo
+        los trae solos del libro. Tú pones la cantidad y la foto.</p>
+    </div>
+
+    <div class="tarjeta">
+      <h2 class="sec">3 · Observaciones</h2>
+      <textarea id="bjObs" rows="4" placeholder="Qué pasó, dónde y cuándo. Entre más claro, menos preguntas después."></textarea>
+    </div>
+
+    <div class="tarjeta" id="bjCierre">
+      <h2 class="sec">4 · Resumen y envío</h2>
+      <div id="bjResumen"></div>
+      <div class="acciones" style="padding-top:10px">
+        <button class="bot" type="button" id="bjImprimir">Imprimir</button>
+        <button class="bot principal" type="button" id="bjPdf">Generar PDF</button>
+        <button class="bot" type="button" id="bjEnviar">Enviar reporte</button>
+        <button class="bot" type="button" id="bjGuardar">Guardar en el historial</button>
+        <button class="bot" type="button" id="bjLimpiar">Empezar otra</button>
+      </div>
+      <p class="aviso-imp" id="bjAvisoImp" hidden>
+        Se mandó a la impresora <b>el mismo reporte que sale al compartir</b>.
+        Si no se abrió el cuadro de impresión, el visor lo bloqueó:
+        usa <b>Generar PDF</b> e imprime desde el archivo.
+      </p>
+    </div>
+
+    <div class="tarjeta">
+      <h2 class="sec">Historial de este dispositivo</h2>
+      <div id="bjHistorial"></div>
+    </div>
+  </main>
+</div>
 <div class="aviso-flotante" id="avisoFlotante" hidden></div>
 
 <div class="velo" id="velo" hidden>
@@ -3131,16 +3263,19 @@
   function verPantalla(cual){
     vista = cual;
     var esPedido = (cual === "pedido"), esPrecios = (cual === "precios"),
-        esProd = (cual === "produccion"), esCosteo = (cual === "costeo");
+        esProd = (cual === "produccion"), esCosteo = (cual === "costeo"),
+        esBajas = (cual === "bajas");
     $("navPedido").setAttribute("aria-pressed", String(esPedido));
     $("navPrecios").setAttribute("aria-pressed", String(esPrecios));
     $("navProduccion").setAttribute("aria-pressed", String(esProd));
     $("navCosteo").setAttribute("aria-pressed", String(esCosteo));
+    $("navBajas").setAttribute("aria-pressed", String(esBajas));
     $("subPedido").hidden = !esPedido;
     $("vistaRecetario").hidden = (cual !== "recetario");
     $("vProduccion").hidden = !esProd;
     $("vPrecios").hidden = !esPrecios;
     $("vCosteo").hidden = !esCosteo;
+    $("vBajas").hidden = !esBajas;
     $("vArmar").hidden = !(esPedido && subPed === "armar");
     $("vComo").hidden  = !(esPedido && subPed === "como");
     // el simulador se imprime en horizontal; todo lo demás, vertical
@@ -3164,6 +3299,9 @@
   });
   $("navCosteo").addEventListener("click", function(){
     verPantalla(vista === "costeo" ? "recetario" : "costeo");
+  });
+  $("navBajas").addEventListener("click", function(){
+    verPantalla(vista === "bajas" ? "recetario" : "bajas");
   });
   $("subArmar").addEventListener("click", function(){ verSubPedido("armar"); });
   $("subComo").addEventListener("click", function(){ verSubPedido("como"); });
@@ -5622,6 +5760,593 @@
     imprimirPdf(doc, "Costeo " + recCost.n + " " + hoyTexto() + ".pdf", "Costeo rápido", "avisoImpCost");
   });
 
+  // ================= BAJAS DE MERCANCÍA =================
+  /* Reemplaza el reporte por WhatsApp. Hay una diferencia de fondo con los
+     otros módulos: aquí el usuario CREA un dato que no existe en ningún lado,
+     en vez de consultar el libro. Y como este aplicativo no tiene servidor ni
+     base de datos, el PDF es el unico registro: lo que no se imprima o se
+     comparta no queda guardado en ninguna parte. El historial de abajo vive
+     solo en este dispositivo y sirve para llevar el consecutivo y ver lo
+     acumulado, no como archivo oficial. */
+  var BJ = { lineas: [], tipo: "Deterioro natural" };
+  var BJ_CORREOS = ["chef@lagosdecaujaral.com", "subgerenciaayb@lagosdecaujaral.com",
+                    "costosayb@lagosdecaujaral.com", "auxiliarcostos@gmail.com",
+                    "auxiliardecostos2@lagosdecaujaral.com"];
+
+  function bjLeer(clave, pordefecto){
+    try { var v = localStorage.getItem(clave); return v ? JSON.parse(v) : pordefecto; }
+    catch(e){ return pordefecto; }
+  }
+  function bjEscribir(clave, valor){
+    try { localStorage.setItem(clave, JSON.stringify(valor)); return true; }
+    catch(e){ return false; }
+  }
+  var BJ_HIST = bjLeer("fichas.bajas", []);
+  var BJ_LISTAS = bjLeer("fichas.bajas.listas", { ambiente:[], bodega:[], centro:[], quien:[] });
+
+  function bjHoy(){
+    var f = new Date(), p = function(n){ return (n<10?"0":"") + n; };
+    return f.getFullYear() + "-" + p(f.getMonth()+1) + "-" + p(f.getDate());
+  }
+  /* Consecutivo por dia: BM-AAAAMMDD-NN. Se cuenta sobre el historial de este
+     dispositivo, asi que si dos personas reportan desde equipos distintos el
+     numero se puede repetir. Es editable justamente por eso. */
+  function bjConsecutivo(){
+    var hoy = bjHoy().replace(/-/g, "");
+    var n = BJ_HIST.filter(function(b){ return (b.consec||"").indexOf("BM-" + hoy) === 0; }).length + 1;
+    return "BM-" + hoy + "-" + (n < 10 ? "0" : "") + n;
+  }
+
+  function bjRecordar(campo, valor){
+    if (!valor) return;
+    var l = BJ_LISTAS[campo] || (BJ_LISTAS[campo] = []);
+    if (l.indexOf(valor) < 0){ l.unshift(valor); BJ_LISTAS[campo] = l.slice(0, 12); }
+    bjEscribir("fichas.bajas.listas", BJ_LISTAS);
+    bjPintarListas();
+  }
+  function bjPintarListas(){
+    [["lAmbiente","ambiente"],["lBodega","bodega"],["lCentro","centro"],["lQuien","quien"]]
+      .forEach(function(par){
+        var dl = $(par[0]); if (!dl) return;
+        dl.innerHTML = (BJ_LISTAS[par[1]] || []).map(function(v){
+          return '<option value="' + esc(v) + '">';
+        }).join("");
+      });
+  }
+
+  function bjNueva(){
+    BJ.lineas = []; BJ.tipo = "Deterioro natural";
+    $("bjConsec").value = bjConsecutivo();
+    $("bjFecha").value = bjHoy();
+    $("bjObs").value = "";
+    $("bjNatural").setAttribute("aria-pressed","true");
+    $("bjDescuido").setAttribute("aria-pressed","false");
+    bjPintarLineas();
+  }
+
+  $("bjNatural").addEventListener("click", function(){
+    BJ.tipo = "Deterioro natural";
+    this.setAttribute("aria-pressed","true");
+    $("bjDescuido").setAttribute("aria-pressed","false");
+  });
+  $("bjDescuido").addEventListener("click", function(){
+    BJ.tipo = "Descuido / mala manipulacion";
+    this.setAttribute("aria-pressed","true");
+    $("bjNatural").setAttribute("aria-pressed","false");
+  });
+
+  $("bjBuscar").addEventListener("input", function(){
+    sugerir(this, $("bjSug"), armarListaIng(), function(o){
+      var d = datosDelArticulo(o.k);
+      if (!d) return;
+      BJ.lineas.push({ k:d.k, art:d.n, cod:codigoArticulo(d.n) || "",
+                       um:d.um, cu:d.cu, cant:1, fotos:[] });
+      bjPintarLineas();
+    });
+  });
+
+  /* Las fotos se achican antes de guardarlas. Una foto de celular pesa 3-5 MB
+     y el PDF con cuatro adentro no se podria ni compartir por correo; a 1200 px
+     se ve el dano perfectamente y el archivo queda manejable. */
+  function bjAchicar(archivo, listo){
+    var fr = new FileReader();
+    fr.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var max = 1200, w = img.width, h = img.height;
+        if (w > max || h > max){
+          if (w > h){ h = Math.round(h * max / w); w = max; }
+          else { w = Math.round(w * max / h); h = max; }
+        }
+        var c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        try { listo(c.toDataURL("image/jpeg", 0.72)); }
+        catch(err){ listo(null); }
+      };
+      img.onerror = function(){ listo(null); };
+      img.src = e.target.result;
+    };
+    fr.onerror = function(){ listo(null); };
+    fr.readAsDataURL(archivo);
+  }
+
+  function bjTotales(){
+    var art = 0, und = 0, val = 0, fotos = 0;
+    BJ.lineas.forEach(function(x){
+      art++; und += (x.cant || 0); val += (x.cant || 0) * (x.cu || 0);
+      fotos += x.fotos.length;
+    });
+    return { art:art, und:und, val:val, fotos:fotos };
+  }
+
+  function bjPintarLineas(){
+    var cont = $("bjLineas");
+    $("bjVacio").hidden = BJ.lineas.length > 0;
+    var h = "";
+    if (BJ.lineas.length){
+      h += '<div class="tablawrap"><table><thead><tr>';
+      h += '<th class="num">N.o</th><th>Articulo</th><th>Codigo</th><th class="c-um">UM</th>';
+      h += '<th class="num">Cantidad</th><th class="num">Costo unit.</th><th class="num">Valor baja</th>';
+      h += '<th>Fotografias</th><th class="opc"></th>';
+      h += '</tr></thead><tbody>';
+      BJ.lineas.forEach(function(x, i){
+        h += '<tr><td class="idx">' + (i+1) + '</td>';
+        h += '<td>' + esc(x.art) + '</td>';
+        h += '<td><span class="cod">' + esc(x.cod || "-") + '</span></td>';
+        h += '<td class="c-um"><span class="um">' + esc(x.um) + '</span></td>';
+        h += '<td class="num"><input class="precio-input" type="number" step="0.001" min="0" ' +
+             'data-cant="' + i + '" value="' + x.cant + '" aria-label="Cantidad de ' + esc(x.art) + '"></td>';
+        h += '<td class="num">' + pesos(x.cu) + '</td>';
+        h += '<td class="num" data-valor="' + i + '">' + pesos(x.cant * x.cu) + '</td>';
+        h += '<td><div class="fotos" data-tira="' + i + '">' + bjMiniaturas(x, i) + '</div>' +
+             '<label class="bot chico">Agregar foto<input type="file" accept="image/*" ' +
+             'capture="environment" multiple data-foto="' + i + '" hidden></label></td>';
+        h += '<td class="opc"><button class="quitar" type="button" data-quita="' + i +
+             '" aria-label="Quitar ' + esc(x.art) + '">&times;</button></td></tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+    cont.innerHTML = h;
+
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-cant]"), function(inp){
+      inp.addEventListener("input", function(){
+        var i = Number(inp.getAttribute("data-cant")), v = Number(inp.value);
+        BJ.lineas[i].cant = (isFinite(v) && v >= 0) ? v : 0;
+        var celda = cont.querySelector('[data-valor="' + i + '"]');
+        if (celda) celda.textContent = pesos(BJ.lineas[i].cant * BJ.lineas[i].cu);
+        bjPintarResumen();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-quita]"), function(b){
+      b.addEventListener("click", function(){
+        BJ.lineas.splice(Number(b.getAttribute("data-quita")), 1);
+        bjPintarLineas();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-foto]"), function(inp){
+      inp.addEventListener("change", function(){
+        var i = Number(inp.getAttribute("data-foto"));
+        var archivos = Array.prototype.slice.call(inp.files || []);
+        if (!archivos.length) return;
+        var faltan = archivos.length;
+        avisar("Procesando " + faltan + (faltan === 1 ? " foto..." : " fotos..."));
+        archivos.forEach(function(a){
+          bjAchicar(a, function(uri){
+            if (uri) BJ.lineas[i].fotos.push(uri);
+            /* Se refresca SOLO la tira de miniaturas de esa fila, no la tabla
+               entera: repintarla toda mientras las fotos van llegando de forma
+               asincrona hacia que se perdiera la que acababa de entrar, y de
+               paso tiraba el scroll al principio justo cuando la persona esta
+               tomando la evidencia. */
+            if (--faltan > 0) return;
+            var tira = cont.querySelector('[data-tira="' + i + '"]');
+            if (tira){
+              tira.innerHTML = bjMiniaturas(BJ.lineas[i], i);
+              bjConectarBorrarFoto(cont);
+            }
+            bjPintarResumen();
+            avisar(BJ.lineas[i].fotos.length === 1
+                   ? "Evidencia agregada"
+                   : BJ.lineas[i].fotos.length + " fotos en esta linea");
+          });
+        });
+        inp.value = "";
+      });
+    });
+    bjConectarBorrarFoto(cont);
+    bjPintarResumen();
+  }
+
+  /* Se vuelve a conectar cada vez que cambia la tira, porque los botones
+     se crean de nuevo con el innerHTML. */
+  function bjConectarBorrarFoto(cont){
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-borrafoto]"), function(b){
+      if (b.__listo) return;
+      b.__listo = true;
+      b.addEventListener("click", function(){
+        var p = b.getAttribute("data-borrafoto").split(":");
+        var fila = Number(p[0]);
+        BJ.lineas[fila].fotos.splice(Number(p[1]), 1);
+        var tira = cont.querySelector('[data-tira="' + fila + '"]');
+        if (tira){
+          tira.innerHTML = bjMiniaturas(BJ.lineas[fila], fila);
+          bjConectarBorrarFoto(cont);
+        }
+        bjPintarResumen();
+      });
+    });
+  }
+
+  function bjMiniaturas(x, i){
+    return x.fotos.map(function(uri, j){
+      return '<span class="mini"><img src="' + uri + '" alt="Evidencia ' + (j+1) + '">' +
+             '<button type="button" data-borrafoto="' + i + ':' + j +
+             '" aria-label="Quitar esta foto">&times;</button></span>';
+    }).join("");
+  }
+
+  function bjPintarResumen(){
+    var t = bjTotales();
+    var h = '<div class="resumen">';
+    h += dato("Total articulos", fmt(t.art, 0));
+    h += dato("Total unidades", fmt(t.und, t.und % 1 ? 3 : 0));
+    h += '<div class="dato roja"><i>Valor total baja</i><b>' + pesos(t.val) + '</b></div>';
+    h += dato("Fotografias", fmt(t.fotos, 0));
+    h += '</div>';
+    if (t.art && !t.fotos){
+      h += '<p class="nota" style="margin:10px 0 0"><b>Falta la evidencia.</b> ' +
+           'Una baja sin foto no se puede reportar: agrega al menos una.</p>';
+    }
+    $("bjResumen").innerHTML = h;
+  }
+
+  /* Que impide generar el reporte. Son las dos reglas del procedimiento:
+     quien responde por la baja, y la evidencia de que ocurrio. */
+  function bjFalta(){
+    if (!BJ.lineas.length) return "Agrega al menos un articulo";
+    if (!$("bjQuien").value.trim()) return "Falta Reportado por: es obligatorio";
+    if (!bjTotales().fotos) return "Falta la fotografia: sin evidencia no se reporta";
+    return null;
+  }
+
+  function bjDatos(){
+    return {
+      consec: $("bjConsec").value.trim() || bjConsecutivo(),
+      fecha: $("bjFecha").value || bjHoy(),
+      ambiente: $("bjAmbiente").value.trim(),
+      bodega: $("bjBodega").value.trim(),
+      centro: $("bjCentro").value.trim(),
+      quien: $("bjQuien").value.trim(),
+      tipo: BJ.tipo,
+      obs: $("bjObs").value.trim(),
+      lineas: BJ.lineas,
+      t: bjTotales()
+    };
+  }
+
+  /* ---------- El reporte en PDF ----------
+     Este documento es el entregable: lo que se firma, se escanea y se archiva.
+     Por eso lleva los cuatro bloques de firma con espacio real para firmar a
+     mano, y la evidencia fotografica pegada adentro y no como adjunto suelto
+     que se pierde. */
+  function bjPdf(){
+    var falta = bjFalta();
+    if (falta){ avisar(falta); return null; }
+    var d = bjDatos();
+    var jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    var doc = new jsPDF({ unit:"mm", format:"a4" });
+    var W = 210, H = 297, M = 14, ANCHO = W - M*2, y = 0;
+
+    function tx(t,x,yy,tam,est,col,al){
+      doc.setFont("helvetica", est||"normal"); doc.setFontSize(tam||9);
+      var c = col||TINTA; doc.setTextColor(c[0],c[1],c[2]);
+      if (al) doc.text(String(t), x, yy, {align:al}); else doc.text(String(t), x, yy);
+    }
+    function linea(yy){ doc.setDrawColor(222); doc.setLineWidth(.2); doc.line(M, yy, W-M, yy); }
+    function hoja(){
+      doc.setFillColor(AZUL[0],AZUL[1],AZUL[2]); doc.rect(0,0,W,3.5,"F");
+    }
+    function pagina(){ doc.addPage(); hoja(); return 20; }
+
+    hoja();
+    var lg = logoDeLaPagina();
+    if (lg){ try { doc.addImage(lg, "PNG", M, 9, 9, 9); } catch(e){} }
+    tx("CLUB LAGOS DE CAUJARAL", M + 12, 13, 7, "normal", AZUL);
+    tx("BAJAS DE MERCANCIA", M + 12, 18.5, 12, "bold");
+    tx(d.consec, W - M, 13, 9, "bold", AZUL, "right");
+    doc.setDrawColor(AZUL[0],AZUL[1],AZUL[2]); doc.setLineWidth(.5);
+    doc.line(M, 22, W-M, 22);
+    y = 29;
+
+    /* Los datos del encabezado en dos columnas: entran los siete campos en
+       menos de tres centimetros y queda sitio para la tabla. */
+    var izq = [["Fecha", fechaBonita(d.fecha)], ["Ambiente", d.ambiente || "-"],
+               ["Bodega", d.bodega || "-"]];
+    var der = [["Centro de costo", d.centro || "-"], ["Tipo de baja", d.tipo],
+               ["Reportado por", d.quien]];
+    for (var i = 0; i < 3; i++){
+      tx(izq[i][0].toUpperCase(), M, y, 6.5, "bold", GRIS);
+      tx(izq[i][1], M + 30, y, 9);
+      tx(der[i][0].toUpperCase(), M + 100, y, 6.5, "bold", GRIS);
+      tx(der[i][1], M + 132, y, 9);
+      y += 6;
+    }
+    y += 2; linea(y); y += 7;
+
+    // ---- tabla de articulos
+    tx("DETALLE DE LA BAJA", M, y, 8, "bold"); y += 3;
+    doc.setFillColor(AZUL_S[0],AZUL_S[1],AZUL_S[2]); doc.rect(M, y, ANCHO, 6, "F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
+    doc.setTextColor(AZUL[0],AZUL[1],AZUL[2]);
+    doc.text("ARTICULO", M+2, y+4);
+    doc.text("CODIGO", M+88, y+4);
+    doc.text("UM", M+108, y+4);
+    doc.text("CANT.", M+128, y+4, {align:"right"});
+    doc.text("COSTO UNIT.", M+156, y+4, {align:"right"});
+    doc.text("VALOR BAJA", W-M-2, y+4, {align:"right"});
+    y += 6;
+    d.lineas.forEach(function(x, i){
+      if (y > H - 50){ y = pagina(); }
+      if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y, ANCHO, 5.6, "F"); }
+      tx(doc.splitTextToSize(String(x.art), 84)[0], M+2, y+4, 8);
+      tx(x.cod || "-", M+88, y+4, 7, "normal", GRIS);
+      tx(x.um, M+108, y+4, 6.5, "normal", TENUE);
+      tx(fmt(x.cant, x.cant % 1 ? 3 : 0), M+128, y+4, 8, "normal", TINTA, "right");
+      tx(pesos(x.cu), M+156, y+4, 8, "normal", TINTA, "right");
+      tx(pesos(x.cant * x.cu), W-M-2, y+4, 8, "bold", TINTA, "right");
+      y += 5.6;
+    });
+    linea(y); y += 7;
+
+    // ---- resumen economico
+    if (y > H - 46){ y = pagina(); }
+    tx("RESUMEN ECONOMICO", M, y, 8, "bold"); y += 5;
+    tx("Total articulos", M+2, y, 8, "normal", GRIS);
+    tx(fmt(d.t.art, 0), M + 60, y, 9, "bold", TINTA, "right"); y += 5;
+    tx("Total unidades", M+2, y, 8, "normal", GRIS);
+    tx(fmt(d.t.und, d.t.und % 1 ? 3 : 0), M + 60, y, 9, "bold", TINTA, "right"); y += 5;
+    doc.setFillColor(253,240,240); doc.rect(M, y-3.5, ANCHO, 8, "F");
+    doc.setFillColor(200,30,30); doc.rect(M, y-3.5, 1.4, 8, "F");
+    tx("VALOR TOTAL BAJA", M+4, y+1.5, 9, "bold", [170,20,20]);
+    tx(pesos(d.t.val), W-M-2, y+1.5, 12, "bold", [170,20,20], "right");
+    y += 12;
+
+    // ---- observaciones
+    if (y > H - 40){ y = pagina(); }
+    tx("OBSERVACIONES", M, y, 8, "bold"); y += 5;
+    var obs = d.obs ? doc.splitTextToSize(d.obs, ANCHO - 4) : ["(sin observaciones)"];
+    doc.setDrawColor(222); doc.setLineWidth(.2);
+    doc.rect(M, y - 3.5, ANCHO, Math.max(14, obs.length * 4.4 + 4));
+    obs.forEach(function(l){ tx(l, M+2, y, 8, "normal", d.obs ? TINTA : TENUE); y += 4.4; });
+    y += 8;
+
+    /* ---- Firmas: cuatro bloques, cada uno con su raya, su nombre y su fecha.
+       ELABORO sale con el nombre ya puesto porque es quien reporta; los otros
+       tres van en blanco para que los llene quien firma. Necesitan 34 mm de
+       alto cada uno: con menos no cabe una firma de verdad. */
+    function bloqueFirma(x, ancho, rotulo, cargo, nombre){
+      tx(rotulo, x, y, 7.5, "bold", AZUL);
+      tx(cargo, x, y + 4, 6.5, "normal", GRIS);
+      doc.setDrawColor(120); doc.setLineWidth(.3);
+      doc.line(x, y + 24, x + ancho, y + 24);
+      tx("Firma", x, y + 28, 6, "normal", TENUE);
+      tx("Nombre: " + (nombre || "______________________"), x, y + 32.5, 6.5, "normal",
+         nombre ? TINTA : TENUE);
+      tx("Fecha: ____ / ____ / ______", x, y + 37, 6.5, "normal", TENUE);
+    }
+    var firmas = [
+      ["ELABORO", "Reporta la baja", d.quien],
+      ["VERIFICO", "Chef Ejecutivo / Jefe de Costos", ""],
+      ["APROBO", "Subgerente A&B", ""],
+      ["CONTABILIZA", "Departamento de Costos", ""]
+    ];
+    var anchoF = (ANCHO - 8) / 2;
+    for (var f = 0; f < 4; f++){
+      if (f === 2 && y + 44 > H - 14){ y = pagina() + 4; }
+      var col = f % 2, fila = Math.floor(f / 2);
+      if (col === 0 && f > 0 && fila > 0){ y += 44; }
+      bloqueFirma(M + col * (anchoF + 8), anchoF, firmas[f][0], firmas[f][1], firmas[f][2]);
+    }
+    y += 46;
+
+    // ---- evidencia fotografica, cada foto con su articulo
+    var conFoto = d.lineas.filter(function(x){ return x.fotos.length; });
+    if (conFoto.length){
+      y = pagina();
+      tx("EVIDENCIA FOTOGRAFICA", M, y, 10, "bold"); y += 2;
+      tx(d.consec + "  ·  " + fechaBonita(d.fecha), W - M, y - 2, 7, "normal", GRIS, "right");
+      y += 6;
+      conFoto.forEach(function(x){
+        x.fotos.forEach(function(uri, j){
+          var alto = 62, ancho = 88;
+          if (y + alto + 10 > H - 12){ y = pagina() + 6; }
+          tx(x.art + (x.fotos.length > 1 ? "  (" + (j+1) + " de " + x.fotos.length + ")" : ""),
+             M, y, 8, "bold");
+          y += 4;
+          try {
+            doc.addImage(uri, "JPEG", M, y, ancho, alto, undefined, "FAST");
+            doc.setDrawColor(210); doc.setLineWidth(.2);
+            doc.rect(M, y, ancho, alto);
+          } catch(e){
+            tx("(no se pudo incrustar esta imagen)", M, y + 8, 8, "normal", TENUE);
+          }
+          y += alto + 8;
+        });
+      });
+    }
+    return doc;
+  }
+
+  function fechaBonita(iso){
+    var p = String(iso).match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (!p) return iso;
+    return new Date(+p[1], +p[2]-1, +p[3])
+      .toLocaleDateString("es-CO", { day:"2-digit", month:"long", year:"numeric" });
+  }
+  function bjNombreArchivo(){
+    var d = bjDatos();
+    return "Baja " + d.consec + (d.ambiente ? " " + d.ambiente : "") + ".pdf";
+  }
+
+  $("bjPdf").addEventListener("click", function(){
+    var doc = bjPdf(); if (!doc) return;
+    compartirPdf(doc.output("blob"), bjNombreArchivo(), "Baja de mercancia");
+  });
+  $("bjImprimir").addEventListener("click", function(){
+    var doc = bjPdf(); if (!doc) return;
+    imprimirPdf(doc, bjNombreArchivo(), "Baja de mercancia", "bjAvisoImp");
+  });
+
+  /* ---------- Enviar el reporte ----------
+     Sin servidor no se puede mandar un correo solo. Lo que si se puede es
+     entregarselo al correo del telefono con todo prellenado: en celular,
+     compartir el PDF a Gmail o al correo que tenga; en computador, abrir el
+     correo con destinatarios y asunto listos para que el usuario adjunte el
+     archivo que acaba de bajar. Es un paso manual, no cinco. */
+  $("bjEnviar").addEventListener("click", function(){
+    var doc = bjPdf(); if (!doc) return;
+    var d = bjDatos();
+    var asunto = "Reporte de Baja de Mercancia - " + (d.ambiente || "Sin ambiente") +
+                 " - " + fechaBonita(d.fecha);
+    var cuerpo = "Adjunto el reporte de baja " + d.consec + ".\n\n" +
+      "Ambiente: " + (d.ambiente || "-") + "\n" +
+      "Bodega: " + (d.bodega || "-") + "\n" +
+      "Centro de costo: " + (d.centro || "-") + "\n" +
+      "Tipo de baja: " + d.tipo + "\n" +
+      "Reportado por: " + d.quien + "\n\n" +
+      "Total articulos: " + fmt(d.t.art, 0) + "\n" +
+      "Total unidades: " + fmt(d.t.und, d.t.und % 1 ? 3 : 0) + "\n" +
+      "Valor total de la baja: " + pesos(d.t.val) + "\n\n" +
+      (d.obs ? "Observaciones:\n" + d.obs + "\n\n" : "") +
+      "El PDF lleva la evidencia fotografica y los espacios de firma.\n";
+
+    var blob = doc.output("blob");
+    var archivo = null;
+    try { archivo = new File([blob], bjNombreArchivo(), { type:"application/pdf" }); } catch(e){}
+
+    if (archivo && navigator.canShare && navigator.canShare({ files:[archivo] })){
+      navigator.share({ files:[archivo], title:asunto, text:cuerpo })
+        .then(function(){ bjGuardar("enviado"); })
+        .catch(function(){ });
+      return;
+    }
+    compartirPdf(doc.output("blob"), bjNombreArchivo(), "Baja de mercancia");
+    var url = "mailto:" + encodeURIComponent(BJ_CORREOS.join(",")) +
+              "?subject=" + encodeURIComponent(asunto) +
+              "&body=" + encodeURIComponent(cuerpo);
+    try { window.location.href = url; } catch(e){}
+    avisar("Se bajo el PDF: adjuntalo al correo que se abrio");
+    bjGuardar("enviado");
+  });
+
+  /* ---------- Historial ----------
+     Guarda los numeros, NO las fotos: el navegador solo da unos 5 MB por sitio
+     y tres fotos lo llenan. Para volver a ver la evidencia esta el PDF que ya
+     se genero. Por eso el historial no finge ser un archivo oficial. */
+  function bjGuardar(estado){
+    var falta = bjFalta();
+    if (falta){ avisar(falta); return; }
+    var d = bjDatos();
+    var reg = {
+      consec:d.consec, fecha:d.fecha, ambiente:d.ambiente, bodega:d.bodega,
+      centro:d.centro, tipo:d.tipo, quien:d.quien, obs:d.obs,
+      totArt:d.t.art, totUnd:d.t.und, total:d.t.val, fotos:d.t.fotos,
+      estado: estado || "pendiente",
+      sello: new Date().toISOString(),
+      lineas: d.lineas.map(function(x){
+        return { art:x.art, cod:x.cod, um:x.um, cant:x.cant, cu:x.cu, fotos:x.fotos.length };
+      })
+    };
+    var i = -1;
+    BJ_HIST.forEach(function(b, j){ if (b.consec === reg.consec) i = j; });
+    if (i >= 0) BJ_HIST[i] = reg; else BJ_HIST.unshift(reg);
+    if (!bjEscribir("fichas.bajas", BJ_HIST)){
+      avisar("No se pudo guardar: el navegador esta lleno");
+      return;
+    }
+    ["ambiente","bodega","centro","quien"].forEach(function(c){ bjRecordar(c, d[c]); });
+    bjPintarHistorial();
+    avisar("Guardada en el historial");
+  }
+  $("bjGuardar").addEventListener("click", function(){ bjGuardar("pendiente"); });
+  $("bjLimpiar").addEventListener("click", function(){
+    bjNueva();
+    avisar("Lista para otra baja");
+  });
+
+  var BJ_ESTADOS = ["pendiente", "verificado", "aprobado", "contabilizado"];
+
+  function bjSuma(filtro){
+    var s = 0;
+    BJ_HIST.forEach(function(b){ if (filtro(b)) s += (b.total || 0); });
+    return s;
+  }
+
+  function bjPintarHistorial(){
+    var cont = $("bjHistorial");
+    if (!BJ_HIST.length){
+      cont.innerHTML = '<p class="nota" style="margin:0">Todavia no hay bajas guardadas en este ' +
+                       'dispositivo. El historial no se comparte entre equipos.</p>';
+      return;
+    }
+    var h = '<div class="resumen" style="margin-bottom:10px">';
+    h += dato("Bajas registradas", fmt(BJ_HIST.length, 0));
+    h += '<div class="dato roja"><i>Valor acumulado</i><b>' +
+         pesos(bjSuma(function(){ return true; })) + '</b></div>';
+    h += dato("Deterioro natural", pesos(bjSuma(function(b){
+      return String(b.tipo).indexOf("Deterioro") === 0; })));
+    h += dato("Mala manipulacion", pesos(bjSuma(function(b){
+      return String(b.tipo).indexOf("Deterioro") !== 0; })));
+    h += '</div>';
+
+    h += '<div class="tablawrap"><table><thead><tr>';
+    h += '<th>Consecutivo</th><th>Fecha</th><th>Ambiente</th><th>Tipo</th>';
+    h += '<th class="num">Art.</th><th class="num">Valor</th><th>Estado</th><th class="opc"></th>';
+    h += '</tr></thead><tbody>';
+    BJ_HIST.slice(0, 40).forEach(function(b, i){
+      h += '<tr><td><span class="cod">' + esc(b.consec) + '</span></td>';
+      h += '<td>' + esc(fechaBonita(b.fecha)) + '</td>';
+      h += '<td>' + esc(b.ambiente || "-") + '</td>';
+      h += '<td>' + (String(b.tipo).indexOf("Deterioro") === 0 ? "Natural" : "Manipulacion") + '</td>';
+      h += '<td class="num">' + fmt(b.totArt, 0) + '</td>';
+      h += '<td class="num">' + pesos(b.total) + '</td>';
+      h += '<td><select data-estado="' + i + '" aria-label="Estado de ' + esc(b.consec) + '">';
+      BJ_ESTADOS.forEach(function(e){
+        h += '<option value="' + e + '"' + (b.estado === e ? " selected" : "") + '>' +
+             e.charAt(0).toUpperCase() + e.slice(1) + '</option>';
+      });
+      h += '</select></td>';
+      h += '<td class="opc"><button class="quitar" type="button" data-borrabaja="' + i +
+           '" aria-label="Borrar ' + esc(b.consec) + '">&times;</button></td></tr>';
+    });
+    h += '</tbody></table></div>';
+    h += '<p class="nota">El historial vive <b>solo en este dispositivo</b> y no guarda las ' +
+         'fotos: para volver a ver la evidencia esta el PDF. El estado que marques aqui es un ' +
+         'control tuyo, no le llega a nadie mas.</p>';
+    cont.innerHTML = h;
+
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-estado]"), function(sel){
+      sel.addEventListener("change", function(){
+        var b = BJ_HIST[Number(sel.getAttribute("data-estado"))];
+        b.estado = sel.value;
+        b["fecha_" + sel.value] = new Date().toISOString();
+        bjEscribir("fichas.bajas", BJ_HIST);
+        bjPintarHistorial();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-borrabaja]"), function(b){
+      b.addEventListener("click", function(){
+        BJ_HIST.splice(Number(b.getAttribute("data-borrabaja")), 1);
+        bjEscribir("fichas.bajas", BJ_HIST);
+        bjPintarHistorial();
+      });
+    });
+  }
+
+  bjPintarListas();
+  bjPintarHistorial();
+  bjNueva();
   pintarElegidas();
   pintarProduccion();
 
