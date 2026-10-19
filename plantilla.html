@@ -519,7 +519,13 @@
   .datos .dato.grupo{border-top-color:var(--g)}
 
   /* ---------- controles de vista ---------- */
-  .controles{display:flex;gap:6px;align-items:center}
+  /* La fila de botones se parte en varias lineas cuando no cabe. Sin esto, en
+     un celular solo se veian los primeros y habia que arrastrar la pantalla a
+     un lado para alcanzar los ultimos, que ni se sospechaba que estaban ahi. */
+  .controles{
+    display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+    justify-content:flex-end;min-width:0;
+  }
   .ctrl{
     border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
     padding:6px 11px;border-radius:8px;cursor:pointer;font-size:12.5px;
@@ -527,6 +533,109 @@
   }
   .ctrl:hover{border-color:var(--accent);color:var(--ink)}
   .ctrl b{font-weight:600;color:var(--ink)}
+
+  /* En pantalla angosta los botones se aprietan y la marca deja de empujarlos
+     a la derecha, para que quepan mas por fila. */
+  @media (max-width:620px){
+    .topbar{padding:10px 12px;gap:10px}
+    .brand{margin-right:0}
+    .brand b{font-size:15px}
+    .controles{justify-content:flex-start;width:100%}
+    .ctrl{padding:6px 9px;font-size:12px}
+  }
+  /* La observacion por linea no puede ser un hilito: es donde se explica la
+     baja, asi que se le da ancho util y se encoge solo en pantalla chica. */
+  .obs-linea{
+    width:190px;min-width:120px;padding:5px 7px;border:1px solid var(--line);
+    border-radius:6px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;
+  }
+  .obs-linea::placeholder{color:var(--faint)}
+  @media (max-width:760px){ .obs-linea{width:140px} }
+
+  /* ---------- En celular, cada articulo es una ficha vertical ----------
+     Una tabla de diez columnas no cabe en un telefono: toca arrastrar la
+     pantalla a un lado, los titulos se pierden de vista y uno termina
+     escribiendo la cantidad en la casilla equivocada. Aqui la fila se vuelve
+     un bloque: rotulo a la izquierda, dato a la derecha, uno debajo del otro.
+     Es lo mismo que uno haria en papel. */
+  .fichas-angostas{display:none}
+  @media (max-width:760px){
+    #bjLineas .tablawrap{overflow:visible}
+    #bjLineas thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+    #bjLineas table,#bjLineas tbody,#bjLineas tr,#bjLineas td{display:block;width:auto}
+    #bjLineas table{min-width:0;border:0}
+    #bjLineas tr{
+      border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+      margin-bottom:10px;background:var(--surface);position:relative;
+    }
+    #bjLineas td{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      border:0;padding:5px 0;text-align:right;
+    }
+    #bjLineas td::before{
+      content:attr(data-rot);color:var(--muted);font-size:12px;
+      text-align:left;flex:none;
+    }
+    /* El nombre del articulo manda: ocupa su propio renglon, grande y a la
+       izquierda, como el titulo de la ficha. */
+    #bjLineas td.art-baja{
+      display:block;text-align:left;font-weight:600;font-size:15px;
+      padding:2px 0 8px;border-bottom:1px solid var(--line-soft);margin-bottom:4px;
+    }
+    #bjLineas td.art-baja::before{display:none}
+    #bjLineas td.idx{display:none}
+    #bjLineas td.opc{
+      position:absolute;top:6px;right:8px;padding:0;
+    }
+    #bjLineas td.opc::before{display:none}
+    /* el boton de quitar flota en la esquina: el codigo le cede ese espacio */
+    #bjLineas td[data-rot="Codigo"]{padding-right:32px}
+    #bjLineas .obs-linea{width:100%;max-width:62%}
+    #bjLineas td[data-rot="Fotografias"]{
+      display:block;text-align:left;padding-top:8px;
+    }
+    #bjLineas td[data-rot="Fotografias"]::before{display:block;margin-bottom:5px}
+    #bjLineas .precio-input{width:110px}
+  }
+
+  /* El boton "Ver en celular" simula el telefono en una pantalla ancha, asi
+     que la consulta de medios no se dispara: las mismas reglas van repetidas
+     para esa clase. */
+  :root.movil #bjLineas .tablawrap{overflow:visible}
+  :root.movil #bjLineas thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  :root.movil #bjLineas table,:root.movil #bjLineas tbody,
+  :root.movil #bjLineas tr,:root.movil #bjLineas td{display:block;width:auto}
+  :root.movil #bjLineas table{min-width:0;border:0}
+  :root.movil #bjLineas tr{
+    border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+    margin-bottom:10px;background:var(--surface);position:relative;
+  }
+  :root.movil #bjLineas td{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    border:0;padding:5px 0;text-align:right;
+  }
+  :root.movil #bjLineas td::before{
+    content:attr(data-rot);color:var(--muted);font-size:12px;text-align:left;flex:none;
+  }
+  :root.movil #bjLineas td.art-baja{
+    display:block;text-align:left;font-weight:600;font-size:15px;
+    padding:2px 0 8px;border-bottom:1px solid var(--line-soft);margin-bottom:4px;
+  }
+  :root.movil #bjLineas td.art-baja::before{display:none}
+  :root.movil #bjLineas td.idx{display:none}
+  :root.movil #bjLineas td.opc{position:absolute;top:6px;right:8px;padding:0}
+  :root.movil #bjLineas td.opc::before{display:none}
+  :root.movil #bjLineas td[data-rot="Codigo"]{padding-right:32px}
+  :root.movil #bjLineas .obs-linea{width:100%;max-width:62%}
+  :root.movil #bjLineas td[data-rot="Fotografias"]{display:block;text-align:left;padding-top:8px}
+  :root.movil #bjLineas td[data-rot="Fotografias"]::before{display:block;margin-bottom:5px}
+  :root.movil #bjLineas .precio-input{width:110px}
+  /* en celular la UM si se muestra: aqui es dato, no adorno */
+  :root.movil #bjLineas td.um-baja{display:flex}
+  #vBajas select{
+    padding:7px 9px;border:1px solid var(--line);border-radius:8px;
+    background:var(--surface);color:var(--ink);font:inherit;font-size:14px;width:100%;
+  }
 
   /* vista de celular forzada desde el botón: se replican las reglas que
      normalmente dispara el ancho de pantalla, y se enmarca como un teléfono */
@@ -1590,16 +1699,8 @@
           <input id="bjFecha" type="date">
         </div>
         <div class="campo">
-          <label for="bjAmbiente">Ambiente</label>
-          <input id="bjAmbiente" type="text" list="lAmbiente" autocomplete="off"
-                 placeholder="Ej: Banquetes">
-          <datalist id="lAmbiente"></datalist>
-        </div>
-        <div class="campo">
           <label for="bjBodega">Bodega</label>
-          <input id="bjBodega" type="text" list="lBodega" autocomplete="off"
-                 placeholder="Ej: Almacén de A&amp;B">
-          <datalist id="lBodega"></datalist>
+          <select id="bjBodega"></select>
         </div>
         <div class="campo">
           <label for="bjCentro">Centro de costo</label>
@@ -1636,8 +1737,8 @@
     </div>
 
     <div class="tarjeta">
-      <h2 class="sec">3 · Observaciones</h2>
-      <textarea id="bjObs" rows="4" placeholder="Qué pasó, dónde y cuándo. Entre más claro, menos preguntas después."></textarea>
+      <h2 class="sec">3 · Observaciones adicionales y/o sugerencias</h2>
+      <textarea id="bjObs" rows="4" placeholder="Lo que aplica a toda la baja: contexto, causa de fondo, qué se propone para que no se repita. El detalle de cada artículo va en su propia columna."></textarea>
     </div>
 
     <div class="tarjeta" id="bjCierre">
@@ -3635,7 +3736,7 @@
          '<span class="um">· ' + filas.length + (filas.length === 1 ? ' preparación' : ' preparaciones') + '</span></h2>';
     h += '<p class="nota" style="margin:0 0 9px">Una hoja por cada una, más la hoja resumen.</p>';
     h += '<div class="tablawrap"><table><thead><tr>';
-    h += '<th class="num">N.º</th><th>Folio</th><th>Código</th><th>Preparación</th>';
+    h += '<th class="num c-idx">N.º</th><th>Folio</th><th>Código</th><th>Preparación</th>';
     h += '<th class="num">Recetas</th><th class="num">Debe dar</th><th class="num">Ingredientes</th>';
     if (conCosto) h += '<th class="num">Costo</th><th class="num">Costo por unidad</th>';
     h += '<th>Método</th></tr></thead><tbody>';
@@ -3691,7 +3792,7 @@
            'alfabéticamente, como se recorre una bodega. Esta misma relación sale en el PDF con ' +
            'dos columnas en blanco para anotar la existencia.</p>';
       h += '<div class="tablawrap"><table><thead><tr>';
-      h += '<th class="num">N.º</th><th>Código</th><th>Insumo</th><th class="opc">Para</th>';
+      h += '<th class="num c-idx">N.º</th><th>Código</th><th>Insumo</th><th class="opc">Para</th>';
       h += '<th class="num">Cantidad</th><th>Unidad</th><th class="num">Gramos / ml</th>';
       if (conCosto) h += '<th class="num">Costo</th>';
       h += '</tr></thead><tbody>';
@@ -3871,7 +3972,7 @@
     var h = '<div class="tablawrap"><table><thead><tr>';
     h += '<th class="sel"><input type="checkbox" data-todas="' + cubo + '"' +
          (todas ? " checked" : "") + ' aria-label="Seleccionar todo"></th>';
-    h += '<th class="num">N.º</th>';
+    h += '<th class="num c-idx">N.º</th>';
     // El código va en TODAS las listas, no solo en la de productos: es lo que
     // hace legible el orden por grupo y lo que se teclea en el sistema.
     h += '<th>Código</th>';
@@ -4883,7 +4984,7 @@
     h += '<div class="tarjeta" style="padding:0;overflow:hidden"><div class="tablawrap"><table><thead><tr>';
     h += '<th class="sel"><input type="checkbox" id="simTodas"' + (sinMarcar===0?" checked":"") +
          ' aria-label="Marcar o desmarcar todas"></th>';
-    h += '<th class="num">N.º</th><th>Código</th><th>Receta</th><th class="num">Usa</th>';
+    h += '<th class="num c-idx">N.º</th><th>Código</th><th>Receta</th><th class="num">Usa</th>';
     if (cambiaG) h += '<th class="num">Gramaje hoy</th><th class="num">Gramaje nuevo</th>';
     if (objPct > 0) h += '<th class="num">Para ' + fmt(objPct,1) + ' %</th>';
     h += '<th class="num">Acompañamiento</th><th class="num">Costo total hoy</th>';
@@ -5299,7 +5400,7 @@
     var h = "";
     if (nuevas.length){
       h += '<div class="tablawrap"><table><thead><tr>';
-      h += '<th class="num">N.º</th><th>Insumo</th><th class="num">Cantidad</th>';
+      h += '<th class="num c-idx">N.º</th><th>Insumo</th><th class="num">Cantidad</th>';
       h += '<th>Unidad</th><th class="num">Costo</th><th class="opc"></th>';
       h += '</tr></thead><tbody>';
       nuevas.forEach(function(x, i){
@@ -5411,7 +5512,7 @@
          (esNuevo ? "plato nuevo · no está en el libro" : esc(recCost.c) +
            (recCost.cat ? ' · ' + esc(recCost.cat) : '')) + '</span></h2></div>';
     h += '<div class="tablawrap"><table><thead><tr>';
-    h += '<th class="num">N.º</th><th>Insumo</th><th class="num">Cantidad</th><th class="c-um">Unidad</th>';
+    h += '<th class="num c-idx">N.º</th><th>Insumo</th><th class="num">Cantidad</th><th class="c-um">Unidad</th>';
     h += '<th class="num">Valor</th><th class="num">% part.</th>';
     h += '</tr></thead><tbody>';
     var lineas = recCost.i.map(function(x, i){
@@ -5773,6 +5874,37 @@
                     "costosayb@lagosdecaujaral.com", "auxiliarcostos@gmail.com",
                     "auxiliardecostos2@lagosdecaujaral.com"];
 
+  /* Las bodegas del club, con su codigo. Es una lista cerrada a proposito:
+     escrita a mano cada quien la nombra distinto ("nautica", "Bar Nautica",
+     "BAR NAUTICA") y despues no se puede agrupar el gasto por sitio. */
+  var BJ_BODEGAS = [
+    ["2",  "ALMACEN DE ALIMENTOS Y BEBIDAS"], ["03", "COCINA PRINCIPAL"],
+    ["04", "BAR PRINCIPAL"],                  ["05", "ZONA GAMER"],
+    ["06", "HOYO 10"],                        ["07", "BAR LOS LAGOS"],
+    ["08", "COCINA NAUTICA"],                 ["09", "TENIS"],
+    ["10", "CARRO BAR"],                      ["11", "SOFTBALL"],
+    ["12", "MAQUINA VENDIG"],                 ["13", "HIPICA"],
+    ["14", "FOOD TRUCK"],                     ["15", "HOYO 14"],
+    ["16", "BAR NAUTICA"],                    ["17", "BAR ZONAS HUMEDAS"],
+    ["18", "BAR KIOSKITO"],                   ["19", "FUTBOL"],
+    ["20", "SALON LAGOS"],                    ["21", "COCINA SUSHI"],
+    ["22", "ZONA DE PRODUCCION"],             ["23", "COCINA PIZZERIA"],
+    ["24", "BAR PIZZERIA"],                   ["25", "GYM"]
+  ];
+  function bjLlenarBodegas(){
+    var s = $("bjBodega");
+    s.innerHTML = '<option value="">Escoge la bodega…</option>' +
+      BJ_BODEGAS.map(function(b){
+        return '<option value="' + esc(b[0]) + '">' + esc(b[0] + " · " + b[1]) + '</option>';
+      }).join("");
+  }
+  function bjBodegaTexto(){
+    var cod = $("bjBodega").value;
+    if (!cod) return "";
+    var b = null;
+    BJ_BODEGAS.forEach(function(x){ if (x[0] === cod) b = x; });
+    return b ? (b[0] + " · " + b[1]) : cod;
+  }
   function bjLeer(clave, pordefecto){
     try { var v = localStorage.getItem(clave); return v ? JSON.parse(v) : pordefecto; }
     catch(e){ return pordefecto; }
@@ -5782,7 +5914,7 @@
     catch(e){ return false; }
   }
   var BJ_HIST = bjLeer("fichas.bajas", []);
-  var BJ_LISTAS = bjLeer("fichas.bajas.listas", { ambiente:[], bodega:[], centro:[], quien:[] });
+  var BJ_LISTAS = bjLeer("fichas.bajas.listas", { centro:[], quien:[] });
 
   function bjHoy(){
     var f = new Date(), p = function(n){ return (n<10?"0":"") + n; };
@@ -5805,7 +5937,7 @@
     bjPintarListas();
   }
   function bjPintarListas(){
-    [["lAmbiente","ambiente"],["lBodega","bodega"],["lCentro","centro"],["lQuien","quien"]]
+    [["lCentro","centro"],["lQuien","quien"]]
       .forEach(function(par){
         var dl = $(par[0]); if (!dl) return;
         dl.innerHTML = (BJ_LISTAS[par[1]] || []).map(function(v){
@@ -5840,7 +5972,7 @@
       var d = datosDelArticulo(o.k);
       if (!d) return;
       BJ.lineas.push({ k:d.k, art:d.n, cod:codigoArticulo(d.n) || "",
-                       um:d.um, cu:d.cu, cant:1, fotos:[] });
+                       um:d.um, cu:d.cu, cant:1, obs:"", fotos:[] });
       bjPintarLineas();
     });
   });
@@ -5886,20 +6018,34 @@
     var h = "";
     if (BJ.lineas.length){
       h += '<div class="tablawrap"><table><thead><tr>';
-      h += '<th class="num">N.o</th><th>Articulo</th><th>Codigo</th><th class="c-um">UM</th>';
+      h += '<th class="num c-idx">N.o</th><th>Codigo</th><th>Articulo</th><th>UM</th>';
       h += '<th class="num">Cantidad</th><th class="num">Costo unit.</th><th class="num">Valor baja</th>';
-      h += '<th>Fotografias</th><th class="opc"></th>';
+      h += '<th>Observacion</th><th>Fotografias</th><th class="opc"></th>';
       h += '</tr></thead><tbody>';
       BJ.lineas.forEach(function(x, i){
-        h += '<tr><td class="idx">' + (i+1) + '</td>';
-        h += '<td>' + esc(x.art) + '</td>';
-        h += '<td><span class="cod">' + esc(x.cod || "-") + '</span></td>';
-        h += '<td class="c-um"><span class="um">' + esc(x.um) + '</span></td>';
-        h += '<td class="num"><input class="precio-input" type="number" step="0.001" min="0" ' +
-             'data-cant="' + i + '" value="' + x.cant + '" aria-label="Cantidad de ' + esc(x.art) + '"></td>';
-        h += '<td class="num">' + pesos(x.cu) + '</td>';
-        h += '<td class="num" data-valor="' + i + '">' + pesos(x.cant * x.cu) + '</td>';
-        h += '<td><div class="fotos" data-tira="' + i + '">' + bjMiniaturas(x, i) + '</div>' +
+        /* Cada celda carga su rotulo en data-rot: en pantalla ancha no se ve
+           —manda el encabezado de la tabla—, pero en celular la fila se
+           convierte en una ficha vertical y el rotulo es lo que dice que es
+           cada cosa. Es la forma de que diez columnas quepan en un telefono
+           sin que toque arrastrar la pantalla a un lado. */
+        h += '<tr><td class="idx" data-rot="N.o">' + (i+1) + '</td>';
+        h += '<td data-rot="Codigo"><span class="cod">' + esc(x.cod || "-") + '</span></td>';
+        h += '<td class="art-baja" data-rot="Articulo">' + esc(x.art) + '</td>';
+        h += '<td class="um-baja" data-rot="UM"><span class="um">' + esc(x.um) + '</span></td>';
+        h += '<td class="num" data-rot="Cantidad"><input class="precio-input" type="number" ' +
+             'step="0.001" min="0" data-cant="' + i + '" value="' + x.cant +
+             '" aria-label="Cantidad de ' + esc(x.art) + '"></td>';
+        h += '<td class="num" data-rot="Costo unitario">' + pesos(x.cu) + '</td>';
+        h += '<td class="num" data-rot="Valor de la baja" data-valor="' + i + '">' +
+             pesos(x.cant * x.cu) + '</td>';
+        /* La observacion por linea es la que de verdad explica la baja: no es
+           lo mismo "se cayo al piso" que "llego vencido del proveedor", y en
+           un reporte con varios articulos cada uno tiene su propia historia. */
+        h += '<td data-rot="Observacion"><input class="obs-linea" type="text" data-obs="' + i + '" ' +
+             'value="' + esc(x.obs || "") + '" placeholder="Que le paso a este" ' +
+             'aria-label="Observacion de ' + esc(x.art) + '"></td>';
+        h += '<td data-rot="Fotografias"><div class="fotos" data-tira="' + i + '">' +
+             bjMiniaturas(x, i) + '</div>' +
              '<label class="bot chico">Agregar foto<input type="file" accept="image/*" ' +
              'capture="environment" multiple data-foto="' + i + '" hidden></label></td>';
         h += '<td class="opc"><button class="quitar" type="button" data-quita="' + i +
@@ -5916,6 +6062,11 @@
         var celda = cont.querySelector('[data-valor="' + i + '"]');
         if (celda) celda.textContent = pesos(BJ.lineas[i].cant * BJ.lineas[i].cu);
         bjPintarResumen();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-obs]"), function(inp){
+      inp.addEventListener("input", function(){
+        BJ.lineas[Number(inp.getAttribute("data-obs"))].obs = inp.value;
       });
     });
     Array.prototype.forEach.call(cont.querySelectorAll("[data-quita]"), function(b){
@@ -6014,8 +6165,8 @@
     return {
       consec: $("bjConsec").value.trim() || bjConsecutivo(),
       fecha: $("bjFecha").value || bjHoy(),
-      ambiente: $("bjAmbiente").value.trim(),
-      bodega: $("bjBodega").value.trim(),
+      bodegaCod: $("bjBodega").value,
+      bodega: bjBodegaTexto(),
       centro: $("bjCentro").value.trim(),
       quien: $("bjQuien").value.trim(),
       tipo: BJ.tipo,
@@ -6061,7 +6212,7 @@
 
     /* Los datos del encabezado en dos columnas: entran los siete campos en
        menos de tres centimetros y queda sitio para la tabla. */
-    var izq = [["Fecha", fechaBonita(d.fecha)], ["Ambiente", d.ambiente || "-"],
+    var izq = [["Fecha", fechaBonita(d.fecha)], ["Bodega", d.bodega || "-"],
                ["Bodega", d.bodega || "-"]];
     var der = [["Centro de costo", d.centro || "-"], ["Tipo de baja", d.tipo],
                ["Reportado por", d.quien]];
@@ -6075,27 +6226,36 @@
     y += 2; linea(y); y += 7;
 
     // ---- tabla de articulos
+    /* El codigo va de primero: es por donde se busca el articulo en Zeus, y
+       quien recibe este papel lo primero que hace es ubicarlo en el sistema.
+       La observacion de cada linea cierra la tabla porque es texto libre y es
+       lo unico que puede ocupar dos renglones. */
     tx("DETALLE DE LA BAJA", M, y, 8, "bold"); y += 3;
     doc.setFillColor(AZUL_S[0],AZUL_S[1],AZUL_S[2]); doc.rect(M, y, ANCHO, 6, "F");
     doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
     doc.setTextColor(AZUL[0],AZUL[1],AZUL[2]);
-    doc.text("ARTICULO", M+2, y+4);
-    doc.text("CODIGO", M+88, y+4);
-    doc.text("UM", M+108, y+4);
-    doc.text("CANT.", M+128, y+4, {align:"right"});
-    doc.text("COSTO UNIT.", M+156, y+4, {align:"right"});
-    doc.text("VALOR BAJA", W-M-2, y+4, {align:"right"});
+    doc.text("CODIGO", M+2, y+4);
+    doc.text("ARTICULO", M+18, y+4);
+    doc.text("UM", M+66, y+4);
+    doc.text("CANT.", M+86, y+4, {align:"right"});
+    doc.text("COSTO UNIT.", M+110, y+4, {align:"right"});
+    doc.text("VALOR BAJA", M+134, y+4, {align:"right"});
+    doc.text("OBSERVACION", M+138, y+4);
     y += 6;
     d.lineas.forEach(function(x, i){
-      if (y > H - 50){ y = pagina(); }
-      if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y, ANCHO, 5.6, "F"); }
-      tx(doc.splitTextToSize(String(x.art), 84)[0], M+2, y+4, 8);
-      tx(x.cod || "-", M+88, y+4, 7, "normal", GRIS);
-      tx(x.um, M+108, y+4, 6.5, "normal", TENUE);
-      tx(fmt(x.cant, x.cant % 1 ? 3 : 0), M+128, y+4, 8, "normal", TINTA, "right");
-      tx(pesos(x.cu), M+156, y+4, 8, "normal", TINTA, "right");
-      tx(pesos(x.cant * x.cu), W-M-2, y+4, 8, "bold", TINTA, "right");
-      y += 5.6;
+      var obs = x.obs ? doc.splitTextToSize(String(x.obs), 42).slice(0, 2) : [];
+      var alto = Math.max(5.6, obs.length * 3.4 + 2.4);
+      if (y + alto > H - 50){ y = pagina(); }
+      if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y, ANCHO, alto, "F"); }
+      tx(x.cod || "-", M+2, y+4, 7, "normal", GRIS);
+      tx(doc.splitTextToSize(String(x.art), 46)[0], M+18, y+4, 8);
+      tx(x.um, M+66, y+4, 6.5, "normal", TENUE);
+      tx(fmt(x.cant, x.cant % 1 ? 3 : 0), M+86, y+4, 8, "normal", TINTA, "right");
+      tx(pesos(x.cu), M+110, y+4, 8, "normal", TINTA, "right");
+      tx(pesos(x.cant * x.cu), M+134, y+4, 8, "bold", TINTA, "right");
+      var yo = y + 3.4;
+      obs.forEach(function(l){ tx(l, M+138, yo, 6.8, "normal", GRIS); yo += 3.4; });
+      y += alto;
     });
     linea(y); y += 7;
 
@@ -6114,7 +6274,7 @@
 
     // ---- observaciones
     if (y > H - 40){ y = pagina(); }
-    tx("OBSERVACIONES", M, y, 8, "bold"); y += 5;
+    tx("OBSERVACIONES ADICIONALES Y/O SUGERENCIAS", M, y, 8, "bold"); y += 5;
     var obs = d.obs ? doc.splitTextToSize(d.obs, ANCHO - 4) : ["(sin observaciones)"];
     doc.setDrawColor(222); doc.setLineWidth(.2);
     doc.rect(M, y - 3.5, ANCHO, Math.max(14, obs.length * 4.4 + 4));
@@ -6186,7 +6346,7 @@
   }
   function bjNombreArchivo(){
     var d = bjDatos();
-    return "Baja " + d.consec + (d.ambiente ? " " + d.ambiente : "") + ".pdf";
+    return "Baja " + d.consec + (d.bodega ? " " + d.bodega.replace(/[^A-Za-z0-9 ]/g, "") : "") + ".pdf";
   }
 
   $("bjPdf").addEventListener("click", function(){
@@ -6207,10 +6367,9 @@
   $("bjEnviar").addEventListener("click", function(){
     var doc = bjPdf(); if (!doc) return;
     var d = bjDatos();
-    var asunto = "Reporte de Baja de Mercancia - " + (d.ambiente || "Sin ambiente") +
+    var asunto = "Reporte de Baja de Mercancia - " + (d.bodega || "Sin bodega") +
                  " - " + fechaBonita(d.fecha);
     var cuerpo = "Adjunto el reporte de baja " + d.consec + ".\n\n" +
-      "Ambiente: " + (d.ambiente || "-") + "\n" +
       "Bodega: " + (d.bodega || "-") + "\n" +
       "Centro de costo: " + (d.centro || "-") + "\n" +
       "Tipo de baja: " + d.tipo + "\n" +
@@ -6249,7 +6408,7 @@
     if (falta){ avisar(falta); return; }
     var d = bjDatos();
     var reg = {
-      consec:d.consec, fecha:d.fecha, ambiente:d.ambiente, bodega:d.bodega,
+      consec:d.consec, fecha:d.fecha, bodega:d.bodega, bodegaCod:d.bodegaCod,
       centro:d.centro, tipo:d.tipo, quien:d.quien, obs:d.obs,
       totArt:d.t.art, totUnd:d.t.und, total:d.t.val, fotos:d.t.fotos,
       estado: estado || "pendiente",
@@ -6265,7 +6424,7 @@
       avisar("No se pudo guardar: el navegador esta lleno");
       return;
     }
-    ["ambiente","bodega","centro","quien"].forEach(function(c){ bjRecordar(c, d[c]); });
+    ["centro","quien"].forEach(function(c){ bjRecordar(c, d[c]); });
     bjPintarHistorial();
     avisar("Guardada en el historial");
   }
@@ -6301,13 +6460,13 @@
     h += '</div>';
 
     h += '<div class="tablawrap"><table><thead><tr>';
-    h += '<th>Consecutivo</th><th>Fecha</th><th>Ambiente</th><th>Tipo</th>';
+    h += '<th>Consecutivo</th><th>Fecha</th><th>Bodega</th><th>Tipo</th>';
     h += '<th class="num">Art.</th><th class="num">Valor</th><th>Estado</th><th class="opc"></th>';
     h += '</tr></thead><tbody>';
     BJ_HIST.slice(0, 40).forEach(function(b, i){
       h += '<tr><td><span class="cod">' + esc(b.consec) + '</span></td>';
       h += '<td>' + esc(fechaBonita(b.fecha)) + '</td>';
-      h += '<td>' + esc(b.ambiente || "-") + '</td>';
+      h += '<td>' + esc(b.bodega || "-") + '</td>';
       h += '<td>' + (String(b.tipo).indexOf("Deterioro") === 0 ? "Natural" : "Manipulacion") + '</td>';
       h += '<td class="num">' + fmt(b.totArt, 0) + '</td>';
       h += '<td class="num">' + pesos(b.total) + '</td>';
@@ -6344,6 +6503,7 @@
     });
   }
 
+  bjLlenarBodegas();
   bjPintarListas();
   bjPintarHistorial();
   bjNueva();
