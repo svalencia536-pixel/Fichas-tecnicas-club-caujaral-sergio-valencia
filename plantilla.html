@@ -551,6 +551,14 @@
   }
   .obs-linea::placeholder{color:var(--faint)}
   @media (max-width:760px){ .obs-linea{width:140px} }
+  /* El nombre de lo que se rompio se escribe a mano: necesita ancho de verdad,
+     porque "Copa de vino tinto Riedel" no cabe en un campito. */
+  .art-rotura{
+    width:210px;min-width:140px;padding:5px 7px;border:1px solid var(--line);
+    border-radius:6px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;
+  }
+  .art-rotura::placeholder{color:var(--faint)}
+  @media (max-width:760px){ .art-rotura{width:100%} }
 
   /* ---------- En celular, cada articulo es una ficha vertical ----------
      Una tabla de diez columnas no cabe en un telefono: toca arrastrar la
@@ -560,78 +568,80 @@
      Es lo mismo que uno haria en papel. */
   .fichas-angostas{display:none}
   @media (max-width:760px){
-    #bjLineas .tablawrap{overflow:visible}
-    #bjLineas thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-    #bjLineas table,#bjLineas tbody,#bjLineas tr,#bjLineas td{display:block;width:auto}
-    #bjLineas table{min-width:0;border:0}
-    #bjLineas tr{
+    #bjLineas .tablawrap,    #rtLineas .tablawrap{overflow:visible}
+    #bjLineas thead,    #rtLineas thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+    #bjLineas table,#bjLineas tbody,#bjLineas tr,#bjLineas td,    #rtLineas table,#rtLineas tbody,#rtLineas tr,#rtLineas td{display:block;width:auto}
+    #bjLineas table,    #rtLineas table{min-width:0;border:0}
+    #bjLineas tr,    #rtLineas tr{
       border:1px solid var(--line);border-radius:10px;padding:10px 12px;
       margin-bottom:10px;background:var(--surface);position:relative;
     }
-    #bjLineas td{
+    #bjLineas td,    #rtLineas td{
       display:flex;align-items:center;justify-content:space-between;gap:12px;
       border:0;padding:5px 0;text-align:right;
     }
-    #bjLineas td::before{
+    #bjLineas td::before,    #rtLineas td::before{
       content:attr(data-rot);color:var(--muted);font-size:12px;
       text-align:left;flex:none;
     }
     /* El nombre del articulo manda: ocupa su propio renglon, grande y a la
        izquierda, como el titulo de la ficha. */
-    #bjLineas td.art-baja{
+    #bjLineas td.art-baja,    #rtLineas td.art-baja{
       display:block;text-align:left;font-weight:600;font-size:15px;
       padding:2px 0 8px;border-bottom:1px solid var(--line-soft);margin-bottom:4px;
     }
-    #bjLineas td.art-baja::before{display:none}
-    #bjLineas td.idx{display:none}
-    #bjLineas td.opc{
+    #bjLineas td.art-baja::before,    #rtLineas td.art-baja::before{display:none}
+    #bjLineas td.idx,    #rtLineas td.idx{display:none}
+    #bjLineas td.opc,    #rtLineas td.opc{
       position:absolute;top:6px;right:8px;padding:0;
     }
-    #bjLineas td.opc::before{display:none}
+    #bjLineas td.opc::before,    #rtLineas td.opc::before{display:none}
     /* el boton de quitar flota en la esquina: el codigo le cede ese espacio */
-    #bjLineas td[data-rot="Codigo"]{padding-right:32px}
-    #bjLineas .obs-linea{width:100%;max-width:62%}
-    #bjLineas td[data-rot="Fotografias"]{
+    #bjLineas td[data-rot="Codigo"],    #rtLineas td[data-rot="Codigo"]{padding-right:32px}
+    #bjLineas .obs-linea,    #rtLineas .obs-linea{width:100%;max-width:62%}
+    #bjLineas td[data-rot="Fotografias"],    #rtLineas td[data-rot="Fotografias"]{
       display:block;text-align:left;padding-top:8px;
     }
-    #bjLineas td[data-rot="Fotografias"]::before{display:block;margin-bottom:5px}
-    #bjLineas .precio-input{width:110px}
+    #bjLineas td[data-rot="Fotografias"]::before,    #rtLineas td[data-rot="Fotografias"]::before{display:block;margin-bottom:5px}
+    #bjLineas .precio-input,    #rtLineas .precio-input{width:110px}
   }
 
   /* El boton "Ver en celular" simula el telefono en una pantalla ancha, asi
      que la consulta de medios no se dispara: las mismas reglas van repetidas
      para esa clase. */
-  :root.movil #bjLineas .tablawrap{overflow:visible}
-  :root.movil #bjLineas thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  :root.movil #bjLineas .tablawrap,  :root.movil #rtLineas .tablawrap{overflow:visible}
+  :root.movil #bjLineas thead,  :root.movil #rtLineas thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   :root.movil #bjLineas table,:root.movil #bjLineas tbody,
-  :root.movil #bjLineas tr,:root.movil #bjLineas td{display:block;width:auto}
-  :root.movil #bjLineas table{min-width:0;border:0}
-  :root.movil #bjLineas tr{
+  :root.movil #bjLineas tr,:root.movil #bjLineas td,
+  :root.movil #rtLineas table,:root.movil #rtLineas tbody,
+  :root.movil #rtLineas tr,:root.movil #rtLineas td{display:block;width:auto}
+  :root.movil #bjLineas table,  :root.movil #rtLineas table{min-width:0;border:0}
+  :root.movil #bjLineas tr,  :root.movil #rtLineas tr{
     border:1px solid var(--line);border-radius:10px;padding:10px 12px;
     margin-bottom:10px;background:var(--surface);position:relative;
   }
-  :root.movil #bjLineas td{
+  :root.movil #bjLineas td,  :root.movil #rtLineas td{
     display:flex;align-items:center;justify-content:space-between;gap:12px;
     border:0;padding:5px 0;text-align:right;
   }
-  :root.movil #bjLineas td::before{
+  :root.movil #bjLineas td::before,  :root.movil #rtLineas td::before{
     content:attr(data-rot);color:var(--muted);font-size:12px;text-align:left;flex:none;
   }
-  :root.movil #bjLineas td.art-baja{
+  :root.movil #bjLineas td.art-baja,  :root.movil #rtLineas td.art-baja{
     display:block;text-align:left;font-weight:600;font-size:15px;
     padding:2px 0 8px;border-bottom:1px solid var(--line-soft);margin-bottom:4px;
   }
-  :root.movil #bjLineas td.art-baja::before{display:none}
-  :root.movil #bjLineas td.idx{display:none}
-  :root.movil #bjLineas td.opc{position:absolute;top:6px;right:8px;padding:0}
-  :root.movil #bjLineas td.opc::before{display:none}
-  :root.movil #bjLineas td[data-rot="Codigo"]{padding-right:32px}
-  :root.movil #bjLineas .obs-linea{width:100%;max-width:62%}
-  :root.movil #bjLineas td[data-rot="Fotografias"]{display:block;text-align:left;padding-top:8px}
-  :root.movil #bjLineas td[data-rot="Fotografias"]::before{display:block;margin-bottom:5px}
-  :root.movil #bjLineas .precio-input{width:110px}
+  :root.movil #bjLineas td.art-baja::before,  :root.movil #rtLineas td.art-baja::before{display:none}
+  :root.movil #bjLineas td.idx,  :root.movil #rtLineas td.idx{display:none}
+  :root.movil #bjLineas td.opc,  :root.movil #rtLineas td.opc{position:absolute;top:6px;right:8px;padding:0}
+  :root.movil #bjLineas td.opc::before,  :root.movil #rtLineas td.opc::before{display:none}
+  :root.movil #bjLineas td[data-rot="Codigo"],  :root.movil #rtLineas td[data-rot="Codigo"]{padding-right:32px}
+  :root.movil #bjLineas .obs-linea,  :root.movil #rtLineas .obs-linea{width:100%;max-width:62%}
+  :root.movil #bjLineas td[data-rot="Fotografias"],  :root.movil #rtLineas td[data-rot="Fotografias"]{display:block;text-align:left;padding-top:8px}
+  :root.movil #bjLineas td[data-rot="Fotografias"]::before,  :root.movil #rtLineas td[data-rot="Fotografias"]::before{display:block;margin-bottom:5px}
+  :root.movil #bjLineas .precio-input,  :root.movil #rtLineas .precio-input{width:110px}
   /* en celular la UM si se muestra: aqui es dato, no adorno */
-  :root.movil #bjLineas td.um-baja{display:flex}
+  :root.movil #bjLineas td.um-baja,  :root.movil #rtLineas td.um-baja{display:flex}
   #vBajas select{
     padding:7px 9px;border:1px solid var(--line);border-radius:8px;
     background:var(--surface);color:var(--ink);font:inherit;font-size:14px;width:100%;
@@ -1276,6 +1286,7 @@
       <button class="ctrl seccion" type="button" id="navPrecios" aria-pressed="false">Precios</button>
       <button class="ctrl seccion" type="button" id="navCosteo" aria-pressed="false">Costeo rápido</button>
       <button class="ctrl seccion" type="button" id="navBajas" aria-pressed="false">Bajas</button>
+      <button class="ctrl seccion" type="button" id="navRotura" aria-pressed="false">Rotura</button>
       <button class="ctrl" type="button" id="btnVista" aria-pressed="false">
         <span id="btnVistaTxt">Ver en celular</span>
       </button>
@@ -1761,6 +1772,91 @@
     <div class="tarjeta">
       <h2 class="sec">Historial de este dispositivo</h2>
       <div id="bjHistorial"></div>
+    </div>
+  </main>
+
+  <!-- ============ ROTURA ============
+       Modulo aparte del de Bajas, aunque se vean parecidos. La diferencia de
+       fondo: aqui el articulo se ESCRIBE, no se busca en el libro. Lo que se
+       rompe es vajilla, cristaleria, cubiertos y utensilios, y nada de eso
+       esta en el libro de recetas —que solo tiene insumos de cocina—, asi que
+       no hay codigo ni costo que traer. -->
+  <main class="pantalla" id="vRotura" hidden>
+    <h1 class="tit">Rotura</h1>
+    <p class="intro">
+      Reporta vajilla, cristalería, cubiertos o utensilios que se rompieron,
+      con su evidencia. Al final sale el PDF para firmar y enviar.
+    </p>
+
+    <div class="tarjeta">
+      <h2 class="sec">1 · Encabezado</h2>
+      <div class="campos">
+        <div class="campo">
+          <label for="rtConsec">Consecutivo</label>
+          <input id="rtConsec" type="text" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label for="rtFecha">Fecha</label>
+          <input id="rtFecha" type="date">
+        </div>
+        <div class="campo">
+          <label for="rtBodega">Bodega</label>
+          <select id="rtBodega"></select>
+        </div>
+        <div class="campo">
+          <label for="rtCentro">Centro de costo</label>
+          <input id="rtCentro" type="text" list="lCentro" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label for="rtQuien">Reportado por <b class="obliga">*</b></label>
+          <input id="rtQuien" type="text" list="lQuien" autocomplete="off"
+                 placeholder="Nombre completo">
+        </div>
+      </div>
+      <div class="campo" style="padding-top:4px">
+        <label>Tipo de rotura</label>
+        <div class="segmento">
+          <button type="button" id="rtNatural" aria-pressed="true">Desgaste natural</button>
+          <button type="button" id="rtDescuido" aria-pressed="false">Descuido / mala manipulación</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <h2 class="sec">2 · Qué se rompió</h2>
+      <div id="rtLineas"></div>
+      <div class="acciones" style="padding:10px 0 0">
+        <button class="bot principal" type="button" id="rtAgregar">+ Agregar artículo</button>
+      </div>
+      <p class="nota" id="rtVacio">Escribe qué se rompió, cuántos, qué pasó y súbele la foto.
+        Agrega una línea por cada artículo distinto.</p>
+    </div>
+
+    <div class="tarjeta">
+      <h2 class="sec">3 · Justificación</h2>
+      <textarea id="rtJust" rows="4" placeholder="Por qué ocurrió y qué se hizo o se propone para que no se repita."></textarea>
+    </div>
+
+    <div class="tarjeta" id="rtCierre">
+      <h2 class="sec">4 · Resumen y envío</h2>
+      <div id="rtResumen"></div>
+      <div class="acciones" style="padding-top:10px">
+        <button class="bot" type="button" id="rtImprimir">Imprimir</button>
+        <button class="bot principal" type="button" id="rtPdf">Generar PDF</button>
+        <button class="bot" type="button" id="rtEnviar">Enviar reporte</button>
+        <button class="bot" type="button" id="rtGuardar">Guardar en el historial</button>
+        <button class="bot" type="button" id="rtLimpiar">Empezar otra</button>
+      </div>
+      <p class="aviso-imp" id="rtAvisoImp" hidden>
+        Se mandó a la impresora <b>el mismo reporte que sale al compartir</b>.
+        Si no se abrió el cuadro de impresión, el visor lo bloqueó:
+        usa <b>Generar PDF</b> e imprime desde el archivo.
+      </p>
+    </div>
+
+    <div class="tarjeta">
+      <h2 class="sec">Historial de este dispositivo</h2>
+      <div id="rtHistorial"></div>
     </div>
   </main>
 </div>
@@ -3365,18 +3461,20 @@
     vista = cual;
     var esPedido = (cual === "pedido"), esPrecios = (cual === "precios"),
         esProd = (cual === "produccion"), esCosteo = (cual === "costeo"),
-        esBajas = (cual === "bajas");
+        esBajas = (cual === "bajas"), esRotura = (cual === "rotura");
     $("navPedido").setAttribute("aria-pressed", String(esPedido));
     $("navPrecios").setAttribute("aria-pressed", String(esPrecios));
     $("navProduccion").setAttribute("aria-pressed", String(esProd));
     $("navCosteo").setAttribute("aria-pressed", String(esCosteo));
     $("navBajas").setAttribute("aria-pressed", String(esBajas));
+    $("navRotura").setAttribute("aria-pressed", String(esRotura));
     $("subPedido").hidden = !esPedido;
     $("vistaRecetario").hidden = (cual !== "recetario");
     $("vProduccion").hidden = !esProd;
     $("vPrecios").hidden = !esPrecios;
     $("vCosteo").hidden = !esCosteo;
     $("vBajas").hidden = !esBajas;
+    $("vRotura").hidden = !esRotura;
     $("vArmar").hidden = !(esPedido && subPed === "armar");
     $("vComo").hidden  = !(esPedido && subPed === "como");
     // el simulador se imprime en horizontal; todo lo demás, vertical
@@ -3403,6 +3501,9 @@
   });
   $("navBajas").addEventListener("click", function(){
     verPantalla(vista === "bajas" ? "recetario" : "bajas");
+  });
+  $("navRotura").addEventListener("click", function(){
+    verPantalla(vista === "rotura" ? "recetario" : "rotura");
   });
   $("subArmar").addEventListener("click", function(){ verSubPedido("armar"); });
   $("subComo").addEventListener("click", function(){ verSubPedido("como"); });
@@ -6584,6 +6685,539 @@
   bjPintarListas();
   bjPintarHistorial();
   bjNueva();
+  // ================= ROTURA =================
+  /* Modulo hermano del de Bajas, pero no el mismo. La diferencia que manda:
+     aqui el articulo se ESCRIBE. Lo que se rompe —platos, copas, cubiertos,
+     utensilios— no esta en el libro de recetas, que solo tiene insumos de
+     cocina, asi que no hay codigo ni costo unitario que traer. Por eso el
+     resumen cuenta unidades y no pesos: este reporte deja constancia de QUE
+     se rompio y POR QUE, no de cuanto costo. */
+  var RT = { lineas: [], tipo: "Desgaste natural" };
+  var RT_HIST = bjLeer("fichas.rotura", []);
+
+  function rtConsecutivo(){
+    var hoy = bjHoy().replace(/-/g, "");
+    var n = RT_HIST.filter(function(r){ return (r.consec||"").indexOf("RT-" + hoy) === 0; }).length + 1;
+    return "RT-" + hoy + "-" + (n < 10 ? "0" : "") + n;
+  }
+  function rtLlenarBodegas(){
+    var s = $("rtBodega");
+    s.innerHTML = '<option value="">Escoge la bodega…</option>' +
+      BJ_BODEGAS.map(function(b){
+        return '<option value="' + esc(b[0]) + '">' + esc(b[0] + " · " + b[1]) + '</option>';
+      }).join("");
+  }
+  function rtBodegaTexto(){
+    var cod = $("rtBodega").value;
+    if (!cod) return "";
+    var b = null;
+    BJ_BODEGAS.forEach(function(x){ if (x[0] === cod) b = x; });
+    return b ? (b[0] + " · " + b[1]) : cod;
+  }
+
+  function rtNueva(){
+    RT.lineas = []; RT.tipo = "Desgaste natural";
+    $("rtConsec").value = rtConsecutivo();
+    $("rtFecha").value = bjHoy();
+    $("rtJust").value = "";
+    $("rtNatural").setAttribute("aria-pressed","true");
+    $("rtDescuido").setAttribute("aria-pressed","false");
+    rtPintarLineas();
+  }
+
+  $("rtNatural").addEventListener("click", function(){
+    RT.tipo = "Desgaste natural";
+    this.setAttribute("aria-pressed","true");
+    $("rtDescuido").setAttribute("aria-pressed","false");
+  });
+  $("rtDescuido").addEventListener("click", function(){
+    RT.tipo = "Descuido / mala manipulacion";
+    this.setAttribute("aria-pressed","true");
+    $("rtNatural").setAttribute("aria-pressed","false");
+  });
+
+  /* El articulo nuevo entra de PRIMERO y el foco salta a su casilla: el boton
+     de agregar queda arriba de la lista, asi que lo recien agregado es lo que
+     esta justo debajo y el operario puede escribir de una, sin buscarlo. */
+  $("rtAgregar").addEventListener("click", function(){
+    RT.lineas.unshift({ art:"", cant:1, paso:"", fotos:[] });
+    rtPintarLineas();
+    var primera = $("rtLineas").querySelector('[data-rart="0"]');
+    if (primera) primera.focus();
+  });
+
+  function rtTotales(){
+    var art = 0, und = 0, fotos = 0, sinNombre = 0;
+    RT.lineas.forEach(function(x){
+      art++; und += (x.cant || 0); fotos += x.fotos.length;
+      if (!x.art.trim()) sinNombre++;
+    });
+    return { art:art, und:und, fotos:fotos, sinNombre:sinNombre };
+  }
+
+  function rtPintarLineas(){
+    var cont = $("rtLineas");
+    $("rtVacio").hidden = RT.lineas.length > 0;
+    var h = "";
+    if (RT.lineas.length){
+      h += '<div class="tablawrap"><table><thead><tr>';
+      h += '<th class="num c-idx">N.o</th><th>Articulo</th><th class="num">Cantidad</th>';
+      h += '<th>Que paso</th><th>Fotografia</th><th class="opc"></th>';
+      h += '</tr></thead><tbody>';
+      RT.lineas.forEach(function(x, i){
+        h += '<tr><td class="idx" data-rot="N.o">' + (i+1) + '</td>';
+        h += '<td data-rot="Articulo"><input class="art-rotura" type="text" data-rart="' + i + '" ' +
+             'value="' + esc(x.art) + '" placeholder="Ej: Copa de vino tinto" ' +
+             'aria-label="Articulo roto numero ' + (i+1) + '"></td>';
+        h += '<td class="num" data-rot="Cantidad"><input class="precio-input" type="number" ' +
+             'step="1" min="0" data-rcant="' + i + '" value="' + x.cant + '" ' +
+             'aria-label="Cantidad rota"></td>';
+        h += '<td data-rot="Que paso"><input class="obs-linea" type="text" data-rpaso="' + i + '" ' +
+             'value="' + esc(x.paso) + '" placeholder="Se cayo al levantar la mesa" ' +
+             'aria-label="Que paso"></td>';
+        h += '<td data-rot="Fotografia"><div class="fotos" data-rtira="' + i + '">' +
+             rtMiniaturas(x, i) + '</div>' +
+             '<label class="bot chico">Agregar foto<input type="file" accept="image/*" ' +
+             'capture="environment" multiple data-rfoto="' + i + '" hidden></label></td>';
+        h += '<td class="opc"><button class="quitar" type="button" data-rquita="' + i +
+             '" aria-label="Quitar esta linea">&times;</button></td></tr>';
+      });
+      h += '</tbody></table></div>';
+    }
+    cont.innerHTML = h;
+
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-rart]"), function(inp){
+      inp.addEventListener("input", function(){
+        RT.lineas[Number(inp.getAttribute("data-rart"))].art = inp.value;
+        rtPintarResumen();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-rpaso]"), function(inp){
+      inp.addEventListener("input", function(){
+        RT.lineas[Number(inp.getAttribute("data-rpaso"))].paso = inp.value;
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-rcant]"), function(inp){
+      inp.addEventListener("input", function(){
+        var v = Number(inp.value);
+        RT.lineas[Number(inp.getAttribute("data-rcant"))].cant = (isFinite(v) && v >= 0) ? v : 0;
+        rtPintarResumen();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-rquita]"), function(b){
+      b.addEventListener("click", function(){
+        RT.lineas.splice(Number(b.getAttribute("data-rquita")), 1);
+        rtPintarLineas();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-rfoto]"), function(inp){
+      inp.addEventListener("change", function(){
+        var i = Number(inp.getAttribute("data-rfoto"));
+        var archivos = Array.prototype.slice.call(inp.files || []);
+        if (!archivos.length) return;
+        var faltan = archivos.length;
+        avisar("Procesando " + faltan + (faltan === 1 ? " foto..." : " fotos..."));
+        archivos.forEach(function(a){
+          bjAchicar(a, function(uri){
+            if (uri) RT.lineas[i].fotos.push(uri);
+            if (--faltan > 0) return;
+            // se refresca solo esa tira, para no perder lo que se esta escribiendo
+            var tira = cont.querySelector('[data-rtira="' + i + '"]');
+            if (tira){ tira.innerHTML = rtMiniaturas(RT.lineas[i], i); rtConectarBorrarFoto(cont); }
+            rtPintarResumen();
+            avisar("Evidencia agregada");
+          });
+        });
+        inp.value = "";
+      });
+    });
+    rtConectarBorrarFoto(cont);
+    rtPintarResumen();
+  }
+
+  function rtConectarBorrarFoto(cont){
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-rborra]"), function(b){
+      if (b.__listo) return;
+      b.__listo = true;
+      b.addEventListener("click", function(){
+        var p = b.getAttribute("data-rborra").split(":");
+        var fila = Number(p[0]);
+        RT.lineas[fila].fotos.splice(Number(p[1]), 1);
+        var tira = cont.querySelector('[data-rtira="' + fila + '"]');
+        if (tira){ tira.innerHTML = rtMiniaturas(RT.lineas[fila], fila); rtConectarBorrarFoto(cont); }
+        rtPintarResumen();
+      });
+    });
+  }
+
+  function rtMiniaturas(x, i){
+    return x.fotos.map(function(uri, j){
+      return '<span class="mini"><img src="' + uri + '" alt="Evidencia ' + (j+1) + '">' +
+             '<button type="button" data-rborra="' + i + ':' + j +
+             '" aria-label="Quitar esta foto">&times;</button></span>';
+    }).join("");
+  }
+
+  function rtPintarResumen(){
+    var t = rtTotales();
+    var h = '<div class="resumen">';
+    h += dato("Articulos rotos", fmt(t.art, 0));
+    h += dato("Total unidades", fmt(t.und, 0));
+    h += dato("Fotografias", fmt(t.fotos, 0));
+    h += '</div>';
+    if (t.art && t.sinNombre){
+      h += '<p class="nota" style="margin:10px 0 0"><b>Falta escribir qué se rompió</b> en ' +
+           (t.sinNombre === 1 ? "una línea." : t.sinNombre + " líneas.") + '</p>';
+    }
+    if (t.art && !t.fotos){
+      h += '<p class="nota" style="margin:10px 0 0"><b>Falta la evidencia.</b> ' +
+           'Una rotura sin foto no se puede reportar.</p>';
+    }
+    $("rtResumen").innerHTML = h;
+  }
+
+  function rtFalta(){
+    var t = rtTotales();
+    if (!RT.lineas.length) return "Agrega al menos un articulo";
+    if (t.sinNombre) return "Falta escribir que se rompio";
+    if (!$("rtQuien").value.trim()) return "Falta Reportado por: es obligatorio";
+    if (!t.fotos) return "Falta la fotografia: sin evidencia no se reporta";
+    return null;
+  }
+
+  function rtDatos(){
+    return {
+      consec: $("rtConsec").value.trim() || rtConsecutivo(),
+      fecha: $("rtFecha").value || bjHoy(),
+      bodegaCod: $("rtBodega").value,
+      bodega: rtBodegaTexto(),
+      centro: $("rtCentro").value.trim(),
+      quien: $("rtQuien").value.trim(),
+      tipo: RT.tipo,
+      just: $("rtJust").value.trim(),
+      lineas: RT.lineas,
+      t: rtTotales()
+    };
+  }
+
+  /* ---------- El reporte de rotura en PDF ---------- */
+  function rtPdf(){
+    var falta = rtFalta();
+    if (falta){ avisar(falta); return null; }
+    var d = rtDatos();
+    var jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    var doc = new jsPDF({ unit:"mm", format:"a4" });
+    var W = 210, H = 297, M = 14, ANCHO = W - M*2, y = 0;
+
+    function tx(t,x,yy,tam,est,col,al){
+      doc.setFont("helvetica", est||"normal"); doc.setFontSize(tam||9);
+      var c = col||TINTA; doc.setTextColor(c[0],c[1],c[2]);
+      if (al) doc.text(String(t), x, yy, {align:al}); else doc.text(String(t), x, yy);
+    }
+    function linea(yy){ doc.setDrawColor(222); doc.setLineWidth(.2); doc.line(M, yy, W-M, yy); }
+    function franja(){ doc.setFillColor(AZUL[0],AZUL[1],AZUL[2]); doc.rect(0,0,W,3.5,"F"); }
+    function pagina(){ doc.addPage(); franja(); return 20; }
+
+    franja();
+    var lg = logoDeLaPagina();
+    if (lg){ try { doc.addImage(lg, "PNG", M, 9, 9, 9); } catch(e){} }
+    tx("CLUB LAGOS DE CAUJARAL", M + 12, 13, 7, "normal", AZUL);
+    tx("REPORTE DE ROTURA", M + 12, 18.5, 12, "bold");
+    tx(d.consec, W - M, 13, 9, "bold", AZUL, "right");
+    doc.setDrawColor(AZUL[0],AZUL[1],AZUL[2]); doc.setLineWidth(.5);
+    doc.line(M, 22, W-M, 22);
+    y = 29;
+
+    var izq = [["Fecha", fechaBonita(d.fecha)],
+               ["Bodega", d.bodega || "-"],
+               ["Centro de costo", d.centro || "-"]];
+    var der = [["Tipo de rotura", d.tipo],
+               ["Reportado por", d.quien]];
+    for (var i = 0; i < 3; i++){
+      tx(izq[i][0].toUpperCase(), M, y, 6.5, "bold", GRIS);
+      tx(izq[i][1], M + 30, y, 9);
+      if (der[i]){
+        tx(der[i][0].toUpperCase(), M + 100, y, 6.5, "bold", GRIS);
+        tx(der[i][1], M + 132, y, 9);
+      }
+      y += 6;
+    }
+    y += 2; linea(y); y += 7;
+
+    // ---- que se rompio
+    tx("QUE SE ROMPIO", M, y, 8, "bold"); y += 3;
+    doc.setFillColor(AZUL_S[0],AZUL_S[1],AZUL_S[2]); doc.rect(M, y, ANCHO, 6, "F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
+    doc.setTextColor(AZUL[0],AZUL[1],AZUL[2]);
+    doc.text("N.o", M+2, y+4);
+    doc.text("ARTICULO", M+12, y+4);
+    doc.text("CANT.", M+86, y+4, {align:"right"});
+    doc.text("QUE PASO", M+92, y+4);
+    doc.text("FOTOS", W-M-2, y+4, {align:"right"});
+    y += 6;
+    d.lineas.forEach(function(x, i){
+      var paso = x.paso ? doc.splitTextToSize(String(x.paso), 78).slice(0, 2) : [];
+      var alto = Math.max(5.6, paso.length * 3.4 + 2.4);
+      if (y + alto > H - 50){ y = pagina(); }
+      if (i % 2 === 1){ doc.setFillColor(250,250,250); doc.rect(M, y, ANCHO, alto, "F"); }
+      tx(String(i+1), M+2, y+4, 7, "normal", GRIS);
+      tx(doc.splitTextToSize(String(x.art), 72)[0], M+12, y+4, 8);
+      tx(fmt(x.cant, 0), M+86, y+4, 8, "bold", TINTA, "right");
+      var yp = y + 3.4;
+      paso.forEach(function(l){ tx(l, M+92, yp, 6.8, "normal", GRIS); yp += 3.4; });
+      tx(String(x.fotos.length), W-M-2, y+4, 7, "normal", GRIS, "right");
+      y += alto;
+    });
+    linea(y); y += 7;
+
+    // ---- resumen: unidades, no pesos
+    if (y > H - 40){ y = pagina(); }
+    tx("RESUMEN", M, y, 8, "bold"); y += 5;
+    tx("Articulos rotos", M+2, y, 8, "normal", GRIS);
+    tx(fmt(d.t.art, 0), M + 60, y, 9, "bold", TINTA, "right"); y += 5;
+    tx("Total unidades", M+2, y, 8, "normal", GRIS);
+    tx(fmt(d.t.und, 0), M + 60, y, 9, "bold", TINTA, "right"); y += 5;
+    tx("Fotografias de evidencia", M+2, y, 8, "normal", GRIS);
+    tx(fmt(d.t.fotos, 0), M + 60, y, 9, "bold", TINTA, "right"); y += 9;
+
+    // ---- justificacion
+    if (y > H - 40){ y = pagina(); }
+    tx("JUSTIFICACION", M, y, 8, "bold"); y += 5;
+    var just = d.just ? doc.splitTextToSize(d.just, ANCHO - 4) : ["(sin justificacion)"];
+    doc.setDrawColor(222); doc.setLineWidth(.2);
+    doc.rect(M, y - 3.5, ANCHO, Math.max(14, just.length * 4.4 + 4));
+    just.forEach(function(l){ tx(l, M+2, y, 8, "normal", d.just ? TINTA : TENUE); y += 4.4; });
+    y += 8;
+
+    // ---- firmas: igual que en bajas, todo debajo de la raya
+    function bloqueFirma(x, ancho, rotulo, cargo, nombre){
+      doc.setDrawColor(120); doc.setLineWidth(.3);
+      doc.line(x, y + 18, x + ancho, y + 18);
+      tx(rotulo, x, y + 22.5, 7.5, "bold", AZUL);
+      tx(cargo, x, y + 26.5, 6.5, "normal", GRIS);
+      tx("Nombre: " + (nombre || "______________________"), x, y + 31, 6.5, "normal",
+         nombre ? TINTA : TENUE);
+      tx("Fecha: ____ / ____ / ______", x, y + 35, 6.5, "normal", TENUE);
+    }
+    var firmas = [
+      ["ELABORO", "Reporta la rotura", d.quien],
+      ["VERIFICO", "Chef Ejecutivo / Jefe de Costos", ""],
+      ["APROBO", "Subgerente A&B", ""],
+      ["CONTABILIZA", "Departamento de Costos", ""]
+    ];
+    var anchoF = (ANCHO - 8) / 2;
+    for (var f = 0; f < 4; f++){
+      if (f === 2 && y + 42 > H - 14){ y = pagina() + 4; }
+      var col = f % 2, fila = Math.floor(f / 2);
+      if (col === 0 && f > 0 && fila > 0){ y += 42; }
+      bloqueFirma(M + col * (anchoF + 8), anchoF, firmas[f][0], firmas[f][1], firmas[f][2]);
+    }
+    y += 44;
+
+    // ---- evidencia
+    var conFoto = d.lineas.filter(function(x){ return x.fotos.length; });
+    if (conFoto.length){
+      y = pagina();
+      tx("EVIDENCIA FOTOGRAFICA", M, y, 10, "bold"); y += 2;
+      tx(d.consec + "  ·  " + fechaBonita(d.fecha), W - M, y - 2, 7, "normal", GRIS, "right");
+      y += 6;
+      conFoto.forEach(function(x){
+        x.fotos.forEach(function(uri, j){
+          var alto = 62, ancho = 88;
+          if (y + alto + 10 > H - 12){ y = pagina() + 6; }
+          tx(x.art + (x.fotos.length > 1 ? "  (" + (j+1) + " de " + x.fotos.length + ")" : ""),
+             M, y, 8, "bold");
+          y += 4;
+          try {
+            doc.addImage(uri, "JPEG", M, y, ancho, alto, undefined, "FAST");
+            doc.setDrawColor(210); doc.setLineWidth(.2);
+            doc.rect(M, y, ancho, alto);
+          } catch(e){
+            tx("(no se pudo incrustar esta imagen)", M, y + 8, 8, "normal", TENUE);
+          }
+          y += alto + 8;
+        });
+      });
+    }
+    return doc;
+  }
+
+  function rtNombreArchivo(){
+    var d = rtDatos();
+    return "Rotura " + d.consec + (d.bodega ? " " + d.bodega.replace(/[^A-Za-z0-9 ]/g, "") : "") + ".pdf";
+  }
+
+  $("rtPdf").addEventListener("click", function(){
+    var doc = rtPdf(); if (!doc) return;
+    compartirPdf(doc.output("blob"), rtNombreArchivo(), "Reporte de rotura");
+  });
+  $("rtImprimir").addEventListener("click", function(){
+    var doc = rtPdf(); if (!doc) return;
+    imprimirPdf(doc, rtNombreArchivo(), "Reporte de rotura", "rtAvisoImp");
+  });
+
+  $("rtEnviar").addEventListener("click", function(){
+    var doc = rtPdf(); if (!doc) return;
+    var d = rtDatos();
+    var asunto = "Reporte de Rotura - " + (d.bodega || "Sin bodega") +
+                 " - " + fechaBonita(d.fecha);
+    var TOPE = 1900;
+
+    function detalle(hasta){
+      var n = (hasta === undefined) ? d.lineas.length : hasta;
+      var t = d.lineas.slice(0, n).map(function(x, i){
+        return "  " + (i+1) + ". " + x.art + "  (" + fmt(x.cant, 0) + ")\n" +
+               (x.paso ? "     " + x.paso + "\n" : "");
+      }).join("");
+      var faltan = d.lineas.length - n;
+      if (faltan > 0){
+        t += "  ... y " + faltan + (faltan === 1 ? " articulo mas" : " articulos mas") +
+             ", en el PDF adjunto.\n";
+      }
+      return t;
+    }
+    function armar(det){
+      return "Reporte de rotura " + d.consec + "\n" +
+        "=================================================\n\n" +
+        "Fecha: " + fechaBonita(d.fecha) + "\n" +
+        "Bodega: " + (d.bodega || "-") + "\n" +
+        "Centro de costo: " + (d.centro || "-") + "\n" +
+        "Tipo de rotura: " + d.tipo + "\n" +
+        "Reportado por: " + d.quien + "\n\n" +
+        "QUE SE ROMPIO\n" +
+        "-------------------------------------------------\n" +
+        det + "\n" +
+        "TOTAL: " + fmt(d.t.art, 0) + (d.t.art === 1 ? " articulo, " : " articulos, ") +
+        fmt(d.t.und, 0) + (d.t.und === 1 ? " unidad" : " unidades") + "\n" +
+        "-------------------------------------------------\n\n" +
+        (d.just ? "JUSTIFICACION\n" +
+                  "-------------------------------------------------\n" +
+                  d.just + "\n\n" : "") +
+        "-------------------------------------------------\n" +
+        "Se adjunta el PDF con la evidencia fotografica (" + d.t.fotos +
+        (d.t.fotos === 1 ? " foto" : " fotos") + ") y los espacios de firma de\n" +
+        "ELABORO, VERIFICO, APROBO y CONTABILIZA.\n";
+    }
+    function enlace(c){
+      return "mailto:" + BJ_CORREOS.join(",") +
+             "?subject=" + encodeURIComponent(asunto) +
+             "&body=" + encodeURIComponent(c);
+    }
+    // mismo cuidado que en bajas: un mailto largo lo abre truncado o vacio
+    var cuerpo, url;
+    for (var n = d.lineas.length; n >= 1; n--){
+      cuerpo = armar(detalle(n));
+      url = enlace(cuerpo);
+      if (url.length <= TOPE) break;
+    }
+    if (url.length > TOPE){
+      cuerpo = armar("  " + fmt(d.t.art, 0) + " articulos. El detalle va en el PDF adjunto.\n");
+      url = enlace(cuerpo);
+    }
+
+    compartirPdf(doc.output("blob"), rtNombreArchivo(), "Reporte de rotura");
+    setTimeout(function(){
+      try { window.location.href = url; } catch(e){}
+    }, 900);
+    avisar("Adjunta el PDF al correo que se abre");
+    rtGuardar("enviado");
+  });
+
+  function rtGuardar(estado){
+    var falta = rtFalta();
+    if (falta){ avisar(falta); return; }
+    var d = rtDatos();
+    var reg = {
+      consec:d.consec, fecha:d.fecha, bodega:d.bodega, bodegaCod:d.bodegaCod,
+      centro:d.centro, tipo:d.tipo, quien:d.quien, just:d.just,
+      totArt:d.t.art, totUnd:d.t.und, fotos:d.t.fotos,
+      estado: estado || "pendiente",
+      sello: new Date().toISOString(),
+      lineas: d.lineas.map(function(x){
+        return { art:x.art, cant:x.cant, paso:x.paso, fotos:x.fotos.length };
+      })
+    };
+    var i = -1;
+    RT_HIST.forEach(function(r, j){ if (r.consec === reg.consec) i = j; });
+    if (i >= 0) RT_HIST[i] = reg; else RT_HIST.unshift(reg);
+    if (!bjEscribir("fichas.rotura", RT_HIST)){
+      avisar("No se pudo guardar: el navegador esta lleno");
+      return;
+    }
+    ["centro","quien"].forEach(function(c){ bjRecordar(c, d[c]); });
+    rtPintarHistorial();
+    avisar("Guardada en el historial");
+  }
+  $("rtGuardar").addEventListener("click", function(){ rtGuardar("pendiente"); });
+  $("rtLimpiar").addEventListener("click", function(){
+    rtNueva();
+    avisar("Lista para otra rotura");
+  });
+
+  function rtPintarHistorial(){
+    var cont = $("rtHistorial");
+    if (!RT_HIST.length){
+      cont.innerHTML = '<p class="nota" style="margin:0">Todavia no hay roturas guardadas en este ' +
+                       'dispositivo. El historial no se comparte entre equipos.</p>';
+      return;
+    }
+    var und = 0, desc = 0;
+    RT_HIST.forEach(function(r){
+      und += (r.totUnd || 0);
+      if (String(r.tipo).indexOf("Desgaste") !== 0) desc += (r.totUnd || 0);
+    });
+    var h = '<div class="resumen" style="margin-bottom:10px">';
+    h += dato("Reportes", fmt(RT_HIST.length, 0));
+    h += dato("Unidades rotas", fmt(und, 0));
+    h += dato("Por mala manipulacion", fmt(desc, 0));
+    h += '</div>';
+
+    h += '<div class="tablawrap"><table><thead><tr>';
+    h += '<th>Consecutivo</th><th>Fecha</th><th>Bodega</th><th>Tipo</th>';
+    h += '<th class="num">Art.</th><th class="num">Und.</th><th>Estado</th><th class="opc"></th>';
+    h += '</tr></thead><tbody>';
+    RT_HIST.slice(0, 40).forEach(function(r, i){
+      h += '<tr><td><span class="cod">' + esc(r.consec) + '</span></td>';
+      h += '<td>' + esc(fechaBonita(r.fecha)) + '</td>';
+      h += '<td>' + esc(r.bodega || "-") + '</td>';
+      h += '<td>' + (String(r.tipo).indexOf("Desgaste") === 0 ? "Desgaste" : "Manipulacion") + '</td>';
+      h += '<td class="num">' + fmt(r.totArt, 0) + '</td>';
+      h += '<td class="num">' + fmt(r.totUnd, 0) + '</td>';
+      h += '<td><select data-restado="' + i + '" aria-label="Estado de ' + esc(r.consec) + '">';
+      BJ_ESTADOS.forEach(function(e){
+        h += '<option value="' + e + '"' + (r.estado === e ? " selected" : "") + '>' +
+             e.charAt(0).toUpperCase() + e.slice(1) + '</option>';
+      });
+      h += '</select></td>';
+      h += '<td class="opc"><button class="quitar" type="button" data-rborrar="' + i +
+           '" aria-label="Borrar ' + esc(r.consec) + '">&times;</button></td></tr>';
+    });
+    h += '</tbody></table></div>';
+    h += '<p class="nota">El historial vive <b>solo en este dispositivo</b> y no guarda las ' +
+         'fotos: para volver a ver la evidencia está el PDF.</p>';
+    cont.innerHTML = h;
+
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-restado]"), function(sel){
+      sel.addEventListener("change", function(){
+        var r = RT_HIST[Number(sel.getAttribute("data-restado"))];
+        r.estado = sel.value;
+        r["fecha_" + sel.value] = new Date().toISOString();
+        bjEscribir("fichas.rotura", RT_HIST);
+        rtPintarHistorial();
+      });
+    });
+    Array.prototype.forEach.call(cont.querySelectorAll("[data-rborrar]"), function(b){
+      b.addEventListener("click", function(){
+        RT_HIST.splice(Number(b.getAttribute("data-rborrar")), 1);
+        bjEscribir("fichas.rotura", RT_HIST);
+        rtPintarHistorial();
+      });
+    });
+  }
+
+  rtLlenarBodegas();
+  rtPintarHistorial();
+  rtNueva();
   pintarElegidas();
   pintarProduccion();
 
