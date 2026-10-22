@@ -14,6 +14,8 @@ $raiz   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $origen = "C:\Users\SergioValencia\OneDrive - CLUB LAGOS DE CAUJARAL\DOCUMENTOS 2026\LIBRO DE RECETAS"
 $work   = Join-Path $raiz "trabajo"
 $salida = Join-Path $raiz "Fichas Tecnicas Caujaral.html"
+# La misma pagina sin un solo costo adentro, para el perfil de operarios.
+$salidaOp = Join-Path $raiz "Fichas Tecnicas Caujaral - operarios.html"
 $hashFn = Join-Path $raiz "ultimo hash.txt"
 
 try {
@@ -561,6 +563,37 @@ try {
   [void]$sb.Append('}}')
   $json = $sb.ToString()
 
+  # ---- la version para operarios: sin un solo costo adentro ----
+  # No basta con esconder el interruptor en pantalla: los numeros viajan dentro
+  # del archivo que descarga el navegador y cualquiera que abra las herramientas
+  # de desarrollo los ve. Aqui se ponen en cero ANTES de escribir el archivo,
+  # asi que el operario recibe una pagina que no los tiene.
+  #   "cs":NNN  -> el costo total de la receta
+  #   ["ART","UM",cant,costo,gramos] -> el cuarto elemento de cada linea
+  $jsonOp = $json -replace '"cs":-?[0-9.]+', '"cs":0'
+  # Hay nombres con comillas adentro -PORTACOMIDA SIN DIVISIONES 8" ECOLOGICOS-
+  # que en el JSON van escapadas. Un patron de "todo menos comilla" se corta ahi
+  # y esa linea se queda con su costo. La barra se arma aparte porque escrita
+  # literal se pierde al pasar por las capas de comillas.
+  $bs = [char]92
+  $cad = '(?:[^"' + $bs + $bs + ']|' + $bs + $bs + '.)*'
+  $patron = '(\["' + $cad + '","' + $cad + '",-?[0-9.]+),-?[0-9.]+,'
+  $jsonOp = $jsonOp -replace $patron, '$1,0,'
+
+  # Y se COMPRUEBA que de verdad no quedo ninguno. Un reemplazo que falle en
+  # silencio seria peor que no hacerlo: se estaria entregando a los operarios
+  # una pagina que uno cree limpia y no lo esta. Si queda un solo costo, no se
+  # escribe el archivo del operario y la corrida falla de frente.
+  $comp = $jsonOp | ConvertFrom-Json
+  $fugas = 0
+  foreach ($r in $comp.recetas) {
+    if ([double]$r.cs -ne 0) { $fugas++ }
+    foreach ($l in $r.i) { if ($null -ne $l[3] -and [double]$l[3] -ne 0) { $fugas++ } }
+  }
+  if ($fugas -gt 0) {
+    throw ("La version para operarios quedo con " + $fugas + " costos adentro. No se publica.")
+  }
+
   # ---- huella del contenido, ignorando la fecha de generacion ----
   # La huella ignora las fechas: si no, toda corrida saldria distinta
   $paraHash = $json -replace '"generado":"[^"]*"', ''
@@ -637,26 +670,35 @@ try {
   # ---- inyectar en la plantilla ----
   $tpl = [System.IO.File]::ReadAllText((Join-Path $raiz "plantilla.html"), [System.Text.Encoding]::UTF8)
   if ($tpl -notmatch '__DATOS__') { throw "La plantilla no tiene el marcador __DATOS__." }
-  $html = $tpl.Replace('__DATOS__', ($json -replace '</','<\/'))
+  # La plantilla se arma dos veces: una con los costos (el administrador) y
+  # otra sin ellos (los operarios). Solo cambian los datos y el perfil; todo
+  # lo demas -la libreria del PDF, el logo- es identico, asi que se sustituye
+  # una sola vez y despues se derivan las dos paginas.
+  $base0 = $tpl
 
   # Libreria para generar el PDF de una ficha desde el propio navegador.
   # Se incrusta como TEXTO, no como data-uri: asi pesa 357 KB en vez de 476.
   $pdfFn = Join-Path $raiz "jspdf.min.js"
   if (Test-Path $pdfFn) {
     $libPdf = [System.IO.File]::ReadAllText($pdfFn, [System.Text.Encoding]::UTF8)
-    $html = $html.Replace('__JSPDF__', ($libPdf -replace '</script>', '<\/script>'))
+    $base0 = $base0.Replace('__JSPDF__', ($libPdf -replace '</script>', '<\/script>'))
   } else {
     "  aviso: falta jspdf.min.js, el boton Compartir no podra armar el PDF"
-    $html = $html.Replace('__JSPDF__', '')
+    $base0 = $base0.Replace('__JSPDF__', '')
   }
 
   $logoFn = Join-Path $raiz "logo.txt"
   if (Test-Path $logoFn) {
-    $html = $html.Replace('__LOGO__', ([System.IO.File]::ReadAllText($logoFn, [System.Text.Encoding]::UTF8)).Trim())
+    $base0 = $base0.Replace('__LOGO__', ([System.IO.File]::ReadAllText($logoFn, [System.Text.Encoding]::UTF8)).Trim())
   } else {
-    $html = $html.Replace('__LOGO__', '')
+    $base0 = $base0.Replace('__LOGO__', '')
   }
+
+  $html = $base0.Replace('__DATOS__', ($json   -replace '</','<\/')).Replace('__PERFIL__', "admin")
+  $htmlOp = $base0.Replace('__DATOS__', ($jsonOp -replace '</','<\/')).Replace('__PERFIL__', "operario")
+
   [System.IO.File]::WriteAllText($salida, $html, (New-Object System.Text.UTF8Encoding($false)))
+  [System.IO.File]::WriteAllText($salidaOp, $htmlOp, (New-Object System.Text.UTF8Encoding($false)))
   # Con -SinPublicar NO se deja la huella: si quedara, la siguiente corrida de
   # verdad diria SIN-CAMBIOS y el cambio no saldria nunca a Railway.
   if (-not $SinPublicar) {
@@ -668,6 +710,7 @@ try {
   $repo = "C:\Users\SergioValencia\Proyectos\fichas-tecnicas-caujaral"
   if (Test-Path $repo) {
     [System.IO.File]::WriteAllText((Join-Path $repo "Fichas Tecnicas Caujaral.html"), $html, (New-Object System.Text.UTF8Encoding($false)))
+    [System.IO.File]::WriteAllText((Join-Path $repo "Fichas Tecnicas Caujaral - operarios.html"), $htmlOp, (New-Object System.Text.UTF8Encoding($false)))
     Copy-Item (Join-Path $raiz "plantilla.html") (Join-Path $repo "plantilla.html") -Force
     Copy-Item (Join-Path $raiz "Generar Fichas Tecnicas.ps1") (Join-Path $repo "Generar Fichas Tecnicas.ps1") -Force
     if (Test-Path $eqFn) { Copy-Item $eqFn (Join-Path $repo "Equivalencias UND.csv") -Force }

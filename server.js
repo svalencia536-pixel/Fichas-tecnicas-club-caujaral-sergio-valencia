@@ -14,6 +14,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const crypto = require('crypto');
 
 const PUERTO = Number(process.env.PORT || 3000);
 
@@ -26,13 +27,23 @@ const PUERTO = Number(process.env.PORT || 3000);
    publica por descuido. */
 const USUARIO = process.env.FICHAS_USER || 'caujaral';
 const CLAVE = process.env.FICHAS_PASSWORD || '';
+/* Segundo perfil: los operarios de cocina y bar. Entran con otra clave y
+   reciben OTRO ARCHIVO, generado sin un solo costo adentro. No es que se les
+   escondan los botones: los numeros no viajan en la pagina que descargan, asi
+   que no hay nada que destapar con las herramientas del navegador.
+   Si no se configura FICHAS_PASSWORD_OP, simplemente no existe ese perfil. */
+const USUARIO_OP = process.env.FICHAS_USER_OP || 'operario';
+const CLAVE_OP = process.env.FICHAS_PASSWORD_OP || '';
 const ABIERTA_A_PROPOSITO = String(process.env.FICHAS_PUBLICA || '').toLowerCase() === 'si';
 
 const ARCHIVO = path.join(__dirname, 'Fichas Tecnicas Caujaral.html');
+const ARCHIVO_OP = path.join(__dirname, 'Fichas Tecnicas Caujaral - operarios.html');
 
 /* La pagina se lee una vez al arrancar: cada despliegue trae su propia version. */
 let PAGINA = '';
 let PAGINA_GZ = null;
+let PAGINA_OP = '';
+let PAGINA_OP_GZ = null;
 let ARRANQUE = new Date();
 let RECETAS = 0;
 let CORTE = '';
@@ -51,22 +62,58 @@ function cargar() {
   // Se saca el logo de la propia pagina, del atributo del icono
   const icono = PAGINA.match(/rel="icon"[^>]*href="data:image\/png;base64,([^"]+)"/);
   LOGO = icono ? Buffer.from(icono[1], 'base64') : null;
+  // La pagina del operario es opcional: si el generador todavia no la produjo,
+  // el perfil simplemente no se ofrece, en vez de caerse al arrancar.
+  if (fs.existsSync(ARCHIVO_OP)) {
+    PAGINA_OP = fs.readFileSync(ARCHIVO_OP, 'utf8');
+    PAGINA_OP_GZ = zlib.gzipSync(Buffer.from(PAGINA_OP, 'utf8'), { level: 9 });
+  } else {
+    PAGINA_OP = '';
+    PAGINA_OP_GZ = null;
+  }
 }
 
-function autorizado(req) {
-  // sin clave configurada no se entrega nada, salvo que se pida abrirla a proposito
-  if (!CLAVE) return ABIERTA_A_PROPOSITO;
+/* Devuelve el PERFIL de quien entra, no un simple si/no:
+     'admin'    -> ve todo, con costos
+     'operario' -> recibe la pagina sin costos
+     null       -> no entra
+   La comparacion se hace con tiempo constante para no filtrar la clave por lo
+   que se demora en responder. */
+function comparaSeguro(a, b) {
+  const x = Buffer.from(String(a));
+  const y = Buffer.from(String(b));
+  if (x.length !== y.length) {
+    // se compara igual contra si mismo para no delatar el largo con el tiempo
+    crypto.timingSafeEqual(x, x);
+    return false;
+  }
+  return crypto.timingSafeEqual(x, y);
+}
+
+function perfilDe(req) {
+  if (!CLAVE) return ABIERTA_A_PROPOSITO ? 'admin' : null;
   const cabecera = req.headers.authorization || '';
-  if (!cabecera.startsWith('Basic ')) return false;
+  if (!cabecera.startsWith('Basic ')) return null;
   let plano;
   try {
     plano = Buffer.from(cabecera.slice(6), 'base64').toString('utf8');
   } catch (e) {
-    return false;
+    return null;
   }
   const corte = plano.indexOf(':');
-  if (corte < 0) return false;
-  return plano.slice(0, corte) === USUARIO && plano.slice(corte + 1) === CLAVE;
+  if (corte < 0) return null;
+  const usuario = plano.slice(0, corte);
+  const clave = plano.slice(corte + 1);
+
+  if (comparaSeguro(usuario, USUARIO) && comparaSeguro(clave, CLAVE)) return 'admin';
+  // el perfil de operario solo existe si tiene clave y si hay pagina sin costos
+  if (CLAVE_OP && PAGINA_OP &&
+      comparaSeguro(usuario, USUARIO_OP) && comparaSeguro(clave, CLAVE_OP)) return 'operario';
+  return null;
+}
+
+function autorizado(req) {
+  return perfilDe(req) !== null;
 }
 
 function pedirClave(res) {
@@ -100,25 +147,32 @@ const servidor = http.createServer((req, res) => {
     return;
   }
 
-  if (!autorizado(req)) { pedirClave(res); return; }
+  const perfil = perfilDe(req);
+  if (perfil === null) { pedirClave(res); return; }
 
   if (ruta === '/' || ruta === '/index.html' || ruta === '/fichas') {
     const aceptaGzip = /\bgzip\b/.test(req.headers['accept-encoding'] || '');
+    // cada perfil recibe SU archivo: el del operario no trae los costos
+    const cuerpo = (perfil === 'operario') ? PAGINA_OP : PAGINA;
+    const cuerpoGz = (perfil === 'operario') ? PAGINA_OP_GZ : PAGINA_GZ;
     const cabeceras = {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'no-cache',
       'X-Content-Type-Options': 'nosniff',
       // que no lo indexen los buscadores
-      'X-Robots-Tag': 'noindex, nofollow'
+      'X-Robots-Tag': 'noindex, nofollow',
+      // si se comparte el enlace, que la respuesta no se guarde en un cache
+      // intermedio y termine entregandole a un operario la pagina con costos
+      'Vary': 'Authorization, Accept-Encoding'
     };
-    if (aceptaGzip && PAGINA_GZ) {
+    if (aceptaGzip && cuerpoGz) {
       cabeceras['Content-Encoding'] = 'gzip';
-      cabeceras['Content-Length'] = PAGINA_GZ.length;
+      cabeceras['Content-Length'] = cuerpoGz.length;
       res.writeHead(200, cabeceras);
-      res.end(PAGINA_GZ);
+      res.end(cuerpoGz);
     } else {
       res.writeHead(200, cabeceras);
-      res.end(PAGINA);
+      res.end(cuerpo);
     }
     return;
   }

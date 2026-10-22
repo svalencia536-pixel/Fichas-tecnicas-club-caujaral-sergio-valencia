@@ -1993,6 +1993,7 @@
   </div>
 </div>
 
+<script id="perfil" type="application/json">"__PERFIL__"</script>
 <script id="datos" type="application/json">__DATOS__</script>
 
 <!-- Librería para armar el PDF de una ficha. Va incrustada porque la página
@@ -2156,6 +2157,34 @@
   };
 
   var $ = function(id){ return document.getElementById(id); };
+
+  /* ---------- Perfil de quien entró ----------
+     El servidor entrega una pagina distinta segun la clave con que se entro.
+     Al operario NO se le mandan los costos dentro del archivo: vienen en cero
+     desde el generador. Esconder el interruptor no habria servido de nada,
+     porque los numeros seguirian ahi para quien abra las herramientas del
+     navegador. Lo de aqui abajo es solo para que no queden botones que llevan
+     a pantallas vacias. */
+  var PERFIL = "admin";
+  try {
+    var nodoPerfil = document.getElementById("perfil");
+    if (nodoPerfil) PERFIL = JSON.parse(nodoPerfil.textContent) || "admin";
+  } catch(e){}
+  var SIN_COSTOS = (PERFIL === "operario");
+
+  if (SIN_COSTOS){
+    // los dos modulos que no son mas que costos se van del encabezado
+    ["navPrecios","navCosteo"].forEach(function(id){
+      var b = document.getElementById(id);
+      if (b) b.remove();
+    });
+    ["vPrecios","vCosteo"].forEach(function(id){
+      var p = document.getElementById(id);
+      if (p) p.remove();
+    });
+    estado.costos = false;
+    estado.part = false;
+  }
   var elTexto=$("texto"), elPanel=$("panel"), elLista=$("lista"), elFicha=$("ficha");
 
   // ---------------- encabezado ----------------
@@ -2530,8 +2559,10 @@
     html += '<button class="chip" type="button" data-orden="nombre" aria-pressed="' +
             (estado.ordenUso === "nombre") + '">Nombre A-Z</button>';
     html += '</div>';
-    html += '<label class="interr"><input type="checkbox" id="verCostos"' +
-            (estado.costos ? " checked" : "") + '> Ver costos</label>';
+    if (!SIN_COSTOS){
+      html += '<label class="interr"><input type="checkbox" id="verCostos"' +
+              (estado.costos ? " checked" : "") + '> Ver costos</label>';
+    }
     if (esReceta){
       html += '<button class="imprimir" type="button" data-ver="' + esc(esReceta.c) +
               '" title="Este artículo también tiene su propia ficha">Ver su ficha</button>';
@@ -2689,7 +2720,9 @@
       html += '<button class="chip" type="button" data-rac="' + n + '" aria-pressed="' + (n===f) + '">&times;' + n + '</button>';
     });
     html += '</div>';
-    html += '<label class="interr"><input type="checkbox" id="verCostos"' + (estado.costos ? " checked" : "") + '> Ver costos</label>';
+    if (!SIN_COSTOS){
+      html += '<label class="interr"><input type="checkbox" id="verCostos"' + (estado.costos ? " checked" : "") + '> Ver costos</label>';
+    }
     /* El % de participación es un análisis aparte: con el costo prendido se ve
        SOLO el costo, y la participación entra únicamente si se pide. El
        interruptor solo asoma con el costo a la vista, porque el porcentaje se
