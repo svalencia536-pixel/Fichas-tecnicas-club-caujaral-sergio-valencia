@@ -3551,65 +3551,135 @@
     }
   })();
 
-  // ---------------- guía de uso ----------------
-  var elVelo = $("velo");
   /* ================= RECORRIDO GUIADO =================
-     Explica el aplicativo señalando en la pantalla de verdad, con voz, y con
-     un control de 460 px abajo. La guía escrita que había antes tapaba todo:
-     uno leía "mira el buscador" sin poder ver el buscador.
+     Explica el aplicativo señalando en la pantalla de verdad, con voz, y
+     con un control de 460 px abajo. La guía escrita que había antes tapaba
+     todo: uno leía "mira el buscador" sin poder ver el buscador.
 
-     Cada paso dice a qué elemento apunta (sel), qué se lee en la barra y qué
-     se narra. Si el elemento no existe —al operario se le quitan Precios y
-     Costeo rápido— el paso se salta solo. */
+     Cada paso dice a qué apunta (sel), a qué pantalla hay que entrar antes
+     (ir), qué se lee en la barra y qué se narra. Si el elemento no existe
+     —al operario se le quitan Precios y Costeo rápido— el paso se salta. */
   var GIRA_PASOS = [
     { sel:null, tit:"Qué es esto",
-      txt:"Este aplicativo reemplaza el archivo de Excel de recetas. Aquí está cada plato y cada trago del club: qué lleva, cuánto lleva, cómo se prepara y cuánto cuesta.",
-      voz:"Bienvenido. Este aplicativo reemplaza el archivo de Excel de recetas del club. Aquí está cada plato y cada trago: qué lleva, cuánto lleva, cómo se prepara y cuánto cuesta. Te voy a mostrar todo en un minuto." },
+      txt:"Reemplaza el archivo de Excel de recetas. Aquí está cada plato y cada trago del club, y seis herramientas de costos encima.",
+      voz:"Bienvenido. Este aplicativo reemplaza el archivo de Excel de recetas del club. Aquí está cada plato y cada trago, y encima seis herramientas para costos y operación. Te las voy a mostrar todas, una por una." },
 
     { sel:"#texto", tit:"Busca tu receta",
-      txt:"Escribe una palabra. No necesitas el nombre completo ni las tildes: con «pollo» salen todas las que lo llevan.",
-      voz:"Empecemos por el buscador. Escribe una palabra y listo. No necesitas el nombre completo ni las tildes: si escribes pollo, salen todas las recetas que llevan pollo." },
+      txt:"Escribe una palabra. No necesitas el nombre completo ni las tildes.",
+      voz:"Empecemos por el recetario. Escribe una palabra en el buscador y listo. No necesitas el nombre completo ni las tildes: si escribes pollo, salen todas las recetas que llevan pollo." },
 
     { sel:"#panel", tit:"O escógela de la lista",
-      txt:"Si no recuerdas el nombre, ábrela y búscala en orden alfabético, o filtra por Alimentos y Bebidas.",
-      voz:"Si no te acuerdas de cómo se llama, puedes escogerla de la lista, en orden alfabético, o filtrar por alimentos y bebidas." },
+      txt:"En orden alfabético, o filtrando por Alimentos, Bebidas, Subrecetas y los demás grupos.",
+      voz:"Si no te acuerdas del nombre, ábrela de la lista, en orden alfabético. También puedes filtrar por alimentos, bebidas, subrecetas o los otros grupos." },
 
-    { sel:"#ficha", tit:"La ficha de la receta",
-      txt:"Los ingredientes con su cantidad, convertidos a gramos y mililitros. Abajo: el método de preparación, los utensilios y el menaje.",
-      voz:"Al abrir una receta verás la ficha. Los ingredientes con su cantidad, ya convertidos a gramos y mililitros, que es como se mide en la cocina. Más abajo está el método de preparación, los utensilios y el menaje." },
+    { sel:"#ficha", tit:"La ficha",
+      txt:"Ingredientes con su cantidad convertida a gramos, método de preparación, utensilios y menaje.",
+      voz:"Al abrir una receta sale la ficha completa. Los ingredientes con su cantidad, ya convertidos a gramos y mililitros, que es como mide la cocina. Debajo están el método de preparación, los utensilios y el menaje." },
 
-    { sel:"#navProduccion", tit:"Producción",
-      txt:"Escoge qué se produce hoy y cuántas veces. Sale un PDF con el plan del día y una orden por preparación, para firmar.",
-      voz:"Este es el módulo de Producción. Escoges qué se va a producir hoy y cuántas veces, y sale un PDF con el plan del día y una orden de producción por cada preparación, lista para firmar. También puedes pedir la hoja de revisión de insumos, para saber antes de empezar si falta algo en bodega." },
+    /* ---- PRODUCCIÓN ---- */
+    { ir:"navProduccion", sel:"#busProd", tit:"Producción · escoge qué se produce",
+      txt:"Busca cada preparación que se va a producir hoy y agrégala a la lista.",
+      voz:"Vamos a Producción. Aquí se arma el plan del día. Busca cada preparación que se va a producir y la vas agregando a la lista." },
 
-    { sel:"#navPedido", tit:"Pedido",
-      txt:"Arma el pedido a bodega: marca las recetas, dile cuántas raciones y suma los insumos. Ordenado por grupo de bodega.",
-      voz:"Con Pedido armas la solicitud a bodega. Marcas las recetas, dices cuántas raciones de cada una, y el aplicativo suma todos los insumos. La lista sale ordenada por grupo de bodega y con el código de cada artículo, que es como se recorre el almacén." },
+    { ir:"navProduccion", sel:"#elegidasProd", tit:"Producción · cuántas veces",
+      txt:"Para cada una, cuántas veces se va a hacer la receta. Las cantidades se multiplican solas.",
+      voz:"Para cada preparación le dices cuántas veces se va a hacer, y las cantidades de todos los insumos se multiplican solas. Ya no hay que sacar la calculadora." },
 
-    { sel:"#navPrecios", tit:"Precios",
-      txt:"Si sube un insumo, mira qué recetas se afectan y cuánto. También puedes cambiar gramajes, o preguntar a cuántos gramos bajar para llegar a un % de costo.",
-      voz:"Precios es el simulador de impacto. Escoges un insumo, le dices cuánto sube, y ves qué recetas se afectan y en cuánto. Además puedes cambiar el gramaje de cada receta para ver qué pasa, o preguntarle al revés: con cuántos gramos este plato queda en el porcentaje de costo que quieres." },
+    { ir:"navProduccion", sel:"#verCostoProd", tit:"Producción · insumos consolidados",
+      txt:"Esta casilla agrega al PDF la hoja de revisión: todo el día sumado, con columnas de qué hay y qué falta.",
+      voz:"Esta casilla es importante. Agrega al PDF una hoja de revisión de insumos: todo lo del día sumado, con columnas en blanco para marcar qué hay en bodega y qué falta. Sirve para no enterarse a mitad de la producción de que faltó algo." },
 
-    { sel:"#navCosteo", tit:"Costeo rápido",
-      txt:"Del costo al precio: cuánto cuesta el plato, a qué % lo quieres vender y qué precio poner. Incluye domicilio con su comisión.",
-      voz:"Costeo rápido va al revés de Precios: del costo al precio. Te dice cuánto cuesta el plato, le pones a qué porcentaje de costo lo quieres vender, y te da el precio sugerido. Si activas domicilio, descuenta la comisión de la plataforma, que es donde muchos platos dejan de ser rentables. Y si el plato todavía no existe, puedes armarlo desde cero escogiendo insumos." },
+    { ir:"navProduccion", sel:"#pdfProd", tit:"Producción · la orden",
+      txt:"Sale el plan del día y una orden de producción por preparación, con folio, rendimiento y firmas.",
+      voz:"Al generar el PDF sale el plan del día y una orden de producción por cada preparación. Cada orden lleva su folio, el rendimiento teórico, espacios para la hora de inicio y fin, lo que salió realmente, y el consecutivo de la transformación en Zeus, que es lo que amarra el papel con el inventario." },
 
-    { sel:"#navBajas", tit:"Bajas de mercancía",
-      txt:"Reemplaza el reporte por WhatsApp: artículo, cantidad, foto y observación. El costo lo calcula solo y sale el PDF con las firmas.",
-      voz:"Bajas de mercancía reemplaza el reporte por WhatsApp. Escoges el artículo y el aplicativo trae solo el código, la unidad y el costo. Tú pones la cantidad, la foto y qué pasó. Al final sale un PDF con la evidencia pegada y los cuatro espacios de firma: elaboró, verificó, aprobó y contabiliza." },
+    /* ---- PEDIDO ---- */
+    { ir:"navPedido", sel:"#bus", tit:"Pedido · marca las recetas",
+      txt:"Busca las recetas que vas a preparar y dile cuántas raciones de cada una.",
+      voz:"Pedido sirve para armar la solicitud a bodega. Buscas las recetas que vas a preparar y le dices cuántas raciones de cada una." },
 
-    { sel:"#navRotura", tit:"Rotura y bajas de activos",
-      txt:"Para lo que no está en el libro: vajilla y cristalería rotas, o baja de activos operacionales y activos fijos.",
-      voz:"Rotura y bajas es para lo que no está en el libro de recetas: vajilla y cristalería que se rompió, o la baja de un activo operacional o de un activo fijo. Aquí el artículo se escribe a mano, porque una copa o una nevera no están en el recetario. Escoges cuál de los tres casos es y el reporte sale con ese título." },
+    { ir:"navPedido", sel:"#elegidas", tit:"Pedido · las raciones",
+      txt:"Aquí quedan las escogidas. Cambia las raciones y todo se recalcula.",
+      voz:"Aquí van quedando las recetas escogidas con sus raciones. Si cambias una cantidad, todo se recalcula de inmediato." },
+
+    { ir:"navPedido", sel:"#pdfPedido", tit:"Pedido · la lista consolidada",
+      txt:"Suma los insumos de todas las recetas, ordenados por grupo de bodega y con su código.",
+      voz:"El PDF suma los insumos de todas las recetas en una sola lista, ordenada por grupo de bodega y con el código de cada artículo. Está en ese orden porque es como se recorre el almacén, estante por estante." }
+  ];
+  GIRA_PASOS = GIRA_PASOS.concat([
+    { ir:"navPrecios", sel:"#busArt", tit:"Precios · qué insumo se mueve",
+      txt:"Escoge el insumo al que le cambió el precio.",
+      voz:"Precios es el simulador de impacto. Escoges el insumo al que le subió el precio, y el aplicativo te dice a qué recetas afecta y en cuánto." },
+
+    { ir:"navPrecios", sel:"#camposSim", tit:"Precios · cuánto sube",
+      txt:"En porcentaje o en pesos. Puedes mirar solo las recetas que tienen precio de venta.",
+      voz:"Le dices cuánto sube, en porcentaje o directamente en pesos. También puedes pedir que muestre solo las recetas que ya tienen precio de venta cargado, que son las que de verdad se venden." },
+
+    { ir:"navPrecios", sel:"#cambiaG", tit:"Precios · cambiar el gramaje",
+      txt:"Abre una columna para probar otro gramaje por receta y ver qué pasa con el costo.",
+      voz:"Esta casilla abre una columna para probar otro gramaje en cada receta. Sirve para preguntarse: si en vez de sesenta gramos de mantequilla pongo cuarenta y cinco, qué pasa con el costo. El gramaje de prueba no se guarda: es análisis, no decisión." },
+
+    { ir:"navPrecios", sel:"#cObjetivo", tit:"Precios · la pregunta al revés",
+      txt:"Escribe el % de costo que quieres y te dice con cuántos gramos se llega.",
+      voz:"Y aquí está la pregunta al revés. En vez de probar gramajes a ciegas, escribes el porcentaje de costo que quieres y el aplicativo te dice con cuántos gramos se llega. Si dice que no alcanza, es que el costo está en otra parte de la receta." },
+
+    { ir:"navCosteo", sel:"#modoCarta", tit:"Costeo rápido · dos modos",
+      txt:"Un plato de la carta, o un plato nuevo que todavía no existe en el libro.",
+      voz:"Costeo rápido va al revés de Precios: del costo al precio. Tiene dos modos. Uno de la carta, para costear un plato que ya existe. Y plato nuevo, para armar uno desde cero escogiendo insumos, cuando todavía no está en el libro." },
+
+    { ir:"navCosteo", sel:"#camposCost", tit:"Costeo rápido · los ajustes",
+      txt:"Protección, porciones e impuesto. Si cambias la protección, ese costeo deja de ser comparable.",
+      voz:"Aquí ajustas la protección por merma, cuántas porciones salen de la receta, y el impuesto al consumo. Ojo con la protección: el resto del aplicativo usa diez por ciento, así que si la cambias, ese costeo deja de ser comparable con la ficha y con los otros módulos. El aplicativo te lo advierte." },
+
+    { ir:"navCosteo", sel:"#verDom", tit:"Costeo rápido · domicilio",
+      txt:"Agrega la comisión de plataforma. Es donde muchos platos dejan de ser rentables.",
+      voz:"Esta casilla agrega la columna de domicilio con su comisión de plataforma. Vale la pena hacer siempre ese cálculo: hay platos que en mesa dejan buen margen y por domicilio pierden plata, porque la comisión sale del precio antes de que quede algo." },
+
+    { ir:"navCosteo", sel:"#resCost", tit:"Costeo rápido · el precio",
+      txt:"Escoges el % de costo y da el precio sugerido. Pones el precio real y ves en qué queda.",
+      voz:"Escoges a qué porcentaje de costo quieres vender, con los atajos de la estructura del club, y te da el precio sugerido. Pero el precio sugerido nunca es el de la carta: tú lo redondeas, y ahí mismo ves en qué porcentaje de costo quedó de verdad, cuánta utilidad bruta deja y qué margen." }
+  ]);
+  GIRA_PASOS = GIRA_PASOS.concat([
+    { ir:"navBajas", sel:"#bjConsec", tit:"Bajas · el encabezado",
+      txt:"Consecutivo y fecha automáticos, bodega de la lista del club y centro de costo.",
+      voz:"Bajas de mercancía reemplaza el reporte por WhatsApp y el formulario de Drive. Arriba va el encabezado: el consecutivo lo pone solo, la fecha también, y la bodega se escoge de una lista con su código. Escogerla de la lista y no escribirla a mano es lo que permite después agrupar el gasto por sitio." },
+
+    { ir:"navBajas", sel:"#bjQuien", tit:"Bajas · quién reporta",
+      txt:"Obligatorio. Ese nombre pasa solo a la firma ELABORÓ del PDF.",
+      voz:"Reportado por es obligatorio, y ese nombre pasa solo a la firma de elaboró en el documento. Al lado se marca la causa: deterioro natural o descuido." },
+
+    { ir:"navBajas", sel:"#bjBuscar", tit:"Bajas · qué se da de baja",
+      txt:"Escoges el artículo y trae solos código, unidad y costo. Tú pones cantidad, foto y qué pasó.",
+      voz:"Aquí escoges el artículo y el aplicativo trae solos el código, la unidad de medida y el costo. Tú pones la cantidad, una foto y qué le pasó a ese artículo en particular. Lo que agregues de último queda arriba, pegado al buscador, para que nadie escriba la cantidad en la línea equivocada." },
+
+    { ir:"navBajas", sel:"#bjResumen", tit:"Bajas · el resumen",
+      txt:"Total de artículos, unidades y valor. Sin nombre y sin foto no deja reportar.",
+      voz:"Abajo está el resumen con el valor total de la baja. Y hay dos cosas que el aplicativo no deja pasar: sin el nombre de quien reporta, y sin al menos una fotografía, no se puede generar el reporte. Sin evidencia no hay baja." },
+
+    { ir:"navBajas", sel:"#bjCierre", tit:"Bajas · enviar",
+      txt:"El PDF lleva la evidencia y las cuatro firmas. El correo se abre con los cinco destinatarios.",
+      voz:"El PDF sale con la evidencia fotográfica pegada y los cuatro espacios de firma: elaboró, verificó, aprobó y contabiliza. Al enviar se abre el correo con los cinco destinatarios y el detalle ya escrito. El archivo toca adjuntarlo a mano, porque ningún navegador permite que una página adjunte por su cuenta." },
+
+    { ir:"navRotura", sel:"#rtClaseRot", tit:"Rotura · tres casos distintos",
+      txt:"Rotura de vajilla, baja de activo operacional o baja de activo fijo.",
+      voz:"Rotura y bajas de activos cubre tres casos que no son lo mismo: la rotura de vajilla y cristalería, la baja de un activo operacional, y la baja de un activo fijo. Escoges cuál es y el reporte sale titulado así, porque para contabilidad una copa rota y una nevera dada de baja son cosas distintas." },
+
+    { ir:"navRotura", sel:"#rtAgregar", tit:"Rotura · agregar artículos",
+      txt:"Aquí el artículo se escribe a mano: una copa o una nevera no están en el libro de recetas.",
+      voz:"Con este botón agregas una línea. Aquí el artículo se escribe a mano, porque una copa o una nevera no están en el libro de recetas. Por eso este módulo cuenta unidades y no pesos: no hay de dónde traer un costo." },
+
+    { ir:"navRotura", sel:"#rtJust", tit:"Rotura · la justificación",
+      txt:"Por qué ocurrió y qué se propone para que no se repita.",
+      voz:"La justificación es para explicar por qué ocurrió y qué se hizo o se propone para que no vuelva a pasar. Es lo que hace que el reporte sirva para algo más que descargar el inventario." },
 
     { sel:"#btnVista", tit:"Ver en celular",
-      txt:"Simula la pantalla del teléfono para revisar cómo lo ve la cocina antes de mandarlo.",
-      voz:"Este botón simula la pantalla del teléfono, para que revises cómo lo ve la cocina antes de mandárselos. Al lado está el tema oscuro, para las pantallas de la cocina." },
+      txt:"Simula la pantalla del teléfono. En el celular la pantalla se mantiene encendida sola.",
+      voz:"Este botón simula la pantalla del teléfono, para revisar cómo lo ve la cocina. Al lado está el tema oscuro. Y en el celular la pantalla se mantiene encendida sola, para no tener que estar tocándola con las manos ocupadas." },
 
     { sel:null, tit:"Quién hizo esto",
       txt:"Aplicación web de control de gestión gastronómica para el Club Lagos de Caujaral, desarrollada por Sergio Valencia, consultor financiero.",
       voz:"Esto fue creado por Sergio Valencia para el Club Lagos de Caujaral. Sergio Valencia es controller financiero y especialista en control de gestión para operaciones de alimentos y bebidas, enfocado en conectar inventarios, producción y contabilidad. Eso es todo: ya puedes usarlo." }
-  ];
+  ]);
 
   var GIRA = { i:0, pasos:[], voz:true, andando:false, pausa:false, espera:null };
 
@@ -3694,6 +3764,18 @@
     }, 60);
   }
 
+  /* Antes de señalar nada se entra a la pantalla del paso. Se evita volver a
+     tocar el botón si ya estamos ahí, porque esos botones funcionan como
+     interruptor y un segundo clic devolvería al recetario. */
+  function giraEntrar(ir){
+    if (!ir) return false;
+    var b = document.getElementById(ir);
+    if (!b) return false;
+    if (b.getAttribute("aria-pressed") === "true") return false;
+    b.click();
+    return true;
+  }
+
   function giraPintar(){
     var p = GIRA.pasos[GIRA.i];
     if (!p) return;
@@ -3703,7 +3785,11 @@
     $("giraAvance").style.width = Math.round((GIRA.i + 1) / GIRA.pasos.length * 100) + "%";
     $("giraAtras").disabled = (GIRA.i === 0);
     $("giraSigue").textContent = (GIRA.i === GIRA.pasos.length - 1) ? "Terminar" : "Siguiente ▶";
-    giraSenalar(p.sel);
+
+    var cambio = giraEntrar(p.ir);
+    // si se acaba de cambiar de pantalla, se le da un respiro antes de medir
+    setTimeout(function(){ giraSenalar(p.sel); }, cambio ? 90 : 0);
+
     /* Al terminar de narrar, el recorrido pasa solo. Solo se queda quieto si
        está en pausa o si ya es el último paso. */
     giraHablar(p.voz || p.txt, function(){
@@ -3729,9 +3815,13 @@
   }
   function giraSalir(){
     GIRA.andando = false;
+    GIRA.pausa = false;
     giraCallar();
     $("giraBarra").hidden = true;
     $("giraAro").hidden = true;
+    $("giraPausa").textContent = "⏸";
+    // el recorrido pasea por los módulos: se devuelve al recetario
+    if (typeof verPantalla === "function") verPantalla("recetario");
   }
 
   $("giraSigue").addEventListener("click", function(){
