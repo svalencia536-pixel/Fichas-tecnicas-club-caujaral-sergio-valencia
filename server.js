@@ -32,8 +32,35 @@ const CLAVE = process.env.FICHAS_PASSWORD || '';
    escondan los botones: los numeros no viajan en la pagina que descargan, asi
    que no hay nada que destapar con las herramientas del navegador.
    Si no se configura FICHAS_PASSWORD_OP, simplemente no existe ese perfil. */
-const USUARIO_OP = process.env.FICHAS_USER_OP || 'operario';
-const CLAVE_OP = process.env.FICHAS_PASSWORD_OP || '';
+/* Los operarios, uno por persona. Cada uno es una variable de entorno que
+   empieza por FICHAS_OP_ : el nombre de usuario es lo que sigue, en minusculas,
+   y el valor es su clave.
+
+     FICHAS_OP_DGUERRA = <clave de D. Guerra>   ->  entra como "dguerra"
+     FICHAS_OP_AMEZA   = <clave de A. Meza>     ->  entra como "ameza"
+
+   Agregar a alguien es crear una variable; quitarle el acceso es borrarla, sin
+   tocar a los demas. Se admite tambien el par FICHAS_USER_OP/FICHAS_PASSWORD_OP
+   de antes, para no romper lo que ya estuviera configurado.
+
+   Las claves quedan en texto plano en las variables de Railway: las ve quien
+   tenga acceso al panel. Es aceptable mientras sean claves de consulta y cada
+   persona tenga la suya, pero el destino es la tabla de usuarios con la clave
+   cifrada (Argon2id) de la fase 1 del diagnostico. */
+const OPERARIOS = (function () {
+  const mapa = new Map();
+  for (const nombre of Object.keys(process.env)) {
+    if (!nombre.startsWith('FICHAS_OP_')) continue;
+    const usuario = nombre.slice('FICHAS_OP_'.length).toLowerCase();
+    const clave = process.env[nombre] || '';
+    if (usuario && clave) mapa.set(usuario, clave);
+  }
+  // el par antiguo, si existe
+  const viejoUsuario = (process.env.FICHAS_USER_OP || 'operario').toLowerCase();
+  const viejaClave = process.env.FICHAS_PASSWORD_OP || '';
+  if (viejaClave) mapa.set(viejoUsuario, viejaClave);
+  return mapa;
+})();
 const ABIERTA_A_PROPOSITO = String(process.env.FICHAS_PUBLICA || '').toLowerCase() === 'si';
 
 const ARCHIVO = path.join(__dirname, 'Fichas Tecnicas Caujaral.html');
@@ -106,9 +133,15 @@ function perfilDe(req) {
   const clave = plano.slice(corte + 1);
 
   if (comparaSeguro(usuario, USUARIO) && comparaSeguro(clave, CLAVE)) return 'admin';
-  // el perfil de operario solo existe si tiene clave y si hay pagina sin costos
-  if (CLAVE_OP && PAGINA_OP &&
-      comparaSeguro(usuario, USUARIO_OP) && comparaSeguro(clave, CLAVE_OP)) return 'operario';
+  /* El perfil de operario solo existe si hay pagina sin costos que entregar.
+     Se compara SIEMPRE, exista o no el usuario, para no delatar por el tiempo
+     de respuesta cuales nombres estan dados de alta. */
+  if (PAGINA_OP) {
+    const guardada = OPERARIOS.get(usuario.toLowerCase());
+    const contra = guardada || 'clave-que-no-existe';
+    const coincide = comparaSeguro(clave, contra);
+    if (guardada && coincide) return 'operario';
+  }
   return null;
 }
 
