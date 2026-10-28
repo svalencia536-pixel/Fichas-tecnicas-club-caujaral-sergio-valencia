@@ -975,6 +975,58 @@
   /* ---------- Bajas de mercancía ----------
      Las miniaturas son el corazón de esta pantalla: hay que ver qué se
      fotografió sin abrir nada, y poder quitar una foto mala de un toque. */
+
+  /* ---------- Recorrido guiado ----------
+     La guia anterior era un modal que tapaba la pantalla: uno leia "mira el
+     buscador" sin poder ver el buscador. Aqui se invierte: la pantalla queda
+     a la vista, se le pone un aro al elemento del que se habla, y el control
+     se encoge a una barra de 420 px abajo. Nada mas. */
+  .gira-aro{
+    position:fixed;pointer-events:none;z-index:9998;border-radius:10px;
+    border:2px solid var(--accent);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent),
+               0 6px 22px rgba(0,0,0,.18);
+    /* sin transición: el aro salta directo al elemento. Animarlo hacía que
+       se quedara a mitad de camino cuando alguien adelanta pasos rápido. */
+  }
+  .gira-aro.sin-blanco{opacity:0}
+
+  .gira-barra{
+    position:fixed;z-index:9999;left:50%;transform:translateX(-50%);bottom:16px;
+    width:min(460px, calc(100vw - 24px));
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    box-shadow:0 10px 32px rgba(0,0,0,.22);
+    padding:10px 12px;font-size:13px;line-height:1.35;
+  }
+  .gira-barra[hidden]{display:none}
+  .gira-tit{
+    font-weight:600;font-size:13.5px;margin:0 0 2px;
+    display:flex;align-items:center;gap:7px;
+  }
+  .gira-tit .n{
+    font-family:var(--mono);font-size:10.5px;color:var(--muted);
+    border:1px solid var(--line);border-radius:5px;padding:1px 5px;flex:none;
+  }
+  .gira-txt{margin:0;color:var(--muted);font-size:12.5px}
+  .gira-pie{display:flex;align-items:center;gap:6px;margin-top:8px}
+  .gira-pie button{
+    border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
+    border-radius:7px;padding:4px 9px;font-size:12px;cursor:pointer;
+  }
+  .gira-pie button:hover{border-color:var(--accent);color:var(--ink)}
+  .gira-pie .sigue{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .gira-pie .lejos{margin-left:auto}
+  /* la raya de avance, dos pixeles: dice en que parte va sin ocupar sitio */
+  .gira-avance{height:2px;background:var(--line-soft);border-radius:2px;margin-top:8px}
+  .gira-avance i{display:block;height:2px;background:var(--accent);border-radius:2px;transition:width .3s}
+
+  /* La firma del autor. Discreta, al pie, y nunca en el papel. */
+  .firma-autor{
+    text-align:center;padding:26px 16px 30px;color:var(--faint);
+    font-size:11.5px;line-height:1.6;
+  }
+  .firma-autor b{color:var(--muted);font-weight:600}
+  @media print{ .firma-autor,.gira-barra,.gira-aro{display:none!important} }
   .obliga{color:var(--g-FP);font-weight:700}
   .fotos{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px}
   .fotos:empty{margin:0}
@@ -1871,8 +1923,31 @@
       <div id="rtHistorial"></div>
     </div>
   </main>
+  <!-- La firma de autoría. Va al pie, discreta, y no sale impresa. -->
+  <div class="firma-autor">
+    Aplicación web de control de gestión gastronómica para el
+    <b>Club Lagos de Caujaral</b><br>
+    Desarrollada por <b>Sergio Valencia</b> · Controller financiero,
+    control de gestión en alimentos y bebidas
+  </div>
 </div>
 <div class="aviso-flotante" id="avisoFlotante" hidden></div>
+
+<!-- Recorrido guiado: el aro que señala y la barra de control. Van fuera del
+     contenedor de la aplicación porque se posicionan contra la ventana. -->
+<div class="gira-aro" id="giraAro" hidden></div>
+<div class="gira-barra" id="giraBarra" hidden role="dialog" aria-live="polite"
+     aria-label="Recorrido guiado">
+  <p class="gira-tit"><span class="n" id="giraN">1/1</span><span id="giraTit">…</span></p>
+  <p class="gira-txt" id="giraTxt">…</p>
+  <div class="gira-pie">
+    <button type="button" id="giraVoz" aria-label="Silenciar la voz">🔊 Voz</button>
+    <button type="button" id="giraAtras">◀</button>
+    <button type="button" id="giraSigue" class="sigue">Siguiente ▶</button>
+    <button type="button" id="giraSalir" class="lejos">Salir</button>
+  </div>
+  <div class="gira-avance"><i id="giraAvance" style="width:0%"></i></div>
+</div>
 
 <div class="velo" id="velo" hidden>
   <div class="guia" role="dialog" aria-modal="true" aria-labelledby="guiaTitulo">
@@ -3477,6 +3552,180 @@
 
   // ---------------- guía de uso ----------------
   var elVelo = $("velo");
+  /* ================= RECORRIDO GUIADO =================
+     Explica el aplicativo señalando en la pantalla de verdad, con voz, y con
+     un control de 460 px abajo. La guía escrita que había antes tapaba todo:
+     uno leía "mira el buscador" sin poder ver el buscador.
+
+     Cada paso dice a qué elemento apunta (sel), qué se lee en la barra y qué
+     se narra. Si el elemento no existe —al operario se le quitan Precios y
+     Costeo rápido— el paso se salta solo. */
+  var GIRA_PASOS = [
+    { sel:null, tit:"Qué es esto",
+      txt:"Este aplicativo reemplaza el archivo de Excel de recetas. Aquí está cada plato y cada trago del club: qué lleva, cuánto lleva, cómo se prepara y cuánto cuesta.",
+      voz:"Bienvenido. Este aplicativo reemplaza el archivo de Excel de recetas del club. Aquí está cada plato y cada trago: qué lleva, cuánto lleva, cómo se prepara y cuánto cuesta. Te voy a mostrar todo en un minuto." },
+
+    { sel:"#texto", tit:"Busca tu receta",
+      txt:"Escribe una palabra. No necesitas el nombre completo ni las tildes: con «pollo» salen todas las que lo llevan.",
+      voz:"Empecemos por el buscador. Escribe una palabra y listo. No necesitas el nombre completo ni las tildes: si escribes pollo, salen todas las recetas que llevan pollo." },
+
+    { sel:"#panel", tit:"O escógela de la lista",
+      txt:"Si no recuerdas el nombre, ábrela y búscala en orden alfabético, o filtra por Alimentos y Bebidas.",
+      voz:"Si no te acuerdas de cómo se llama, puedes escogerla de la lista, en orden alfabético, o filtrar por alimentos y bebidas." },
+
+    { sel:"#ficha", tit:"La ficha de la receta",
+      txt:"Los ingredientes con su cantidad, convertidos a gramos y mililitros. Abajo: el método de preparación, los utensilios y el menaje.",
+      voz:"Al abrir una receta verás la ficha. Los ingredientes con su cantidad, ya convertidos a gramos y mililitros, que es como se mide en la cocina. Más abajo está el método de preparación, los utensilios y el menaje." },
+
+    { sel:"#navProduccion", tit:"Producción",
+      txt:"Escoge qué se produce hoy y cuántas veces. Sale un PDF con el plan del día y una orden por preparación, para firmar.",
+      voz:"Este es el módulo de Producción. Escoges qué se va a producir hoy y cuántas veces, y sale un PDF con el plan del día y una orden de producción por cada preparación, lista para firmar. También puedes pedir la hoja de revisión de insumos, para saber antes de empezar si falta algo en bodega." },
+
+    { sel:"#navPedido", tit:"Pedido",
+      txt:"Arma el pedido a bodega: marca las recetas, dile cuántas raciones y suma los insumos. Ordenado por grupo de bodega.",
+      voz:"Con Pedido armas la solicitud a bodega. Marcas las recetas, dices cuántas raciones de cada una, y el aplicativo suma todos los insumos. La lista sale ordenada por grupo de bodega y con el código de cada artículo, que es como se recorre el almacén." },
+
+    { sel:"#navPrecios", tit:"Precios",
+      txt:"Si sube un insumo, mira qué recetas se afectan y cuánto. También puedes cambiar gramajes, o preguntar a cuántos gramos bajar para llegar a un % de costo.",
+      voz:"Precios es el simulador de impacto. Escoges un insumo, le dices cuánto sube, y ves qué recetas se afectan y en cuánto. Además puedes cambiar el gramaje de cada receta para ver qué pasa, o preguntarle al revés: con cuántos gramos este plato queda en el porcentaje de costo que quieres." },
+
+    { sel:"#navCosteo", tit:"Costeo rápido",
+      txt:"Del costo al precio: cuánto cuesta el plato, a qué % lo quieres vender y qué precio poner. Incluye domicilio con su comisión.",
+      voz:"Costeo rápido va al revés de Precios: del costo al precio. Te dice cuánto cuesta el plato, le pones a qué porcentaje de costo lo quieres vender, y te da el precio sugerido. Si activas domicilio, descuenta la comisión de la plataforma, que es donde muchos platos dejan de ser rentables. Y si el plato todavía no existe, puedes armarlo desde cero escogiendo insumos." },
+
+    { sel:"#navBajas", tit:"Bajas de mercancía",
+      txt:"Reemplaza el reporte por WhatsApp: artículo, cantidad, foto y observación. El costo lo calcula solo y sale el PDF con las firmas.",
+      voz:"Bajas de mercancía reemplaza el reporte por WhatsApp. Escoges el artículo y el aplicativo trae solo el código, la unidad y el costo. Tú pones la cantidad, la foto y qué pasó. Al final sale un PDF con la evidencia pegada y los cuatro espacios de firma: elaboró, verificó, aprobó y contabiliza." },
+
+    { sel:"#navRotura", tit:"Rotura y bajas de activos",
+      txt:"Para lo que no está en el libro: vajilla y cristalería rotas, o baja de activos operacionales y activos fijos.",
+      voz:"Rotura y bajas es para lo que no está en el libro de recetas: vajilla y cristalería que se rompió, o la baja de un activo operacional o de un activo fijo. Aquí el artículo se escribe a mano, porque una copa o una nevera no están en el recetario. Escoges cuál de los tres casos es y el reporte sale con ese título." },
+
+    { sel:"#btnVista", tit:"Ver en celular",
+      txt:"Simula la pantalla del teléfono para revisar cómo lo ve la cocina antes de mandarlo.",
+      voz:"Este botón simula la pantalla del teléfono, para que revises cómo lo ve la cocina antes de mandárselos. Al lado está el tema oscuro, para las pantallas de la cocina." },
+
+    { sel:null, tit:"Quién hizo esto",
+      txt:"Aplicación web de control de gestión gastronómica para el Club Lagos de Caujaral, desarrollada por Sergio Valencia, consultor financiero.",
+      voz:"Esto fue creado por Sergio Valencia para el Club Lagos de Caujaral. Sergio Valencia es controller financiero y especialista en control de gestión para operaciones de alimentos y bebidas, enfocado en conectar inventarios, producción y contabilidad. Eso es todo: ya puedes usarlo." }
+  ];
+
+  var GIRA = { i:0, pasos:[], voz:true, andando:false };
+
+  /* Se arma la lista saltando los pasos cuyo elemento no existe: al operario
+     se le quitan Precios y Costeo rápido del encabezado, y no tiene sentido
+     hablarle de algo que no va a encontrar. */
+  function giraArmar(){
+    GIRA.pasos = GIRA_PASOS.filter(function(p){
+      return !p.sel || document.querySelector(p.sel);
+    });
+  }
+
+  function giraHablar(texto){
+    if (!GIRA.voz || !window.speechSynthesis) return;
+    try {
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(texto);
+      u.lang = "es-CO";
+      u.rate = 1.02;
+      // se prefiere una voz en español si el equipo tiene alguna instalada
+      var voces = speechSynthesis.getVoices() || [];
+      var es = voces.filter(function(v){ return /^es/i.test(v.lang); });
+      if (es.length) u.voice = es[0];
+      speechSynthesis.speak(u);
+    } catch(e){}
+  }
+  function giraCallar(){
+    if (window.speechSynthesis){ try { speechSynthesis.cancel(); } catch(e){} }
+  }
+  /* El aro se dibuja sobre el elemento sin tapar nada: la pantalla sigue
+     completa y solo se resalta de qué se está hablando.
+
+     Se coloca de inmediato y luego se vuelve a medir durante medio segundo,
+     porque el desplazamiento suave mueve el objetivo mientras va llegando.
+     La primera versión media una sola vez, 320 ms después, y cuando alguien
+     adelantaba pasos rápido el aro se quedaba en el anterior. */
+  var giraReloj = null;
+  function giraSenalar(sel){
+    var aro = $("giraAro");
+    if (giraReloj){ clearInterval(giraReloj); giraReloj = null; }
+    if (!sel){ aro.hidden = true; return; }
+    var el = document.querySelector(sel);
+    if (!el){ aro.hidden = true; return; }
+
+    function colocar(){
+      var r = el.getBoundingClientRect();
+      if (!r.width && !r.height){ aro.hidden = true; return; }
+      aro.hidden = false;
+      aro.style.top = (r.top - 5) + "px";
+      aro.style.left = (r.left - 5) + "px";
+      aro.style.width = (r.width + 10) + "px";
+      aro.style.height = (r.height + 10) + "px";
+    }
+    colocar();
+    try { el.scrollIntoView({ behavior:"smooth", block:"center" }); } catch(e){ el.scrollIntoView(); }
+    // se persigue al objetivo mientras dura el desplazamiento
+    var veces = 0;
+    giraReloj = setInterval(function(){
+      colocar();
+      if (++veces > 12){ clearInterval(giraReloj); giraReloj = null; }
+    }, 60);
+  }
+
+  function giraPintar(){
+    var p = GIRA.pasos[GIRA.i];
+    if (!p) return;
+    $("giraN").textContent = (GIRA.i + 1) + "/" + GIRA.pasos.length;
+    $("giraTit").textContent = p.tit;
+    $("giraTxt").textContent = p.txt;
+    $("giraAvance").style.width = Math.round((GIRA.i + 1) / GIRA.pasos.length * 100) + "%";
+    $("giraAtras").disabled = (GIRA.i === 0);
+    $("giraSigue").textContent = (GIRA.i === GIRA.pasos.length - 1) ? "Terminar" : "Siguiente ▶";
+    giraSenalar(p.sel);
+    giraHablar(p.voz || p.txt);
+  }
+
+  function giraIr(n){
+    if (n < 0 || n >= GIRA.pasos.length) return;
+    GIRA.i = n;
+    giraPintar();
+  }
+  function giraEmpezar(){
+    giraArmar();
+    if (!GIRA.pasos.length) return;
+    GIRA.andando = true;
+    GIRA.i = 0;
+    $("giraBarra").hidden = false;
+    giraPintar();
+  }
+  function giraSalir(){
+    GIRA.andando = false;
+    giraCallar();
+    $("giraBarra").hidden = true;
+    $("giraAro").hidden = true;
+  }
+
+  $("giraSigue").addEventListener("click", function(){
+    if (GIRA.i >= GIRA.pasos.length - 1) giraSalir(); else giraIr(GIRA.i + 1);
+  });
+  $("giraAtras").addEventListener("click", function(){ giraIr(GIRA.i - 1); });
+  $("giraSalir").addEventListener("click", giraSalir);
+  $("giraVoz").addEventListener("click", function(){
+    GIRA.voz = !GIRA.voz;
+    this.textContent = GIRA.voz ? "🔊 Voz" : "🔇 Voz";
+    this.setAttribute("aria-label", GIRA.voz ? "Silenciar la voz" : "Activar la voz");
+    if (GIRA.voz) giraHablar(GIRA.pasos[GIRA.i].voz); else giraCallar();
+  });
+  // el aro se recoloca si se mueve la pantalla
+  window.addEventListener("resize", function(){
+    if (GIRA.andando) giraSenalar(GIRA.pasos[GIRA.i].sel);
+  });
+  document.addEventListener("keydown", function(e){
+    if (!GIRA.andando) return;
+    if (e.key === "Escape") giraSalir();
+    if (e.key === "ArrowRight") giraIr(GIRA.i + 1);
+    if (e.key === "ArrowLeft") giraIr(GIRA.i - 1);
+  });
   function abrirAyuda(){
     elVelo.hidden = false;
     $("cerrarAyuda").focus();
@@ -3485,7 +3734,9 @@
     elVelo.hidden = true;
     $("abrirAyuda").focus();
   }
-  $("abrirAyuda").addEventListener("click", abrirAyuda);
+  // el botón del encabezado arranca el recorrido guiado; la guía escrita
+  // sigue a mano en «Ver la guía completa», dentro de las pantallas
+  $("abrirAyuda").addEventListener("click", giraEmpezar);
   $("cerrarAyuda").addEventListener("click", cerrarAyuda);
   $("cerrarAyuda2").addEventListener("click", cerrarAyuda);
   elVelo.addEventListener("click", function(e){ if (e.target === elVelo) cerrarAyuda(); });
