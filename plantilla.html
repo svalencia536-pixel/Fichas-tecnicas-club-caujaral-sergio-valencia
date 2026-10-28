@@ -1286,7 +1286,7 @@
       <button class="ctrl seccion" type="button" id="navPrecios" aria-pressed="false">Precios</button>
       <button class="ctrl seccion" type="button" id="navCosteo" aria-pressed="false">Costeo rápido</button>
       <button class="ctrl seccion" type="button" id="navBajas" aria-pressed="false">Bajas</button>
-      <button class="ctrl seccion" type="button" id="navRotura" aria-pressed="false">Rotura</button>
+      <button class="ctrl seccion" type="button" id="navRotura" aria-pressed="false">Rotura y bajas</button>
       <button class="ctrl" type="button" id="btnVista" aria-pressed="false">
         <span id="btnVistaTxt">Ver en celular</span>
       </button>
@@ -1782,10 +1782,10 @@
        esta en el libro de recetas —que solo tiene insumos de cocina—, asi que
        no hay codigo ni costo que traer. -->
   <main class="pantalla" id="vRotura" hidden>
-    <h1 class="tit">Rotura</h1>
+    <h1 class="tit" id="rtTitulo">Rotura y baja de activos</h1>
     <p class="intro">
-      Reporta vajilla, cristalería, cubiertos o utensilios que se rompieron,
-      con su evidencia. Al final sale el PDF para firmar y enviar.
+      Reporta roturas de vajilla y cristalería, o bajas de activos operacionales
+      y de activos fijos, con su evidencia. Al final sale el PDF para firmar y enviar.
     </p>
 
     <div class="tarjeta">
@@ -1813,8 +1813,20 @@
                  placeholder="Nombre completo">
         </div>
       </div>
+      <!-- QUE se da de baja. Son tres cosas distintas que antes cabian todas
+           bajo la palabra "rotura", y no son lo mismo para costos: una copa
+           rota se consume, un activo fijo se da de baja del inventario de
+           activos y eso toca contabilidad. Por eso se declara de entrada. -->
       <div class="campo" style="padding-top:4px">
-        <label>Tipo de rotura</label>
+        <label>Qué se está dando de baja</label>
+        <div class="segmento">
+          <button type="button" id="rtClaseRot" aria-pressed="true">Rotura</button>
+          <button type="button" id="rtClaseOp" aria-pressed="false">Activo operacional</button>
+          <button type="button" id="rtClaseFijo" aria-pressed="false">Activo fijo</button>
+        </div>
+      </div>
+      <div class="campo" style="padding-top:4px">
+        <label>Causa</label>
         <div class="segmento">
           <button type="button" id="rtNatural" aria-pressed="true">Desgaste natural</button>
           <button type="button" id="rtDescuido" aria-pressed="false">Descuido / mala manipulación</button>
@@ -6671,7 +6683,7 @@
     h += '</div>';
 
     h += '<div class="tablawrap"><table><thead><tr>';
-    h += '<th>Consecutivo</th><th>Fecha</th><th>Bodega</th><th>Tipo</th>';
+    h += '<th>Consecutivo</th><th>Fecha</th><th>Bodega</th><th>Clase</th>';
     h += '<th class="num">Art.</th><th class="num">Valor</th><th>Estado</th><th class="opc"></th>';
     h += '</tr></thead><tbody>';
     BJ_HIST.slice(0, 40).forEach(function(b, i){
@@ -6725,7 +6737,7 @@
      cocina, asi que no hay codigo ni costo unitario que traer. Por eso el
      resumen cuenta unidades y no pesos: este reporte deja constancia de QUE
      se rompio y POR QUE, no de cuanto costo. */
-  var RT = { lineas: [], tipo: "Desgaste natural" };
+  var RT = { lineas: [], tipo: "Desgaste natural", clase: "rotura" };
   var RT_HIST = bjLeer("fichas.rotura", []);
 
   function rtConsecutivo(){
@@ -6749,15 +6761,53 @@
   }
 
   function rtNueva(){
-    RT.lineas = []; RT.tipo = "Desgaste natural";
+    RT.lineas = []; RT.tipo = "Desgaste natural"; RT.clase = "rotura";
     $("rtConsec").value = rtConsecutivo();
     $("rtFecha").value = bjHoy();
     $("rtJust").value = "";
     $("rtNatural").setAttribute("aria-pressed","true");
     $("rtDescuido").setAttribute("aria-pressed","false");
+    ["rtClaseRot","rtClaseOp","rtClaseFijo"].forEach(function(id){
+      $(id).setAttribute("aria-pressed", String(id === "rtClaseRot"));
+    });
+    rtPintarTitulos();
     rtPintarLineas();
   }
 
+  /* Las tres cosas que cabe reportar aqui. No son lo mismo y por eso se
+     declaran: una copa rota se consume y no sale del inventario de activos;
+     un activo fijo dado de baja si, y eso toca contabilidad. El reporte lo
+     dice en el titulo para que quien lo recibe sepa de entrada que trata. */
+  var RT_CLASES = {
+    rotura: { et:"Rotura", doc:"REPORTE DE ROTURA", asunto:"Reporte de Rotura" },
+    operacional: { et:"Baja de activo operacional", doc:"BAJA DE ACTIVO OPERACIONAL",
+                   asunto:"Baja de Activo Operacional" },
+    fijo: { et:"Baja de activo fijo", doc:"BAJA DE ACTIVO FIJO",
+            asunto:"Baja de Activo Fijo" }
+  };
+  function rtClaseActual(){ return RT_CLASES[RT.clase] || RT_CLASES.rotura; }
+
+  [["rtClaseRot","rotura"],["rtClaseOp","operacional"],["rtClaseFijo","fijo"]]
+    .forEach(function(par){
+      $(par[0]).addEventListener("click", function(){
+        RT.clase = par[1];
+        ["rtClaseRot","rtClaseOp","rtClaseFijo"].forEach(function(id){
+          $(id).setAttribute("aria-pressed", String(id === par[0]));
+        });
+        rtPintarTitulos();
+      });
+    });
+
+  /* El encabezado de la pantalla y el rotulo de la tabla siguen a la clase:
+     "Que se rompio" no tiene sentido cuando se esta dando de baja una nevera. */
+  function rtPintarTitulos(){
+    var c = rtClaseActual();
+    var h2 = $("rtLineas").parentNode.querySelector(".sec");
+    if (h2) h2.textContent = "2 · " + (RT.clase === "rotura" ? "Qué se rompió"
+                                                            : "Qué se da de baja");
+    var t = $("rtTitulo");
+    if (t) t.textContent = c.et === "Rotura" ? "Rotura y baja de activos" : c.et;
+  }
   $("rtNatural").addEventListener("click", function(){
     RT.tipo = "Desgaste natural";
     this.setAttribute("aria-pressed","true");
@@ -6927,6 +6977,8 @@
       centro: $("rtCentro").value.trim(),
       quien: $("rtQuien").value.trim(),
       tipo: RT.tipo,
+      clase: RT.clase,
+      claseEt: rtClaseActual().et,
       just: $("rtJust").value.trim(),
       lineas: RT.lineas,
       t: rtTotales()
@@ -6955,7 +7007,7 @@
     var lg = logoDeLaPagina();
     if (lg){ try { doc.addImage(lg, "PNG", M, 9, 9, 9); } catch(e){} }
     tx("CLUB LAGOS DE CAUJARAL", M + 12, 13, 7, "normal", AZUL);
-    tx("REPORTE DE ROTURA", M + 12, 18.5, 12, "bold");
+    tx(rtClaseActual().doc, M + 12, 18.5, 12, "bold");
     tx(d.consec, W - M, 13, 9, "bold", AZUL, "right");
     doc.setDrawColor(AZUL[0],AZUL[1],AZUL[2]); doc.setLineWidth(.5);
     doc.line(M, 22, W-M, 22);
@@ -6964,7 +7016,8 @@
     var izq = [["Fecha", fechaBonita(d.fecha)],
                ["Bodega", d.bodega || "-"],
                ["Centro de costo", d.centro || "-"]];
-    var der = [["Tipo de rotura", d.tipo],
+    var der = [["Clase", d.claseEt],
+               ["Causa", d.tipo],
                ["Reportado por", d.quien]];
     for (var i = 0; i < 3; i++){
       tx(izq[i][0].toUpperCase(), M, y, 6.5, "bold", GRIS);
@@ -6978,7 +7031,7 @@
     y += 2; linea(y); y += 7;
 
     // ---- que se rompio
-    tx("QUE SE ROMPIO", M, y, 8, "bold"); y += 3;
+    tx(RT.clase === "rotura" ? "QUE SE ROMPIO" : "QUE SE DA DE BAJA", M, y, 8, "bold"); y += 3;
     doc.setFillColor(AZUL_S[0],AZUL_S[1],AZUL_S[2]); doc.rect(M, y, ANCHO, 6, "F");
     doc.setFont("helvetica","bold"); doc.setFontSize(6.5);
     doc.setTextColor(AZUL[0],AZUL[1],AZUL[2]);
@@ -7077,7 +7130,7 @@
 
   function rtNombreArchivo(){
     var d = rtDatos();
-    return "Rotura " + d.consec + (d.bodega ? " " + d.bodega.replace(/[^A-Za-z0-9 ]/g, "") : "") + ".pdf";
+    return rtClaseActual().asunto + " " + d.consec + (d.bodega ? " " + d.bodega.replace(/[^A-Za-z0-9 ]/g, "") : "") + ".pdf";
   }
 
   $("rtPdf").addEventListener("click", function(){
@@ -7092,7 +7145,7 @@
   $("rtEnviar").addEventListener("click", function(){
     var doc = rtPdf(); if (!doc) return;
     var d = rtDatos();
-    var asunto = "Reporte de Rotura - " + (d.bodega || "Sin bodega") +
+    var asunto = rtClaseActual().asunto + " - " + (d.bodega || "Sin bodega") +
                  " - " + fechaBonita(d.fecha);
     var TOPE = 1900;
 
@@ -7110,14 +7163,15 @@
       return t;
     }
     function armar(det){
-      return "Reporte de rotura " + d.consec + "\n" +
+      return rtClaseActual().asunto + " " + d.consec + "\n" +
         "=================================================\n\n" +
         "Fecha: " + fechaBonita(d.fecha) + "\n" +
         "Bodega: " + (d.bodega || "-") + "\n" +
         "Centro de costo: " + (d.centro || "-") + "\n" +
-        "Tipo de rotura: " + d.tipo + "\n" +
+        "Clase: " + d.claseEt + "\n" +
+        "Causa: " + d.tipo + "\n" +
         "Reportado por: " + d.quien + "\n\n" +
-        "QUE SE ROMPIO\n" +
+        (d.clase === "rotura" ? "QUE SE ROMPIO\n" : "QUE SE DA DE BAJA\n") +
         "-------------------------------------------------\n" +
         det + "\n" +
         "TOTAL: " + fmt(d.t.art, 0) + (d.t.art === 1 ? " articulo, " : " articulos, ") +
@@ -7162,7 +7216,7 @@
     var d = rtDatos();
     var reg = {
       consec:d.consec, fecha:d.fecha, bodega:d.bodega, bodegaCod:d.bodegaCod,
-      centro:d.centro, tipo:d.tipo, quien:d.quien, just:d.just,
+      centro:d.centro, tipo:d.tipo, clase:d.clase, claseEt:d.claseEt, quien:d.quien, just:d.just,
       totArt:d.t.art, totUnd:d.t.und, fotos:d.t.fotos,
       estado: estado || "pendiente",
       sello: new Date().toISOString(),
@@ -7206,14 +7260,14 @@
     h += '</div>';
 
     h += '<div class="tablawrap"><table><thead><tr>';
-    h += '<th>Consecutivo</th><th>Fecha</th><th>Bodega</th><th>Tipo</th>';
+    h += '<th>Consecutivo</th><th>Fecha</th><th>Bodega</th><th>Clase</th>';
     h += '<th class="num">Art.</th><th class="num">Und.</th><th>Estado</th><th class="opc"></th>';
     h += '</tr></thead><tbody>';
     RT_HIST.slice(0, 40).forEach(function(r, i){
       h += '<tr><td><span class="cod">' + esc(r.consec) + '</span></td>';
       h += '<td>' + esc(fechaBonita(r.fecha)) + '</td>';
       h += '<td>' + esc(r.bodega || "-") + '</td>';
-      h += '<td>' + (String(r.tipo).indexOf("Desgaste") === 0 ? "Desgaste" : "Manipulacion") + '</td>';
+      h += '<td>' + esc(r.claseEt || "Rotura") + '</td>';
       h += '<td class="num">' + fmt(r.totArt, 0) + '</td>';
       h += '<td class="num">' + fmt(r.totUnd, 0) + '</td>';
       h += '<td><select data-restado="' + i + '" aria-label="Estado de ' + esc(r.consec) + '">';
