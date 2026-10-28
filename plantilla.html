@@ -2261,14 +2261,18 @@
   var SIN_COSTOS = (PERFIL === "operario");
 
   if (SIN_COSTOS){
-    // los dos modulos que no son mas que costos se van del encabezado
+    /* Solo se quitan los BOTONES del encabezado, no las pantallas. Quitar las
+       pantallas del documento parecía más limpio, pero reventaba el aplicativo
+       del operario: el código de Precios y Costeo rápido corre de todas formas
+       al arrancar y buscaba elementos que ya no estaban, así que se caía antes
+       de pintar la lista de recetas y el operario veía la página vacía.
+
+       Dejarlas en su sitio no abre ninguna puerta: sin botón no se llega a
+       ellas, y lo que de verdad protege es que los costos no vienen en el
+       archivo que descarga este perfil. */
     ["navPrecios","navCosteo"].forEach(function(id){
       var b = document.getElementById(id);
       if (b) b.remove();
-    });
-    ["vPrecios","vCosteo"].forEach(function(id){
-      var p = document.getElementById(id);
-      if (p) p.remove();
     });
     estado.costos = false;
     estado.part = false;
@@ -3686,11 +3690,13 @@
 
   var GIRA = { i:0, pasos:[], voz:true, andando:false, pausa:false, espera:null };
 
-  /* Se arma la lista saltando los pasos cuyo elemento no existe: al operario
-     se le quitan Precios y Costeo rápido del encabezado, y no tiene sentido
-     hablarle de algo que no va a encontrar. */
+  /* Se arma la lista saltando los pasos que no apliquen. Para el operario eso
+     es Precios y Costeo rápido: sus pantallas siguen en el documento —quitarlas
+     rompía el aplicativo— pero sin botón no se llega a ellas, así que tampoco
+     tiene sentido explicárselas. El filtro mira el botón, no la pantalla. */
   function giraArmar(){
     GIRA.pasos = GIRA_PASOS.filter(function(p){
+      if (p.ir && !document.getElementById(p.ir)) return false;
       return !p.sel || document.querySelector(p.sel);
     });
   }
@@ -3748,8 +3754,19 @@
     var el = document.querySelector(sel);
     if (!el){ aro.hidden = true; return; }
 
+    /* Hay controles que solo aparecen después de escoger algo: el cambio de
+       gramaje sale cuando ya hay un insumo, y el de domicilio cuando ya hay
+       una receta. Si el paso apunta a uno de esos y todavía no está a la
+       vista, el aro sube a la tarjeta que lo contiene en vez de desaparecer:
+       así la persona igual sabe en qué parte de la pantalla va a salir. */
     function colocar(){
-      var r = el.getBoundingClientRect();
+      var blanco = el, r = blanco.getBoundingClientRect();
+      var saltos = 0;
+      while ((!r.width || !r.height) && blanco.parentElement && saltos < 6){
+        blanco = blanco.parentElement;
+        r = blanco.getBoundingClientRect();
+        saltos++;
+      }
       if (!r.width && !r.height){ aro.hidden = true; return; }
       aro.hidden = false;
       aro.style.top = (r.top - 5) + "px";
@@ -3882,26 +3899,40 @@
   /* --- navegación entre el recetario y las dos pantallas --- */
   var vista = "recetario", subPed = "armar";
 
+  /* Al operario se le quitan del encabezado los botones de Precios y Costeo
+     rápido, y sus pantallas. Por eso aquí NO se da por hecho que existan: si
+     se les habla directamente, al operario le reventaba la navegación entera
+     —dejaba de poder entrar a Producción, Pedido, Bajas y Rotura— porque la
+     función se caía en la primera línea. */
+  function marcar(id, activo){
+    var e = document.getElementById(id);
+    if (e) e.setAttribute("aria-pressed", String(activo));
+  }
+  function ocultar(id, oculto){
+    var e = document.getElementById(id);
+    if (e) e.hidden = oculto;
+  }
+
   function verPantalla(cual){
     vista = cual;
     var esPedido = (cual === "pedido"), esPrecios = (cual === "precios"),
         esProd = (cual === "produccion"), esCosteo = (cual === "costeo"),
         esBajas = (cual === "bajas"), esRotura = (cual === "rotura");
-    $("navPedido").setAttribute("aria-pressed", String(esPedido));
-    $("navPrecios").setAttribute("aria-pressed", String(esPrecios));
-    $("navProduccion").setAttribute("aria-pressed", String(esProd));
-    $("navCosteo").setAttribute("aria-pressed", String(esCosteo));
-    $("navBajas").setAttribute("aria-pressed", String(esBajas));
-    $("navRotura").setAttribute("aria-pressed", String(esRotura));
-    $("subPedido").hidden = !esPedido;
-    $("vistaRecetario").hidden = (cual !== "recetario");
-    $("vProduccion").hidden = !esProd;
-    $("vPrecios").hidden = !esPrecios;
-    $("vCosteo").hidden = !esCosteo;
-    $("vBajas").hidden = !esBajas;
-    $("vRotura").hidden = !esRotura;
-    $("vArmar").hidden = !(esPedido && subPed === "armar");
-    $("vComo").hidden  = !(esPedido && subPed === "como");
+    marcar("navPedido", esPedido);
+    marcar("navPrecios", esPrecios);
+    marcar("navProduccion", esProd);
+    marcar("navCosteo", esCosteo);
+    marcar("navBajas", esBajas);
+    marcar("navRotura", esRotura);
+    ocultar("subPedido", !esPedido);
+    ocultar("vistaRecetario", cual !== "recetario");
+    ocultar("vProduccion", !esProd);
+    ocultar("vPrecios", !esPrecios);
+    ocultar("vCosteo", !esCosteo);
+    ocultar("vBajas", !esBajas);
+    ocultar("vRotura", !esRotura);
+    ocultar("vArmar", !(esPedido && subPed === "armar"));
+    ocultar("vComo", !(esPedido && subPed === "como"));
     // el simulador se imprime en horizontal; todo lo demás, vertical
     document.documentElement.classList.toggle("pagina-horizontal", esPrecios);
     window.scrollTo(0,0);
@@ -3918,10 +3949,12 @@
   $("navPedido").addEventListener("click", function(){
     verPantalla(vista === "pedido" ? "recetario" : "pedido");
   });
-  $("navPrecios").addEventListener("click", function(){
+  /* Estos dos botones no existen en el perfil de operario: se conectan solo
+     si están, para que su ausencia no corte el resto del arranque. */
+  if ($("navPrecios")) $("navPrecios").addEventListener("click", function(){
     verPantalla(vista === "precios" ? "recetario" : "precios");
   });
-  $("navCosteo").addEventListener("click", function(){
+  if ($("navCosteo")) $("navCosteo").addEventListener("click", function(){
     verPantalla(vista === "costeo" ? "recetario" : "costeo");
   });
   $("navBajas").addEventListener("click", function(){
