@@ -1941,7 +1941,8 @@
   <p class="gira-tit"><span class="n" id="giraN">1/1</span><span id="giraTit">…</span></p>
   <p class="gira-txt" id="giraTxt">…</p>
   <div class="gira-pie">
-    <button type="button" id="giraVoz" aria-label="Silenciar la voz">🔊 Voz</button>
+    <button type="button" id="giraPausa" aria-label="Pausar el recorrido">⏸</button>
+    <button type="button" id="giraVoz" aria-label="Silenciar la voz">🔊</button>
     <button type="button" id="giraAtras">◀</button>
     <button type="button" id="giraSigue" class="sigue">Siguiente ▶</button>
     <button type="button" id="giraSalir" class="lejos">Salir</button>
@@ -3610,7 +3611,7 @@
       voz:"Esto fue creado por Sergio Valencia para el Club Lagos de Caujaral. Sergio Valencia es controller financiero y especialista en control de gestión para operaciones de alimentos y bebidas, enfocado en conectar inventarios, producción y contabilidad. Eso es todo: ya puedes usarlo." }
   ];
 
-  var GIRA = { i:0, pasos:[], voz:true, andando:false };
+  var GIRA = { i:0, pasos:[], voz:true, andando:false, pausa:false, espera:null };
 
   /* Se arma la lista saltando los pasos cuyo elemento no existe: al operario
      se le quitan Precios y Costeo rápido del encabezado, y no tiene sentido
@@ -3621,21 +3622,42 @@
     });
   }
 
-  function giraHablar(texto){
-    if (!GIRA.voz || !window.speechSynthesis) return;
+  /* La voz avisa cuando termina, y ahí es donde el recorrido pasa solo al
+     siguiente paso: la idea es que corra como un video y nadie tenga que ir
+     dándole clic. Si el equipo no tiene voz en español —o está silenciada—
+     se calcula cuánto tardaría en leerse y se usa ese tiempo. */
+  function giraHablar(texto, alTerminar){
+    var siguePor = Math.max(3800, String(texto).length * 62);
+    function listo(){
+      if (typeof alTerminar === "function") alTerminar();
+    }
+    if (!GIRA.voz || !window.speechSynthesis){
+      GIRA.espera = setTimeout(listo, siguePor);
+      return;
+    }
     try {
       speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(texto);
       u.lang = "es-CO";
       u.rate = 1.02;
-      // se prefiere una voz en español si el equipo tiene alguna instalada
       var voces = speechSynthesis.getVoices() || [];
       var es = voces.filter(function(v){ return /^es/i.test(v.lang); });
       if (es.length) u.voice = es[0];
+      var yaPaso = false;
+      u.onend = function(){ if (!yaPaso){ yaPaso = true; listo(); } };
+      u.onerror = function(){ if (!yaPaso){ yaPaso = true; listo(); } };
       speechSynthesis.speak(u);
-    } catch(e){}
+      /* Red de seguridad: en algunos navegadores onend no llega si la pestaña
+         pierde el foco, y el recorrido se quedaría congelado. */
+      GIRA.espera = setTimeout(function(){
+        if (!yaPaso){ yaPaso = true; listo(); }
+      }, siguePor + 4000);
+    } catch(e){
+      GIRA.espera = setTimeout(listo, siguePor);
+    }
   }
   function giraCallar(){
+    if (GIRA.espera){ clearTimeout(GIRA.espera); GIRA.espera = null; }
     if (window.speechSynthesis){ try { speechSynthesis.cancel(); } catch(e){} }
   }
   /* El aro se dibuja sobre el elemento sin tapar nada: la pantalla sigue
@@ -3682,11 +3704,18 @@
     $("giraAtras").disabled = (GIRA.i === 0);
     $("giraSigue").textContent = (GIRA.i === GIRA.pasos.length - 1) ? "Terminar" : "Siguiente ▶";
     giraSenalar(p.sel);
-    giraHablar(p.voz || p.txt);
+    /* Al terminar de narrar, el recorrido pasa solo. Solo se queda quieto si
+       está en pausa o si ya es el último paso. */
+    giraHablar(p.voz || p.txt, function(){
+      if (!GIRA.andando || GIRA.pausa) return;
+      if (GIRA.i >= GIRA.pasos.length - 1){ giraSalir(); return; }
+      giraIr(GIRA.i + 1);
+    });
   }
 
   function giraIr(n){
     if (n < 0 || n >= GIRA.pasos.length) return;
+    giraCallar();   // corta la narración anterior antes de empezar la nueva
     GIRA.i = n;
     giraPintar();
   }
@@ -3707,6 +3736,13 @@
 
   $("giraSigue").addEventListener("click", function(){
     if (GIRA.i >= GIRA.pasos.length - 1) giraSalir(); else giraIr(GIRA.i + 1);
+  });
+  $("giraPausa").addEventListener("click", function(){
+    GIRA.pausa = !GIRA.pausa;
+    this.textContent = GIRA.pausa ? "▶" : "⏸";
+    this.setAttribute("aria-label", GIRA.pausa ? "Seguir el recorrido" : "Pausar el recorrido");
+    if (GIRA.pausa) giraCallar();
+    else giraPintar();   // al soltar la pausa vuelve a narrar y sigue solo
   });
   $("giraAtras").addEventListener("click", function(){ giraIr(GIRA.i - 1); });
   $("giraSalir").addEventListener("click", giraSalir);
@@ -7556,6 +7592,38 @@
   rtLlenarBodegas();
   rtPintarHistorial();
   rtNueva();
+
+  /* ---------- Que el celular no se duerma ----------
+     En la cocina el teléfono queda en la mesa mientras se prepara la receta,
+     y Android lo bloquea a los 30 segundos: toca secarse las manos y tocarlo
+     otra vez para seguir leyendo. Con el bloqueo de pantalla del navegador se
+     mantiene encendido mientras el recetario esté a la vista.
+
+     El permiso solo se concede tras un gesto de la persona, y se pierde al
+     cambiar de aplicación, así que se vuelve a pedir cuando regresa. Si el
+     navegador no lo admite —iPhone viejo— no pasa nada: sigue como hoy. */
+  var CANDADO = null;
+
+  function mantenerDespierto(){
+    if (!("wakeLock" in navigator)) return;
+    if (document.visibilityState !== "visible") return;
+    if (CANDADO) return;
+    try {
+      navigator.wakeLock.request("screen").then(function(c){
+        CANDADO = c;
+        c.addEventListener("release", function(){ CANDADO = null; });
+      }).catch(function(){ /* lo negó el sistema o hay poca batería */ });
+    } catch(e){}
+  }
+
+  // el primer toque en cualquier parte sirve como gesto para pedirlo
+  ["pointerdown","keydown"].forEach(function(ev){
+    document.addEventListener(ev, mantenerDespierto, { once:false, passive:true });
+  });
+  // al volver de otra aplicación el permiso se perdió: se vuelve a pedir
+  document.addEventListener("visibilitychange", function(){
+    if (document.visibilityState === "visible") mantenerDespierto();
+  });
   pintarElegidas();
   pintarProduccion();
 
