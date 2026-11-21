@@ -1027,6 +1027,14 @@
   }
   .firma-autor b{color:var(--muted);font-weight:600}
   @media print{ .firma-autor,.gira-barra,.gira-aro{display:none!important} }
+  /* La columna de lo que hay que alistar para la producción. Se resalta
+     porque es la que se lleva a la bodega: el resto de la tabla es análisis,
+     esa es la orden. */
+  #resCost .alistar{
+    background:var(--g-FP-suave);font-weight:600;
+    border-left:1px solid var(--line-soft);border-right:1px solid var(--line-soft);
+  }
+  #resCost th.alistar{font-weight:700;color:var(--g-FP)}
   .obliga{color:var(--g-FP);font-weight:700}
   .fotos{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px}
   .fotos:empty{margin:0}
@@ -1707,6 +1715,13 @@
         <div class="campo">
           <label for="porcCost">Porciones que salen</label>
           <input id="porcCost" type="number" step="1" min="1" value="1">
+        </div>
+        <!-- Cuántos se van a producir. Es lo contrario de las porciones: ese
+             campo divide el costo de la receta, este lo multiplica. Con los dos
+             el aplicativo sabe cuántas veces hay que hacer la receta. -->
+        <div class="campo">
+          <label for="prodCost">Platos a producir</label>
+          <input id="prodCost" type="number" step="1" min="1" value="1">
         </div>
         <div class="campo">
           <label for="impCost">Impuesto %</label>
@@ -5887,6 +5902,7 @@
       $("camposCost").hidden = false;
       $("busCost").value = recCost.n;
       $("porcCost").value = 1;
+      $("prodCost").value = 1;
       metaCost = 45; metaCostEt = "Alimentos";
       // el precio que ya esté guardado entra como punto de partida
       pvCost = PRECIOS[recCost.c] || 0;
@@ -6028,7 +6044,7 @@
     $("cComision").hidden = !this.checked;
     costear();
   });
-  ["protCost","porcCost","impCost","comDom"].forEach(function(id){
+  ["protCost","porcCost","prodCost","impCost","comDom"].forEach(function(id){
     $(id).addEventListener("input", function(){ costear(); });
   });
 
@@ -6070,10 +6086,19 @@
          esc(recCost.n) + ' <span class="um">' +
          (esNuevo ? "plato nuevo · no está en el libro" : esc(recCost.c) +
            (recCost.cat ? ' · ' + esc(recCost.cat) : '')) + '</span></h2></div>';
+    /* Cuántas veces hay que hacer la receta: si rinde 4 porciones y se van a
+       producir 40 platos, son 10 veces. Con rendimiento de 1 —que es el caso
+       de casi todo el libro— el factor es el número de platos. */
+    var platos = Math.max(1, numDe("prodCost", 1));
+    var vueltas = platos / Math.max(1, c.porc);
+    var produciendo = platos > 1;
+
     h += '<div class="tablawrap"><table><thead><tr>';
     h += '<th class="num c-idx">N.º</th><th>Insumo</th><th class="num">Cantidad</th><th class="c-um">Unidad</th>';
+    if (produciendo) h += '<th class="num alistar">Para ' + fmt(platos,0) + '</th>';
     h += '<th class="num">Valor</th><th class="num">% part.</th>';
     h += '</tr></thead><tbody>';
+
     var lineas = recCost.i.map(function(x, i){
       return { n:x[0], um:x[1], cant:x[2], v:(x[3]||0)*x[2] };
     }).sort(function(a,b){ return b.v - a.v; });
@@ -6083,10 +6108,19 @@
       h += '<td>' + esc(x.n) + '</td>';
       h += '<td class="num">' + fmt(x.cant, x.cant < 1 ? 3 : 2) + '</td>';
       h += '<td class="c-um"><span class="um">' + esc(x.um) + '</span></td>';
+      if (produciendo){
+        var cantProd = x.cant * vueltas;
+        h += '<td class="num alistar">' + fmt(cantProd, cantProd < 1 ? 3 : 2) + '</td>';
+      }
+      /* El valor se queda SIEMPRE por receta, no multiplicado: esta tabla es
+         el análisis del plato y el % de participación se lee sobre ella. Lo
+         que cuesta la producción completa va en el recuadro de al lado, con
+         su propio rótulo, para que no haya dos cifras distintas bajo el mismo
+         nombre. Lo único que se multiplica aquí son las cantidades. */
       h += '<td class="num">' + pesos(x.v) + '</td>';
       h += '<td class="num">' + fmt(p,1) + ' %</td></tr>';
     });
-    h += '</tbody><tfoot><tr><td colspan="4">Total materia prima</td>' +
+    h += '</tbody><tfoot><tr><td colspan="' + (produciendo ? 5 : 4) + '">Total materia prima</td>' +
          '<td class="num">' + pesos(c.mp) + '</td><td class="num">100 %</td></tr></tfoot>';
     h += '</table></div></div>';
 
@@ -6103,6 +6137,15 @@
          'aria-label="Acompañamiento del plato"></div>';
     if (c.porc > 1) h += filaDato("Porciones", fmt(c.porc,0));
     h += filaDato("Costo por porción", pesos(c.total), "fuerte");
+    /* Lo que de verdad se va a gastar hoy. El costo por porción sirve para
+       fijar el precio; este sirve para pedir la plata y los insumos. */
+    if (produciendo){
+      h += filaDato("Producir " + fmt(platos,0) + " platos", pesos(c.total * platos), "fuerte azul");
+      if (c.porc > 1){
+        h += '<p class="nota" style="margin:8px 0 0">Son <b>' + fmt(vueltas, vueltas % 1 ? 2 : 0) +
+             '</b> veces la receta, porque cada una rinde ' + fmt(c.porc,0) + ' porciones.</p>';
+      }
+    }
     if (c.prot !== 10){
       h += '<p class="nota" style="margin:8px 0 0">La protección quedó en <b>' + fmt(c.prot,0) +
            ' %</b> y el resto del aplicativo usa <b>10 %</b>: este costeo no es comparable ' +
